@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home</title>
     <style>
         * {
@@ -48,16 +48,19 @@
             margin: 20px;
         }
 
+        /* Sidebar styles */
+        .sidebarL,
+        .sidebarR {
+            flex: 1;
+            padding: 20px;
+            background: #ddd;
+        }
+
+        /* Main content style */
         .content {
             flex: 3;
             padding: 20px;
             background: #f4f4f4;
-        }
-
-        .sidebar {
-            flex: 1;
-            padding: 20px;
-            background: #ddd;
         }
 
         footer {
@@ -73,32 +76,35 @@
 <body>
 
     <header>
-        <h1>Website Name</h1>
-        <p>Welcome to the website!</p>
+        <h1 style="text-align: center;">Turntable</h1>
+        <p style="text-align: center;">Expand your music taste!</p>
     </header>
 
     <nav>
         <ul>
             <li><a href="#">Home</a></li>
             <li><a href="#">About</a></li>
-            <li><a href="#">Services</a></li>
             <li><a href="#">Contact</a></li>
         </ul>
     </nav>
 
     <main>
+        <aside class="sidebarL">
+            <h3>Left Sidebar</h3>
+            <p>This is space is for ads.</p>
+        </aside>
         <section class="content">
-            <h2>Main Content</h2>
-            <p>This is where the main content of the website goes.</p>
+            <h2 style="text-align: center;">Main Content</h2>
+            <p style="text-align: center;">This is where the main stuff goes.</p>
         </section>
-        <aside class="sidebar">
-            <h3>Sidebar</h3>
-            <p>This is the sidebar with additional information or links.</p>
+        <aside class="sidebarR">
+            <h3>Right Sidebar</h3>
+            <p>This is space is for ads.</p>
         </aside>
     </main>
 
     <footer>
-        <p>&copy; 2025 Website Name. All rights reserved.</p>
+        <p>&copy; 2025 Turntable. All rights reserved.</p>
     </footer>
 
 </body>
