@@ -1,0 +1,2 @@
+python3 -m flask run -> this is to run the website
+source myenv/bin/activate -> this is the command to activate the virtual environment 
