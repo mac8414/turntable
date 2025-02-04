@@ -56,6 +56,28 @@
             background: #ddd;
         }
 
+        .optionButtons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .optionButton {
+            padding: 10px 15px;
+            font-size: 14px;
+            background: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .optionButton:hover {
+            background: #777;
+        }   
+
         .randomizeButton {
             padding: 10px 20px;
             font-size: 16px;
@@ -111,6 +133,12 @@
         <section class="content">
             <h2 style="text-align: center;">Main Content</h2>
             <p style="text-align: center;">This is where the main stuff goes.</p>
+            <h3 style="text-align: center; margin-top: 30px;">Options</h3>
+            <div class="optionButtons">
+                <button class="optionButton">Song</button>
+                <button class="optionButton">Album</button>
+                <button class="optionButton">Artist</button>
+            </div>
             <div style="text-align: center; margin-top: 20px;">
                 <button class="randomizeButton">Randomize</button>
             </div>            
