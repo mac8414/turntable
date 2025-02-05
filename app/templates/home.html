@@ -78,7 +78,7 @@
             background: #777;
         }   
 
-        .dropDown {
+        .dropDownGenre {
             padding: 10px 10px;
             font-size: 18px;
             background: #555;
@@ -89,7 +89,22 @@
             transition: background 0.3s ease;
         }
 
-        .dropDown:hover {
+        .dropDownGenre:hover {
+            background: #777;
+        }
+
+        .dropDownTimePeriod {
+            padding: 10px 10px;
+            font-size: 18px;
+            background: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .dropDownTimePeriod:hover {
             background: #777;
         }
 
@@ -168,14 +183,28 @@
                 <button class="optionButton">Artist</button>
             </div>
             <div style="text-align: center; margin-top: 20px;">
-                <select class="dropDown">
+                <select class="dropDownGenre">
                     <option value="">Genre</option>
                     <option value="rock">Rock</option>
                     <option value="pop">Pop</option>
                     <option value="jazz">Jazz</option>
                     <option value="hiphop">Hip-Hop</option>
                     <option value="classical">Classical</option>
-                    <option value="electronic">Electronic</option>
+                    <option value="electronic">Metal</option>
+                    <option value="country">Country</option>
+                    <option value="indie">Indie</option>
+                    <option value="reggae">Reggae</option>
+                </select>
+                <select class="dropDownTimePeriod">
+                    <option value="">Time Period</option>
+                    <option value="50s">1950's</option>
+                    <option value="60s">1960's</option>
+                    <option value="70s">1970's</option>
+                    <option value="80s">1980's</option>
+                    <option value="90s">1990's</option>
+                    <option value="2000s">2000's</option>
+                    <option value="2010s">2010's</option>
+                    <option value="2020s">2020's</option>
                 </select>
             </div>
             <div style="text-align: center; margin-top: 20px;">
