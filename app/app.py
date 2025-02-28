@@ -30,8 +30,11 @@ def random_album():
         album_url = album['external_urls']['spotify']
         album_image = album['images'][0]['url']
         artist_name = album['artists'][0]['name']
-        
-        return jsonify(album_name=album_name, album_url=album_url, album_image=album_image, artist_name=artist_name)
+        artist_id = album['artists'][0]['id']
+        artist_info = spotify.artist(artist_id)
+        genres = artist_info['genres']
+
+        return jsonify(album_name=album_name, album_url=album_url, album_image=album_image, artist_name=artist_name, genres=genres)
     else:
         return jsonify(album_name=None)
 
