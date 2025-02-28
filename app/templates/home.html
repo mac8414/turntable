@@ -15,18 +15,20 @@
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
+            background: lightgreen; /* Set background color to green */
         }
 
         header {
-            background: #333;
+            background: orange;
             color: #fff;
             padding: 10px 20px;
         }
 
         nav {
-            background: #555;
+            background: pink;
             color: #fff;
             padding: 10px 20px;
+            border: 2px solid purple;
         }
 
         nav ul {
@@ -54,6 +56,7 @@
             flex: 1;
             padding: 20px;
             background: #ddd;
+            border: 2px solid purple;
         }
 
         .optionButtons {
@@ -66,7 +69,7 @@
         .optionButton {
             padding: 10px 15px;
             font-size: 14px;
-            background: #555;
+            background: orange;
             color: white;
             border: none;
             cursor: pointer;
@@ -126,21 +129,23 @@
         .contentBox {
             width: 80%; 
             height: 500px; 
-            background: white;
-            border: 2px solid #555;
+            background: yellow;
+            border: 2px solid red;
             margin: 20px auto; /* Centers the box */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
             color: #555;
+            text-align: center;
         }
 
         /* Main content style */
         .content {
             flex: 3;
             padding: 20px;
-            background: #f4f4f4;
+            background: cyan;
+            border: 2px solid purple;
         }
 
         footer {
@@ -151,6 +156,28 @@
             margin-top: 20px;
         }
     </style>
+    <script>
+        function randomizeAlbum() {
+            fetch('/random_album')
+                .then(response => response.json())
+                .then(data => {
+                    const contentBox = document.querySelector('.contentBox');
+                    if (data.album_name) {
+                        contentBox.innerHTML = `
+                            <div>
+                                <h2>${data.album_name}</h2>
+                                <p>${data.artist_name}</p>
+                                <a href="${data.album_url}" target="_blank">
+                                    <img src="${data.album_image}" alt="${data.album_name}" style="width:300px;">
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        contentBox.innerHTML = '<p>No albums found. Try refreshing!</p>';
+                    }
+                });
+        }
+    </script>
 </head>
 
 <body>
@@ -174,8 +201,8 @@
             <p>This is space is for ads.</p>
         </aside>
         <section class="content">
-            <h2 style="text-align: center;">Main Content</h2>
-            <p style="text-align: center;">This is where the main stuff goes.</p>
+            <h2 style="text-align: center;">Randomizer</h2>
+            <p style="text-align: center;">Select your options, and find new music!</p>
             <h3 style="text-align: center; margin-top: 30px;">Options</h3>
             <div class="optionButtons">
                 <button class="optionButton">Song</button>
@@ -208,11 +235,11 @@
                 </select>
             </div>
             <div style="text-align: center; margin-top: 20px;">
-                <button class="randomizeButton">Randomize</button>
+                <button class="randomizeButton" onclick="randomizeAlbum()">Randomize</button>
             </div>  
 
             <div class="contentBox">
-                <p>Content will be displayed here</p>
+                <p>No albums found. Try refreshing!</p>
             </div>            
             
         </section>
