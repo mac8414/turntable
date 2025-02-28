@@ -8,10 +8,7 @@ env/
 
 # Ignore environment variables
 .env
-
-# Ignore compiled files
-*.o
-*.out
+.cache
 
 # Ignore system files
 .DS_Store
