@@ -15,34 +15,13 @@
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
-            background: lightgreen; /* Set background color to green */
+            background: rgb(38, 38, 38); /* Set background color to green */
         }
 
         header {
-            background: orange;
+            background: rgb(120, 114, 103);
             color: #fff;
             padding: 10px 20px;
-        }
-
-        nav {
-            background: pink;
-            color: #fff;
-            padding: 10px 20px;
-            border: 2px solid purple;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-        }
-
-        nav ul li {
-            margin-right: 20px;
-        }
-
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
         }
 
         main {
@@ -56,7 +35,7 @@
             flex: 1;
             padding: 20px;
             background: #ddd;
-            border: 2px solid purple;
+            border: 2px solid black;
         }
 
         .optionButtons {
@@ -133,8 +112,8 @@
         .contentBox {
             width: 80%; 
             height: 500px; 
-            background: yellow;
-            border: 2px solid red;
+            background: orange;
+            border: 2px solid black;
             margin: 20px auto; /* Centers the box */
             display: flex;
             align-items: center;
@@ -148,8 +127,8 @@
         .content {
             flex: 3;
             padding: 20px;
-            background: cyan;
-            border: 2px solid purple;
+            background: rgb(120, 114, 103);
+            border: 2px solid black;
         }
 
         footer {
@@ -216,17 +195,19 @@
 <body>
 
     <header>
-        <h1 style="text-align: center;">Turntable</h1>
-        <p style="text-align: center;">Expand your music taste!</p>
-    </header>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+            <div>
+                <div style="font-size: 32px;">Turntable</div>
+                <div style="font-size: 18px;">Expand your music taste!</div>
+            </div>
+            <div style="font-size: 25px;">
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
+            </div>
+        </div>
 
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
-    </nav>
+    </header>
 
     <main>
         <aside class="sidebarL">
