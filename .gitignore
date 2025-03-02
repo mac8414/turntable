@@ -8,8 +8,12 @@ env/
 
 # Ignore environment variables
 .env
-.cache
+
+# Ignore .cache directory and .cache files
+.cache/
+*.cache
 
 # Ignore system files
 .DS_Store
 Thumbs.db
+
