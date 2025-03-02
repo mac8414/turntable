@@ -1,2 +1,2 @@
 python3 -m flask run
-source .venv/bin/activate -> this is the command to activate the virtual environment 
+source .venv/bin/activate 

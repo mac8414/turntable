@@ -17,31 +17,89 @@ spotify = Spotify(client_credentials_manager=client_credentials_manager)
 def home():
     return render_template('home.html')
 
+
+@app.route('/random_song')
+def random_song():
+    year = request.args.get('year')
+    genre = request.args.get('genre')
+
+    query_parts = []
+    if year and year != "Random Year":
+        query_parts.append(f"year:{year}")
+    if genre and genre != "Random Genre":
+        query_parts.append(f"genre:{genre}")
+
+    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
+
+    results = spotify.search(q=query, type="track", limit=1, offset=random.randint(0, 50))
+
+    if results['tracks']['items']:
+        track = results['tracks']['items'][0]
+        return jsonify(
+            name=track['name'],
+            url=track['external_urls']['spotify'],  # Link to song
+            image=track['album']['images'][0]['url'],  # Album image
+            artist=track['artists'][0]['name'],
+            type="song",
+            preview_url=track['preview_url']
+        )
+    else:
+        return jsonify(name=None)
+
+
 @app.route('/random_album')
 def random_album():
     year = request.args.get('year')
     genre = request.args.get('genre')
-    if year is not None and year != "Random Year":
-        query = f'year:{year}'
-        results = spotify.search(q=query, type="album", limit=1, offset=random.randint(0, 50))
-        
-    else:
-        random_letter = random.choice("abcdefghijklmnopqrstuvwxyz")
-        results = spotify.search(q=random_letter, type="album", limit=1, offset=random.randint(0, 50))
 
-    # Get album details
+    query_parts = []
+    if year and year != "Random Year":
+        query_parts.append(f"year:{year}")
+    if genre and genre != "Random Genre":
+        query_parts.append(f"genre:{genre}")
+
+    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
+
+    results = spotify.search(q=query, type="album", limit=1, offset=random.randint(0, 50))
+
     if results['albums']['items']:
         album = results['albums']['items'][0]
-        album_name = album['name']
-        album_url = album['external_urls']['spotify']
-        album_image = album['images'][0]['url']
-        artist_name = album['artists'][0]['name']
-        artist_id = album['artists'][0]['id']
-        artist_info = spotify.artist(artist_id)
-        genres = artist_info['genres']
-        return jsonify(album_name=album_name, album_url=album_url, album_image=album_image, artist_name=artist_name, genres=genres)
+        return jsonify(
+            name=album['name'],
+            url=album['external_urls']['spotify'],  # Link to album
+            image=album['images'][0]['url'],  # Album image
+            artist=album['artists'][0]['name'],
+            type="album"
+        )
     else:
-        return jsonify(album_name=None)
+        return jsonify(name=None)
+
+
+@app.route('/random_artist')
+def random_artist():
+    genre = request.args.get('genre')
+
+    query_parts = []
+    if genre and genre != "Random Genre":
+        query_parts.append(f"genre:{genre}")
+
+    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
+
+    results = spotify.search(q=query, type="artist", limit=1, offset=random.randint(0, 50))
+
+    if results['artists']['items']:
+        artist = results['artists']['items'][0]
+        return jsonify(
+            name=artist['name'],
+            url=artist['external_urls']['spotify'],  # Link to artist page
+            image=artist['images'][0]['url'] if artist['images'] else None,  # Artist image (if available)
+            type="artist"
+        )
+    else:
+        return jsonify(name=None)
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

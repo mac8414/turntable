@@ -15,34 +15,13 @@
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
-            background: lightgreen; /* Set background color to green */
+            background: rgb(38, 38, 38); /* Set background color to green */
         }
 
         header {
-            background: orange;
+            background: rgb(120, 114, 103);
             color: #fff;
             padding: 10px 20px;
-        }
-
-        nav {
-            background: pink;
-            color: #fff;
-            padding: 10px 20px;
-            border: 2px solid purple;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-        }
-
-        nav ul li {
-            margin-right: 20px;
-        }
-
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
         }
 
         main {
@@ -56,7 +35,7 @@
             flex: 1;
             padding: 20px;
             background: #ddd;
-            border: 2px solid purple;
+            border: 2px solid black;
         }
 
         .optionButtons {
@@ -80,6 +59,10 @@
         .optionButton:hover {
             background: #777;
         }   
+
+        .optionButton.selected {
+            background: #777; 
+        }
 
         .dropDownGenre {
             padding: 10px 10px;
@@ -129,8 +112,8 @@
         .contentBox {
             width: 80%; 
             height: 500px; 
-            background: yellow;
-            border: 2px solid red;
+            background: orange;
+            border: 2px solid black;
             margin: 20px auto; /* Centers the box */
             display: flex;
             align-items: center;
@@ -144,8 +127,8 @@
         .content {
             flex: 3;
             padding: 20px;
-            background: cyan;
-            border: 2px solid purple;
+            background: rgb(120, 114, 103);
+            border: 2px solid black;
         }
 
         footer {
@@ -157,51 +140,74 @@
         }
     </style>
     <script>
-        function randomizeAlbum() {
-            const genre = document.querySelector('.dropDownGenre').value;
-            const year = document.querySelector('.dropDownTimePeriod').value;
-
-            fetch(`/random_album?year=${year}&genre=${genre}`)
-                .then(response => response.json())
-                .then(data => {
-                    const contentBox = document.querySelector('.contentBox');
-                    if (data.album_name) {
-                        const capitalizedGenres = data.genres.map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
-                        contentBox.innerHTML = `
-                            <div>
-                                <h2>${data.album_name}</h2>
-                                <p>${data.artist_name}</p>
-                                <a href="${data.album_url}" target="_blank">
-                                    <img src="${data.album_image}" alt="${data.album_name}" style="width:300px;">
-                                </a>
-                                <p>Genres: ${capitalizedGenres.join(', ')}</p>
-                            </div>
-                        `;
-                    } else {
-                        contentBox.innerHTML = '<p>No albums found. Try refreshing!</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching album:', error);
-                });
+        
+    function randomizeSelection() {
+        const selectedOption = document.querySelector('.optionButton.selected');
+        if (!selectedOption) {
+            alert("Please select an option (Song, Album, or Artist) first!");
+            return;
         }
+
+        const genre = document.querySelector('.dropDownGenre').value;
+        const year = document.querySelector('.dropDownTimePeriod').value;
+        let endpoint = "";
+
+        if (selectedOption.textContent === "Song") {
+            endpoint = `/random_song?year=${year}&genre=${genre}`;
+        } else if (selectedOption.textContent === "Album") {
+            endpoint = `/random_album?year=${year}&genre=${genre}`;
+        } else if (selectedOption.textContent === "Artist") {
+            endpoint = `/random_artist?genre=${genre}`;
+        }
+
+        fetch(endpoint)
+            .then(response => response.json())
+            .then(data => {
+                const contentBox = document.querySelector('.contentBox');
+
+                if (data.name) {
+                    contentBox.innerHTML = `
+                        <div>
+                             <h2>${data.name}</h2>
+                            <p>${data.artist ? "By " + data.artist : ""}</p>
+                            ${data.image ? `<a href="${data.url}" target="_blank"><img src="${data.image}" alt="${data.name}" style="width:300px;"></a>` : ''}
+                            ${data.type === "song" && data.preview_url ? `<audio controls><source src="${data.preview_url}" type="audio/mpeg"></audio>` : ''}
+                        </div>
+                    `;
+                } else {
+                    contentBox.innerHTML = `<p>No results found. Try refreshing!</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }
+
+
+    function toggleSelection(button) {
+        document.querySelectorAll('.optionButton').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+    }
+    
     </script>
 </head>
 
 <body>
 
     <header>
-        <h1 style="text-align: center;">Turntable</h1>
-        <p style="text-align: center;">Expand your music taste!</p>
-    </header>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+            <div>
+                <div style="font-size: 32px;">Turntable</div>
+                <div style="font-size: 18px;">Expand your music taste!</div>
+            </div>
+            <div style="font-size: 25px;">
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
+                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
+            </div>
+        </div>
 
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
-    </nav>
+    </header>
 
     <main>
         <aside class="sidebarL">
@@ -213,9 +219,9 @@
             <p style="text-align: center;">Select your options, and find new music!</p>
             <h3 style="text-align: center; margin-top: 30px;">Options</h3>
             <div class="optionButtons">
-                <button class="optionButton">Song</button>
-                <button class="optionButton">Album</button>
-                <button class="optionButton">Artist</button>
+                <button class="optionButton" onclick="toggleSelection(this)">Song</button>
+                <button class="optionButton" onclick="toggleSelection(this)">Album</button>
+                <button class="optionButton" onclick="toggleSelection(this)">Artist</button>
             </div>
             <div style="text-align: center; margin-top: 20px;">
                 <select class="dropDownGenre">
@@ -245,7 +251,7 @@
                 </select>
             </div>
             <div style="text-align: center; margin-top: 20px;">
-                <button class="randomizeButton" onclick="randomizeAlbum()">Randomize</button>
+                <button class="randomizeButton" onclick="randomizeSelection()">Randomize</button>
             </div>  
 
             <div class="contentBox">
