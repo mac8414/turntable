@@ -17,7 +17,8 @@ spotify = Spotify(client_credentials_manager=client_credentials_manager)
 def home():
     return render_template('home.html')
 
-
+# FIX ME: The implementation is choppy. Will work if you do a random year and random genre,
+# will work if you do a random year and a specific genre, but will not work if you do a specific year and a random genre as well as it could.
 @app.route('/random_song')
 def random_song():
     year = request.args.get('year')
@@ -46,7 +47,8 @@ def random_song():
     else:
         return jsonify(name=None)
 
-
+# FIX ME: The whole implementation of this does not work for a specific genre when you search.
+# For whatever reason we are not able to get the genre of the album to work in the query.
 @app.route('/random_album')
 def random_album():
     year = request.args.get('year')
@@ -74,7 +76,8 @@ def random_album():
     else:
         return jsonify(name=None)
 
-
+# FIX ME: NEEDS HELP. This feature doesn't work properly with the genre or the year. Needs to be fixed.
+# Only generates a random artist, but doesn't take into account the genre or the year.
 @app.route('/random_artist')
 def random_artist():
     genre = request.args.get('genre')
@@ -86,7 +89,7 @@ def random_artist():
     query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
 
     results = spotify.search(q=query, type="artist", limit=1, offset=random.randint(0, 50))
-
+    # TODO: THIS IS WHERE THE PROBLEM IS. THE QUERY IS NOT WORKING PROPERLY.
     if results['artists']['items']:
         artist = results['artists']['items'][0]
         return jsonify(
