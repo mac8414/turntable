@@ -5,205 +5,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            background: rgb(38, 38, 38); /* Set background color to green */
-        }
-
-        header {
-            background: rgb(120, 114, 103);
-            color: #fff;
-            padding: 10px 20px;
-        }
-
-        main {
-            display: flex;
-            margin: 20px;
-        }
-
-        /* Sidebar styles */
-        .sidebarL,
-        .sidebarR {
-            flex: 1;
-            padding: 20px;
-            background: #ddd;
-            border: 2px solid black;
-        }
-
-        .optionButtons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .optionButton {
-            padding: 10px 15px;
-            font-size: 14px;
-            background: orange;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .optionButton:hover {
-            background: #777;
-        }   
-
-        .optionButton.selected {
-            background: #777; 
-        }
-
-        .dropDownGenre {
-            padding: 10px 10px;
-            font-size: 18px;
-            background: #555;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .dropDownGenre:hover {
-            background: #777;
-        }
-
-        .dropDownTimePeriod {
-            padding: 10px 10px;
-            font-size: 18px;
-            background: #555;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .dropDownTimePeriod:hover {
-            background: #777;
-        }
-
-        .randomizeButton {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #ff5733; /* Custom color */
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .randomizeButton:hover {
-            background: #cc4629; /* Darker shade on hover */
-        }
-
-        .contentBox {
-            width: 80%; 
-            height: 500px; 
-            background: orange;
-            border: 2px solid black;
-            margin: 20px auto; /* Centers the box */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #555;
-            text-align: center;
-        }
-
-        /* Main content style */
-        .content {
-            flex: 3;
-            padding: 20px;
-            background: rgb(120, 114, 103);
-            border: 2px solid black;
-        }
-
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 10px;
-            margin-top: 20px;
-        }
-    </style>
-    <script>
-        
-    function randomizeSelection() {
-        const selectedOption = document.querySelector('.optionButton.selected');
-        if (!selectedOption) {
-            alert("Please select an option (Song, Album, or Artist) first!");
-            return;
-        }
-
-        const genre = document.querySelector('.dropDownGenre').value;
-        const year = document.querySelector('.dropDownTimePeriod').value;
-        let endpoint = "";
-
-        if (selectedOption.textContent === "Song") {
-            endpoint = `/random_song?year=${year}&genre=${genre}`;
-        } else if (selectedOption.textContent === "Album") {
-            endpoint = `/random_album?year=${year}&genre=${genre}`;
-        } else if (selectedOption.textContent === "Artist") {
-            endpoint = `/random_artist?genre=${genre}`;
-        }
-
-        fetch(endpoint)
-            .then(response => response.json())
-            .then(data => {
-                const contentBox = document.querySelector('.contentBox');
-
-                if (data.name) {
-                    contentBox.innerHTML = `
-                        <div>
-                             <h2>${data.name}</h2>
-                            <p>${data.artist ? "By " + data.artist : ""}</p>
-                            ${data.image ? `<a href="${data.url}" target="_blank"><img src="${data.image}" alt="${data.name}" style="width:300px;"></a>` : ''}
-                            ${data.type === "song" && data.preview_url ? `<audio controls><source src="${data.preview_url}" type="audio/mpeg"></audio>` : ''}
-                        </div>
-                    `;
-                } else {
-                    contentBox.innerHTML = `<p>No results found. Try refreshing!</p>`;
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-    }
-
-
-    function toggleSelection(button) {
-        document.querySelectorAll('.optionButton').forEach(btn => btn.classList.remove('selected'));
-        button.classList.add('selected');
-    }
-    
-    </script>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </head>
 
 <body>
 
-    <header>
+    <header class="gradient2">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <div style="font-size: 32px;">Turntable</div>
                 <div style="font-size: 18px;">Expand your music taste!</div>
             </div>
             <div style="font-size: 25px;">
-                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
-                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
-                <a href="#" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
+                <a href="#" onclick="location.href='/home'" style="text-decoration: none; color: black; margin-right: 20px;">Home</a>
+                <a href="#" onclick="location.href='/about'" style="text-decoration: none; color: black; margin-right: 20px;">About</a>
+                <a href="#" onclick="location.href='/contact'" style="text-decoration: none; color: black; margin-right: 20px;">Contact</a>
             </div>
         </div>
 
@@ -254,7 +72,7 @@
                 <button class="randomizeButton" onclick="randomizeSelection()">Randomize</button>
             </div>  
 
-            <div class="contentBox">
+            <div class="contentBox gradient1">
                 <p>No albums found. Try refreshing!</p>
             </div>            
             
