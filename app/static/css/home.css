@@ -12,11 +12,11 @@ body {
 
 .gradient2 {
     background-color: cyan; /* For browsers that do not support gradients */
-    background-image: linear-gradient(white, cyan);
+    background-image: linear-gradient(red, yellow);
 }
 
 header {
-    color:black;
+    color: black;
     padding: 10px 20px;
 }
 
@@ -50,14 +50,15 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
+    font-family: 'Lucida Bright', Georgia, serif; /* Add this line */
 }
 
 .optionButton:hover {
-    background: #777;
+    background: #ff8c33; /* Darker shade on hover */
 }   
 
 .optionButton.selected {
-    background: #777; 
+    background: red; 
 }
 
 .dropDownGenre {
@@ -69,10 +70,11 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
+    font-family: 'Lucida Bright', Georgia, serif;
 }
 
 .dropDownGenre:hover {
-    background: #777;
+    background: #333;
 }
 
 .dropDownTimePeriod {
@@ -84,10 +86,11 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
+    font-family: 'Lucida Bright', Georgia, serif;
 }
 
 .dropDownTimePeriod:hover {
-    background: #777;
+    background: #333;
 }
 
 .randomizeButton {
@@ -99,6 +102,7 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
+    font-family: 'Lucida Bright', Georgia, serif; /* Add this line */
 }
 
 .randomizeButton:hover {
@@ -107,7 +111,7 @@ main {
 
 .gradient1 {
     background-color: red; /* For browsers that do not support gradients */
-    background-image: linear-gradient(red, yellow);
+    background-image: linear-gradient(yellow, red);
 }
 
 .contentBox {
@@ -127,8 +131,10 @@ main {
 .content {
     flex: 3;
     padding: 20px;
-    background: rgb(120, 114, 103);
+    background: url('/static/images/shelf2.jpg') no-repeat center center fixed; /* Set background image */
+    background-size: cover; /* Ensure the background image covers the entire area */
     border: 2px solid black;
+    color: black; /* Set text color to white */
 }
 
 footer {

@@ -35,6 +35,7 @@ def random_song():
         query_parts.append(f"year:{year}")
 
     if genre and genre.lower() != "random genre":
+        genre = genre.lower()
         query_parts.append(f"genre:{genre}")
     else:
         # If only the year is given, append a common word to improve search results
@@ -100,25 +101,52 @@ def random_album():
 @app.route('/random_artist')
 def random_artist():
     genre = request.args.get('genre')
-
-    query_parts = []
-    if genre and genre != "Random Genre":
-        query_parts.append(f"genre:{genre}")
-
-    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
-
-    results = spotify.search(q=query, type="artist", limit=1, offset=random.randint(0, 50))
-    # TODO: THIS IS WHERE THE PROBLEM IS. THE QUERY IS NOT WORKING PROPERLY.
-    if results['artists']['items']:
-        artist = results['artists']['items'][0]
-        return jsonify(
-            name=artist['name'],
-            url=artist['external_urls']['spotify'],  # Link to artist page
-            image=artist['images'][0]['url'] if artist['images'] else None,  # Artist image (if available)
-            type="artist"
-        )
-    else:
-        return jsonify(name=None)
+    
+    # Set attempts counter to avoid infinite loops
+    max_attempts = 10
+    attempts = 0
+    
+    while attempts < max_attempts:
+        attempts += 1
+        
+        # Build the search query
+        if genre and genre.lower() != "random genre":
+            # Search specifically for the genre
+            query = f"genre:{genre}"
+        else:
+            # Use a random letter to get diverse results
+            query = random.choice("abcdefghijklmnopqrstuvwxyz")
+        
+        # Get a random offset between 0 and 100 to access different results
+        offset = random.randint(0, 100)
+        results = spotify.search(q=query, type="artist", limit=50, offset=offset)
+        
+        if results['artists']['items']:
+            # If we got results, pick a random artist from the 50 returned
+            random_index = random.randint(0, len(results['artists']['items']) - 1)
+            artist = results['artists']['items'][random_index]
+            
+            # Verify the genre if one was specified
+            if genre and genre.lower() != "random genre":
+                # Get full artist details to check their genres
+                artist_id = artist['id']
+                artist_info = spotify.artist(artist_id)
+                artist_genres = [g.lower() for g in artist_info.get('genres', [])]
+                
+                # Check if any of the artist's genres contain our search genre
+                if not any(genre.lower() in g for g in artist_genres):
+                    continue  # Try again if genre doesn't match
+            
+            # Return the artist info
+            return jsonify(
+                name=artist['name'],
+                url=artist['external_urls']['spotify'],
+                image=artist['images'][0]['url'] if artist['images'] else None,
+                type="artist"
+            )
+    
+    # If we couldn't find a matching artist after max attempts
+    return jsonify(name=None)
 
 
 
