@@ -5,14 +5,15 @@
 }
 
 body {
-    font-family: 'Lucida Bright', Georgia, serif;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-weight: bold;
     line-height: 1.6;
     background: rgb(38, 38, 38); /* Set background color to green */
 }
 
 .gradient2 {
-    background-color: cyan; /* For browsers that do not support gradients */
-    background-image: linear-gradient(red, yellow);
+    background-color: black; /* For browsers that do not support gradients */
+    color: white;
 }
 
 header {
@@ -38,8 +39,10 @@ main {
 .content {
     flex: 3;
     padding: 20px;
-    background: rgb(120, 114, 103);
+    background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
+    background-size: cover;
     border: 2px solid black;
+    color: white;
 }
 
 footer {
@@ -48,4 +51,9 @@ footer {
     text-align: center;
     padding: 10px;
     margin-top: 20px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: white;
 }
