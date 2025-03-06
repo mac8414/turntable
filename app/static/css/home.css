@@ -39,6 +39,8 @@ main {
     padding: 20px;
     background: #ddd;
     border: 2px solid black;
+    margin: 0 5px; /* Add margin to move sidebars away from main content */
+    border-radius: 10px;
 }
 
 .optionButtons {
@@ -136,6 +138,7 @@ main {
     font-size: 18px;
     color: black;
     text-align: center;
+    border-radius: 10px;
 }
 
 /* Main content style */
@@ -146,6 +149,7 @@ main {
     background-size: cover; /* Ensure the background image covers the entire area */
     border: 2px solid black;
     color: black; /* Set text color to white */
+    border-radius: 10px;
 }
 
 footer {
