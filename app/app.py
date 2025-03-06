@@ -51,32 +51,36 @@ def random_song():
         query_parts.append(random.choice(["music", "song", "love", "dance", "classic", "hit"]))
 
     query = " ".join(query_parts)
+    max_attempts = 10
+    attempts = 0
+    
+    while attempts < max_attempts:
+        attempts += 1
+        results = spotify.search(q=query, type="track", limit=1, offset=random.randint(0, 50))
 
-    results = spotify.search(q=query, type="track", limit=1, offset=random.randint(0, 50))
+        if results.get('tracks', {}).get('items'):
+            track = results['tracks']['items'][0]
+            image_url = track.get('album', {}).get('images', [{}])[0].get('url', None)
+            dominant_color = "#000000"  # Default to black
+            if image_url:
+                try:
+                    response = requests.get(image_url)
+                    image = Image.open(BytesIO(response.content))
+                    color_thief = ColorThief(BytesIO(response.content))
+                    dominant_color_rgb = color_thief.get_color(quality=10)
+                    dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
+                except Exception as e:
+                    print(f"Error extracting color: {e}")
 
-    if results.get('tracks', {}).get('items'):
-        track = results['tracks']['items'][0]
-        image_url = track.get('album', {}).get('images', [{}])[0].get('url', None)
-        dominant_color = "#000000"  # Default to black
-        if image_url:
-            try:
-                response = requests.get(image_url)
-                image = Image.open(BytesIO(response.content))
-                color_thief = ColorThief(BytesIO(response.content))
-                dominant_color_rgb = color_thief.get_color(quality=10)
-                dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
-            except Exception as e:
-                print(f"Error extracting color: {e}")
-
-        return jsonify(
-            name=track.get('name', 'Unknown Song'),
-            url=track.get('external_urls', {}).get('spotify', ''),
-            image=image_url,
-            artist=track.get('artists', [{}])[0].get('name', 'Unknown Artist'),
-            type="song",
-            preview_url=track.get('preview_url', None),
-            dominant_color=dominant_color
-        )
+            return jsonify(
+                name=track.get('name', 'Unknown Song'),
+                url=track.get('external_urls', {}).get('spotify', ''),
+                image=image_url,
+                artist=track.get('artists', [{}])[0].get('name', 'Unknown Artist'),
+                type="song",
+                preview_url=track.get('preview_url', None),
+                dominant_color=dominant_color
+            )
 
     return jsonify(name=None)
 
@@ -90,7 +94,7 @@ def random_album():
     if year and year != "Random Year":
         query_parts.append(f"year:{year}")
     
-    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz")
+    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz1234567890")
 
     offset = random.randint(0, 50)
     
@@ -148,7 +152,7 @@ def random_artist():
         if genre and genre.lower() != "random genre":
             query = f"genre:{genre}"
         else:
-            query = random.choice("abcdefghijklmnopqrstuvwxyz")
+            query = random.choice("abcdefghijklmnopqrstuvwxyz1234567890")
         
         offset = random.randint(0, 100)
         results = spotify.search(q=query, type="artist", limit=50, offset=offset)
