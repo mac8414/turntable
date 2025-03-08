@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 import random
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -7,8 +7,21 @@ import requests
 from io import BytesIO
 from PIL import Image
 from colorthief import ColorThief
+from flask_mail import Mail, Message
+
 
 app = Flask(__name__)
+
+# Configuring Flask-Mail with Gmail SMTP
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = 'turntablehelp@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'fnuj qfow rnlt yaym'  
+app.config['MAIL_DEFAULT_SENDER'] = 'turntablehelp@gmail.com'
+
+mail = Mail(app)
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=os.getenv('SPOTIPY_CLIENT_ID'),
@@ -188,6 +201,34 @@ def random_artist():
             )
 
     return jsonify(name=None)
+
+# Route for Contact Form Page
+@app.route('/contact-help', methods=['GET', 'POST'])
+def contact_help():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        message = request.form['message']
+
+        # Create the email message
+        msg = Message(f'New message from {name} ({email})',
+                      recipients=['turntablehelp@gmail.com'])  
+        msg.body = f'Name: {name}\nEmail: {email}\n\nMessage:\n{message}'
+
+        try:
+            mail.send(msg)
+            return redirect(url_for('success'))  # Redirect to success page
+        except Exception as e:
+            print("Error details:", traceback.format_exc())
+            return 'An error occurred while sending your message. Please try again.'
+
+    return render_template('contact.html')
+
+# Route for Success Page
+@app.route('/success')
+def success():
+    return render_template('success.html')  # You can create this page for the success message.
+
 
 if __name__ == "__main__":
     app.run(debug=True)

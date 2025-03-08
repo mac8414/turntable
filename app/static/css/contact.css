@@ -24,6 +24,7 @@ header {
 main {
     display: flex;
     margin: 20px;
+    min-height: 80vh; /* Push footer down */
 }
 
 /* Sidebar styles */
@@ -43,6 +44,42 @@ main {
     background-size: cover;
     border: 2px solid black;
     color: white;
+    margin-bottom: 50px;
+}
+
+.content h2, .content p {
+    text-align: center;
+}
+
+.content p {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* Contact Form Styles */
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.contact-form button {
+    padding: 10px 20px;
+    background-color: #ff4081;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+.contact-form button:hover {
+    background-color: #e91e63;
 }
 
 footer {
