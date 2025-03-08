@@ -32,7 +32,7 @@ function randomizeSelection() {
                     <div>
                         <h2 style="color: white;">${data.name}</h2>
                         <p style="color: white;">${data.artist ? "By " + data.artist : ""}</p>
-                        ${data.image ? `<a href="${data.url}" target="_blank"><img id="albumImage" src="${data.image}" alt="${data.name}" style="width:300px;"></a>` : ''}
+                        ${data.image ? `<a href="${data.url}" target="_blank"><img id="albumImage" src="${data.image}" alt="${data.name}" style="width:300px; border-radius: 5px;"></a>` : ''}
                         ${data.type === "song" && data.preview_url ? `<audio controls><source src="${data.preview_url}" type="audio/mpeg"></audio>` : ''}
                     </div>
                 `;

@@ -33,7 +33,8 @@ main {
     flex: 1;
     padding: 20px;
     background: #ddd;
-    border: 2px solid black;
+    margin: 0 5px; /* Add margin to move sidebars away from main content */
+    border-radius: 10px;
 }
 
 /* Main content style */

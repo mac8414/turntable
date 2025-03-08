@@ -38,7 +38,8 @@ main {
     flex: 1;
     padding: 20px;
     background: #ddd;
-    border: 2px solid black;
+    margin: 0 5px; /* Add margin to move sidebars away from main content */
+    border-radius: 10px;
 }
 
 .optionButtons {
@@ -128,7 +129,6 @@ main {
 .contentBox {
     width: 80%; 
     height: 500px; 
-    border: 2px solid black;
     margin: 20px auto; /* Centers the box */
     display: flex;
     align-items: center;
@@ -136,6 +136,7 @@ main {
     font-size: 18px;
     color: black;
     text-align: center;
+    border-radius: 10px;
 }
 
 /* Main content style */
@@ -144,8 +145,8 @@ main {
     padding: 20px;
     background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
     background-size: cover; /* Ensure the background image covers the entire area */
-    border: 2px solid black;
     color: black; /* Set text color to white */
+    border-radius: 10px;
 }
 
 footer {
@@ -155,4 +156,6 @@ footer {
     padding: 10px;
     margin-top: 20px;
 }
+
+
 
