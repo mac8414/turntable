@@ -26,14 +26,36 @@
     </header>
 
     <main>
-        <aside class="sidebarL">
+        <!-- Left Sidebar -->
+        <aside class="sidebarL" style ="border-radius: 10px;">
             <!-- <h3>Left Sidebar</h3> -->
             <!-- <p>This is space is for ads.</p> -->
         </aside>
+    
+        <!-- Main Content -->
         <section class="content">
-            <p>Idk man we need to update this.</p>
+            <h2>About Us</h2>
+            <p>Welcome to Turntable! We are dedicated to helping you discover new music and expand your taste. Our platform connects users to a world of music data powered by Spotify, and we aim to create a community of music lovers.</p>
+    
+            <section class="team-members">
+                <h3>Meet the Team</h3>
+                <div class="team">
+                    <div class="team-member">
+                        <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKayHunter" />
+                        <h4>McKay Hunter</h4>
+                        <p>Co-founder & Developer</p>
+                    </div>
+                    <div class="team-member">
+                        <img src="{{ url_for('static', filename='images/rasimImage.jpg') }}" alt="RasimCrnica" />
+                        <h4>Rasim Crnica</h4>
+                        <p>Co-founder & Developer</p>
+                    </div>
+                </div>
+            </section>
         </section>
-        <aside class="sidebarR">
+    
+        <!-- Right Sidebar -->
+        <aside class="sidebarR" style ="border-radius: 10px;">
             <!-- <h3>Right Sidebar</h3> -->
             <!-- <p>This is space is for ads.</p> -->
         </aside>

@@ -41,10 +41,70 @@ main {
     flex: 3;
     padding: 20px;
     background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
-    background-size: cover;
-    color: white;
+    background-size: cover; /* Ensure the background image covers the entire area */
+    color: black; /* Set text color to white */
     border-radius: 10px;
 }
+
+.content h2 {
+    font-size: 32px;
+    text-align: center;
+    color: #ff5733; /* Accent color for headers */
+    margin-bottom: 15px;
+}
+
+
+.content p {
+    font-size: 18px;
+    text-align: center;
+    color: #fff; /* White text for content */
+    margin-bottom: 20px;
+}
+
+/* Sections inside the content */
+.team-members {
+    margin-bottom: 30px;
+}
+
+.team-members h3 {
+    font-size: 24px;
+    text-align: center;
+    color: #ff5733;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+.team {
+    display: flex;
+    text-align: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+.team-member {
+    text-align: center;
+    width: 150px;
+}
+
+.team-member img {
+    width: 150px; /* Set the width of the images */
+    height: 150px; /* Set the height of the images */
+    border-radius: 50%; /* Make the images round */
+    object-fit: cover; /* Ensures the image covers the circle without distortion */
+    margin-bottom: 10px;
+}
+
+.team-member h4 {
+    font-size: 18px;
+    color: #ff5733;
+    margin-bottom: 5px;
+}
+
+.team-member p {
+    font-size: 16px;
+    color: #fff;
+}
+
 
 footer {
     background: #333;

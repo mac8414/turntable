@@ -4,6 +4,7 @@
     box-sizing: border-box;
 }
 
+
 body {
     font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     font-weight: bold;
@@ -147,6 +148,7 @@ main {
     background-size: cover; /* Ensure the background image covers the entire area */
     color: black; /* Set text color to white */
     border-radius: 10px;
+    
 }
 
 footer {
