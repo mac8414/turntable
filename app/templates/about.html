@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>About</title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
     <link rel="image" href="{{ url_for('static', filename='images/imageForTurntable') }}" type="image/imageForTurntable.jpeg">
 </head>
@@ -13,7 +13,7 @@
     <header class ="gradient2">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
-                <div style="font-size: 32px;">Turntable</div>
+                <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
                 <div style="font-size: 18px; color: gray;">Expand your music taste!</div>
             </div>
             <div style="font-size: 25px;">
@@ -34,11 +34,11 @@
     
         <!-- Main Content -->
         <section class="content">
-            <h2>About Us</h2>
-            <p>Welcome to Turntable! We are dedicated to helping you discover new music and expand your taste. Our platform connects users to a world of music data powered by Spotify, and we aim to create a community of music lovers.</p>
+            <img src="{{ url_for('static', filename='images/aboutUs.png') }}" alt="AboutUs" class="aboutUs-image" style="height: 32px;">
+            <p style="margin-top: 30px;">Welcome to Turntable! We are dedicated to helping you discover new music and expand your taste. Our platform connects users to a world of music data powered by Spotify, and we aim to create a community of music lovers.</p>
     
             <section class="team-members">
-                <h3>Meet the Team</h3>
+                <img src="{{ url_for('static', filename='images/mtt.png') }}" alt="MeetTheTeam" class="mtt-image" style="height: 16px;">
                 <div class="team">
                     <div class="team-member">
                         <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKayHunter" />

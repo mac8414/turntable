@@ -111,7 +111,7 @@ main {
 .randomizeButton {
     padding: 10px 20px;
     font-size: 16px;
-    background: #ff4081; /* Custom color */
+    background: #ff24ac; /* Custom color */
     color: #fff;
     border: none;
     cursor: pointer;
@@ -122,7 +122,7 @@ main {
 }
 
 .randomizeButton:hover {
-    background: #ca3366; /* Darker shade on hover */
+    background: #cf1d8b; /* Darker shade on hover */
 }
 
 .gradient1 {
@@ -167,5 +167,61 @@ footer {
     margin-right: auto;
 }
 
+.options-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 30px;
+}
 
+/* Mobile styles */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  .nav-menu {
+    flex-direction: column;
+  }
+  .sidebarL,
+  .sidebarR {
+    display: none; /* Hide sidebars on mobile */
+  }
+  .content {
+    flex: 1;
+    padding: 10px;
+    margin: 0; /* Remove margin on mobile */
+  }
+  .optionButtons {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .optionButton {
+    width: 100%; /* Make buttons full width on mobile */
+  }
+  .dropDownGenre,
+  .dropDownTimePeriod {
+    width: 100%; /* Make dropdowns full width on mobile */
+    margin-bottom: 10px; /* Add margin for spacing */
+  }
+  .randomizeButton {
+    width: 100%; /* Make button full width on mobile */
+  }
+  .contentBox {
+    width: 100%; /* Make content box full width on mobile */
+    height: auto; /* Adjust height for mobile */
+    margin: 10px 0; /* Adjust margin for mobile */
+  }
+}
 
+/* iPhone specific styles */
+@media (max-width: 480px) {
+  header div {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  header a {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+}
