@@ -15,12 +15,13 @@
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
-                <div style="font-size: 18px; color: gray;">Expand your music taste!</div>
+                <div style="font-size: 18px; color: #f8a235; text-align: center;">Listen Different. Explore new music.</div>
             </div>
-            <div style="font-size: 25px;">
-                <a href="#" onclick="location.href='/home'" class="nav-link" style="margin-right: 20px; color: gray;">Home</a>
-                <a href="#" onclick="location.href='/about'" class="nav-link" style="margin-right: 20px; color: gray;">About</a>
-                <a href="#" onclick="location.href='/contact'" class="nav-link" style="margin-right: 20px; color: gray;">Contact</a>
+            <div class="nav-menu" style="font-size: 25px;">
+                <a href="#" onclick="location.href='/home'" class="nav-link" style="margin-right: 20px; color: white;">Home</a>
+                <a href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
+                <a href="#" onclick="location.href='/about'" class="nav-link" style="margin-right: 20px; color: white;">About</a>
+                <a href="#" onclick="location.href='/contact'" class="nav-link" style="margin-right: 20px; color: white;">Contact</a>
             </div>
         </div>
     </header>
@@ -31,8 +32,8 @@
         </aside>
         
         <section class="content">
-            <h2>Contact Us</h2>
-            <p>If you have any questions, feel free to get in touch with us through the form below.</p>
+            <img src="{{ url_for('static', filename='images/contactUs.png') }}" alt="ContactUs" class="contactUs-image" style="height: 32px;">
+            <p style="margin-top: 30px; color: black;" >If you have any questions, feel free to get in touch with us through the form below.</p>
             <div class="contact-form">
                 <form action="/contact-help" method="POST">
                     <input type="text" name="name" placeholder="Your Name" required>

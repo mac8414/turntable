@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Londrina+Solid&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dangrek&display=swap');
 
 * {
     margin: 0;
@@ -6,12 +6,11 @@
     box-sizing: border-box;
 }
 
-
 body {
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
     line-height: 1.6;
-    background: rgb(38, 38, 38); /* Set background color to green */
+    background: #9b3a33;
 }
 
 .highlight {
@@ -22,11 +21,10 @@ body {
 }
 
 .gradient2 {
-    background-color: black; /* For browsers that do not support gradients */
+    background-color: #2f1d1b; /* For browsers that do not support gradients */
 }
 
 header {
-    color: black;
     padding: 10px 20px;
 }
 
@@ -40,7 +38,7 @@ main {
 .sidebarR {
     flex: 1;
     padding: 20px;
-    background: #ddd;
+    background: white;
     margin: 0 5px; /* Add margin to move sidebars away from main content */
     border-radius: 10px;
 }
@@ -55,74 +53,74 @@ main {
 .optionButton {
     padding: 10px 15px;
     font-size: 14px;
-    background: rgb(153, 153, 153);
+    background: #5c3936;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
 }
 
 .optionButton:hover {
-    background: rgb(95, 95, 95); /* Darker shade on hover */
+    background: #492d2b; /* Darker shade on hover */
 }   
 
 .optionButton.selected {
-    background: black; 
+    background: #362220; 
     color: white;
 }
 
 .dropDownGenre {
     padding: 10px 10px;
     font-size: 18px;
-    background: #555;
+    background: #2f1d1b;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
 }
 
 .dropDownGenre:hover {
-    background: #4e4e4e;
+    background: #221514;
 }
 
 .dropDownTimePeriod {
     padding: 10px 10px;
     font-size: 18px;
-    background: #555;
+    background: #2f1d1b;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
 }
 
 .dropDownTimePeriod:hover {
-    background: #4e4e4e;
+    background: #221514;
 }
 
 .randomizeButton {
     padding: 10px 20px;
     font-size: 16px;
-    background: #ff24ac; /* Custom color */
+    background: #f8a235; /* Custom color */
     color: #fff;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
 }
 
 .randomizeButton:hover {
-    background: #cf1d8b; /* Darker shade on hover */
+    background: #cc872c; /* Darker shade on hover */
 }
 
 .gradient1 {
@@ -146,15 +144,14 @@ main {
 .content {
     flex: 3;
     padding: 20px;
-    background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
-    background-size: cover; /* Ensure the background image covers the entire area */
-    color: black; /* Set text color to white */
+    background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
+    color: #2f1d1b; /* Set text color to white */
     border-radius: 10px;
     
 }
 
 footer {
-    background: #333;
+    background: #2f1d1b;
     color: #fff;
     text-align: center;
     padding: 10px;
@@ -179,8 +176,15 @@ footer {
   .container {
     padding: 10px;
   }
-  .nav-menu {
+  header .nav-menu {
     flex-direction: column;
+    align-items: center; /* Center the links */
+    margin-top: 10px; /* Add some spacing */
+  }
+  header .nav-menu a {
+    display: block;
+    margin: 5px 0; /* Add vertical spacing */
+    font-size: 10px; /* Smaller font size for iPhone */
   }
   .sidebarL,
   .sidebarR {
@@ -216,12 +220,19 @@ footer {
 /* iPhone specific styles */
 @media (max-width: 480px) {
   header div {
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
   }
-  header a {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 20px;
+  header .nav-menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px; /* Add some spacing */
+  }
+  header .nav-menu a {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 15px; /* Smaller font size for iPhone */
   }
 }

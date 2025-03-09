@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Londrina+Solid&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dangrek&display=swap');
 
 * {
     margin: 0;
@@ -7,19 +7,18 @@
 }
 
 body {
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
     line-height: 1.6;
-    background: rgb(38, 38, 38); /* Set background color to green */
+    background: #9b3a33; /* Set background color to green */
 }
 
 .gradient2 {
-    background-color: black; /* For browsers that do not support gradients */
+    background-color: #2f1d1b; /* For browsers that do not support gradients */
     color: white;
 }
 
 header {
-    color: black;
     padding: 10px 20px;
 }
 
@@ -33,7 +32,7 @@ main {
 .sidebarR {
     flex: 1;
     padding: 20px;
-    background: #ddd;
+    background: white;
     margin: 0 5px; /* Add margin to move sidebars away from main content */
     border-radius: 10px;
 }
@@ -42,8 +41,7 @@ main {
 .content {
     flex: 3;
     padding: 20px;
-    background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
-    background-size: cover; /* Ensure the background image covers the entire area */
+    background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
     color: black; /* Set text color to white */
     border-radius: 10px;
 }
@@ -51,7 +49,7 @@ main {
 .content h2 {
     font-size: 32px;
     text-align: center;
-    color: #ff24ac; /* Accent color for headers */
+    color: #f8a235; /* Accent color for headers */
     margin-bottom: 15px;
 }
 
@@ -70,7 +68,7 @@ main {
 .team-members h3 {
     font-size: 24px;
     text-align: center;
-    color: #ff24ac;
+    color: #f8a235;
     margin-top: 50px;
     margin-bottom: 30px;
 }
@@ -98,7 +96,7 @@ main {
 
 .team-member h4 {
     font-size: 18px;
-    color: #ff24ac;
+    color: #f8a235;
     margin-bottom: 5px;
 }
 
@@ -108,7 +106,7 @@ main {
 }
 
 footer {
-    background: #333;
+    background: #2f1d1b;
     color: #fff;
     text-align: center;
     padding: 10px;
@@ -154,12 +152,19 @@ footer {
 /* iPhone specific styles */
 @media (max-width: 480px) {
   header div {
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
   }
-  header a {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 20px;
+  header .nav-menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px; /* Add some spacing */
+  }
+  header .nav-menu a {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 15px;
   }
 }

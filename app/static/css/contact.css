@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Londrina+Solid&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dangrek&display=swap');
 
 * {
     margin: 0;
@@ -7,19 +7,18 @@
 }
 
 body {
-    font-family: 'Londrina Solid', sans-serif;
+    font-family: 'Dangrek', sans-serif;
     font-weight: bold;
     line-height: 1.6;
-    background: rgb(38, 38, 38); /* Set background color to green */
+    background: #9b3a33; /* Set background color to green */
 }
 
 .gradient2 {
-    background-color: black; /* For browsers that do not support gradients */
+    background-color: #2f1d1b; /* For browsers that do not support gradients */
     color: white;
 }
 
 header {
-    color: black;
     padding: 10px 20px;
 }
 
@@ -34,7 +33,7 @@ main {
 .sidebarR {
     flex: 1;
     padding: 20px;
-    background: #ddd;
+    background: white;
     margin: 0 5px; /* Add margin to move sidebars away from main content */
     border-radius: 10px;
 }
@@ -43,10 +42,9 @@ main {
 .content {
     flex: 3;
     padding: 20px;
-    background-image: linear-gradient(rgb(80, 79, 79), black); /* Set background image */
-    background-size: cover;
-    border: 2px solid black;
+    background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
     color: white;
+    border-radius: 10px;
     margin-bottom: 50px;
 }
 
@@ -72,7 +70,8 @@ main {
 
 .contact-form button {
     padding: 10px 20px;
-    background-color: #ff4081;
+    background-color: #f8a235;
+    font-family: 'Dangrek', sans-serif;
     color: white;
     border: none;
     border-radius: 5px;
@@ -82,11 +81,11 @@ main {
 }
 
 .contact-form button:hover {
-    background-color: #e91e63;
+    background-color: #cc872c;
 }
 
 footer {
-    background: #333;
+    background: #2f1d1b;
     color: #fff;
     text-align: center;
     padding: 10px;
@@ -96,6 +95,12 @@ footer {
 .nav-link {
     text-decoration: none;
     color: white;
+}
+
+.contactUs-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 @media (max-width: 768px) {
@@ -119,12 +124,19 @@ footer {
 /* iPhone specific styles */
 @media (max-width: 480px) {
   header div {
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
   }
-  header a {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 20px;
+  header .nav-menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px; /* Add some spacing */
+  }
+  header .nav-menu a {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 15px;
   }
 }
