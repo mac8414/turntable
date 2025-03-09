@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Londrina+Solid&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -6,7 +8,7 @@
 
 
 body {
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-family: 'Londrina Solid', sans-serif;
     font-weight: bold;
     line-height: 1.6;
     background: rgb(38, 38, 38); /* Set background color to green */
@@ -59,7 +61,7 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-family: 'Londrina Solid', sans-serif;
     font-weight: bold;
 }
 
@@ -81,12 +83,12 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-family: 'Londrina Solid', sans-serif;
     font-weight: bold;
 }
 
 .dropDownGenre:hover {
-    background: #333;
+    background: #4e4e4e;
 }
 
 .dropDownTimePeriod {
@@ -98,29 +100,29 @@ main {
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-family: 'Londrina Solid', sans-serif;
     font-weight: bold;
 }
 
 .dropDownTimePeriod:hover {
-    background: #333;
+    background: #4e4e4e;
 }
 
 .randomizeButton {
     padding: 10px 20px;
     font-size: 16px;
-    background: #ff5733; /* Custom color */
+    background: #ff4081; /* Custom color */
     color: #fff;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     transition: background 0.3s ease;
-    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-family: 'Londrina Solid', sans-serif;
     font-weight: bold;
 }
 
 .randomizeButton:hover {
-    background: #cc4629; /* Darker shade on hover */
+    background: #ca3366; /* Darker shade on hover */
 }
 
 .gradient1 {
@@ -157,6 +159,12 @@ footer {
     text-align: center;
     padding: 10px;
     margin-top: 20px;
+}
+
+.randomizer-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 

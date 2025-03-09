@@ -15,7 +15,7 @@
     <header class="gradient2">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
-                <div style="font-size: 32px; color: white;">Turntable</div>
+                <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
                 <div style="font-size: 18px; color: gray;">Expand your music taste!</div>
             </div>
             <div style="font-size: 25px;">
@@ -29,13 +29,13 @@
     </header>
 
     <main>
-        <aside class="sidebarL" style ="border-radius: 10px;">
+        <aside class="sidebarL" style="border-radius: 10px;">
             <!-- <h3>Left Sidebar</h3> -->
             <!-- <p>This is space is for ads.</p> -->
         </aside>
         <section class="content">
-            <h2 style="text-align: center; color: white;">Randomizer</h2>
-            <p style="text-align: center; color: white;">Select your options, and find new music!</p>
+            <img src="{{ url_for('static', filename='images/randomizer.png') }}" alt="Randomizer" class="randomizer-image" style="height: 32px;">
+            <p style="text-align: center; color: white; margin-top: 10px;">Select your options, and find new music!</p>
             <h3 style="text-align: center; margin-top: 30px; color: white;">Options</h3>
             <div class="optionButtons">
                 <button class="optionButton" onclick="toggleSelection(this)">Song</button>
@@ -80,7 +80,7 @@
             </div>            
             
         </section>
-        <aside class="sidebarR" style ="border-radius: 10px;">
+        <aside class="sidebarR" style="border-radius: 10px;">
             <!-- <h3>Right Sidebar</h3> -->
             <!-- <p>This is space is for ads.</p> -->
         </aside>

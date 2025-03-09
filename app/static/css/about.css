@@ -49,7 +49,7 @@ main {
 .content h2 {
     font-size: 32px;
     text-align: center;
-    color: #ff5733; /* Accent color for headers */
+    color: #ff4081; /* Accent color for headers */
     margin-bottom: 15px;
 }
 
@@ -69,7 +69,7 @@ main {
 .team-members h3 {
     font-size: 24px;
     text-align: center;
-    color: #ff5733;
+    color: #ff4081;
     margin-top: 50px;
     margin-bottom: 30px;
 }
@@ -96,7 +96,7 @@ main {
 
 .team-member h4 {
     font-size: 18px;
-    color: #ff5733;
+    color: #ff4081;
     margin-bottom: 5px;
 }
 
