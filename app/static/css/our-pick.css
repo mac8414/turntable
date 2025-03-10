@@ -10,12 +10,18 @@ body {
     font-family: 'Dangrek', sans-serif;
     font-weight: bold;
     line-height: 1.6;
-    background: #9b3a33; /* Set background color to green */
+    background: #9b3a33;
+}
+
+.highlight {
+    background-color: white;
+    padding: 5px;
+    display: inline-block;
+    border-radius: 5px;
 }
 
 .gradient2 {
     background-color: #2f1d1b; /* For browsers that do not support gradients */
-    color: white;
 }
 
 header {
@@ -25,7 +31,6 @@ header {
 main {
     display: flex;
     margin: 20px;
-    min-height: 80vh; /* Push footer down */
 }
 
 /* Sidebar styles */
@@ -38,93 +43,79 @@ main {
     border-radius: 10px;
 }
 
+
+.gradient1 {
+    background-color: white; /* For browsers that do not support gradients */
+}
+
+
 /* Main content style */
 .content {
     flex: 3;
     padding: 20px;
     background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
-    color: white;
+    color: white; 
     border-radius: 10px;
-    margin-bottom: 50px;
-}
-
-.content h2, .content p {
     text-align: center;
 }
 
-.content p {
-    text-align: center;
-    margin-bottom: 25px;
+.content h1{
+  margin-top: 40px;
+  font-size: 2.5rem;
+  animation: fadeIn 2s ease-in-out;
 }
 
-/* Contact Form Styles */
-
-.contact-form {
-  display: flex;
-  justify-content: center; /* Centers the form horizontally */
+.content h2{
+  margin-top: 15x;
+  font-size: 1.8rem;
+  animation: fadeIn 4s ease-in-out;
 }
 
-.contact-form form {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Centers input fields and button */
-  width: 100%;
-  max-width: 1000px; /* Prevents form from stretching too much */
+.content h3{
+  margin-top: 5px;
+  font-size: 1.5rem;
+  animation: fadeIn 6s ease-in-out;
 }
 
-.contact-form input,
-.contact-form textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 16px;
+.this-weeks-pick-image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.contact-form button {
-    padding: 10px 20px;
-    background-color: #f8a235;
-    display: inline-block;
-    font-family: 'Dangrek', sans-serif;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 18px;
-    transition: background-color 0.3s;
-    margin-top: 10px;
-}
-
-.contact-form button:hover {
-    background-color: #cc872c;
+.Week1Pick-image {
+  display: block;  
+  margin: 20px auto;  
+  max-width: 100%;  
+  height: auto; 
+  border-radius: 10px;  
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2); 
+  animation: fadeIn 8s ease-in-out;
 }
 
 footer {
-    background: #2f1d1b;
-    color: #fff;
-    text-align: center;
-    padding: 10px;
-    margin-top: 20px;
+  background: #2f1d1b;
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
 }
 
-.nav-link {
-    text-decoration: none;
-    color: white;
-}
 
-.contactUs-image {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
+/* Mobile styles */
 @media (max-width: 768px) {
   .container {
     padding: 10px;
   }
-  .nav-menu {
-    flex-direction: row;
+  header .nav-menu {
+    flex-direction: column;
+    align-items: center; /* Center the links */
+    margin-top: 10px; /* Add some spacing */
+  }
+  header .nav-menu a {
+    display: block;
+    margin: 5px 0; /* Add vertical spacing */
+    font-size: 10px; /* Smaller font size for iPhone */
   }
   .sidebarL,
   .sidebarR {
@@ -153,6 +144,6 @@ footer {
   header .nav-menu a {
     display: inline-block;
     margin: 0 10px;
-    font-size: 15px;
+    font-size: 15px; /* Smaller font size for iPhone */
   }
 }

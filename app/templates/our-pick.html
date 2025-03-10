@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contact</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/contact.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/our-pick.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 </head>
 
 <body>
@@ -28,24 +29,17 @@
 
     <main>
         <aside class="sidebarL">
-            <!-- Additional content, like links or ads -->
         </aside>
         
         <section class="content">
-            <img src="{{ url_for('static', filename='images/contactUs.png') }}" alt="ContactUs" class="contactUs-image" style="height: 40px;">
-            <p style="margin-top: 30px; color: black;" >If you have any questions, feel free to get in touch with us through the form below.</p>
-            <div class="contact-form">
-                <form action="/contact-help" method="POST">
-                    <input type="text" name="name" placeholder="Your Name" required>
-                    <input type="email" name="email" placeholder="Your Email" required>
-                    <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
-                    <button type="submit">Send Message</button>
-                </form>
-            </div>
+            <img src="{{ url_for('static', filename='images/this-weeks-pick.png') }}" alt="this-weeks-pick" class="this-weeks-pick-image" style="height: 40px;">
+            <h1>As</h1> 
+            <h2>Stevie Wonder</h2>
+            <h3>Songs In The Key Of Life</h3>
+            <a href="https://open.spotify.com/track/13toFl1UwJPsRxDiD9jgtn" target="_blank"> <img src="{{ url_for('static', filename='images/Week1Pick.jpg') }}" alt="Week1Pick" class="Week1Pick-image" style="height: 600px;"> </a> 
         </section>
 
         <aside class="sidebarR">
-            <!-- Additional content, like social media links or ads -->
         </aside>
     </main>
 

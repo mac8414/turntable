@@ -11,6 +11,7 @@ from flask_mail import Mail, Message
 import logging
 import traceback
 
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -250,12 +251,12 @@ def contact_help():
 @app.route('/success')
 def success():
     logger.info("Rendering success page")
-    return render_template('success.html')  # You can create this page for the success message.
+    return render_template('success.html')  
 
-@app.rout('/our-pick')
+@app.route('/our-pick')
 def our_pick():
     logger.info("Rendering our pick page")
-    return "WIP"
+    return render_template('our-pick.html')  
 
 if __name__ == "__main__":
     app.run(debug=True)

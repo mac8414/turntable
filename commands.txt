@@ -1,2 +1,2 @@
 python3 -m flask run
-source .venv/bin/activate 
+source myenv/bin/activate 
