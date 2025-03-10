@@ -13,8 +13,10 @@
     <header class="gradient2">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
-                <div style="font-size: 32px; color: white;">Turntable</div>
-                <div style="font-size: 18px; color: gray;">Expand your music taste!</div>
+                <a href="/home">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable Logo" class="logo">
+                </a>
+                <div class="tagline">Listen Different. Explore new music.</div>
             </div>
             <div style="font-size: 25px;">
                 <a href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
@@ -36,7 +38,7 @@
     <footer>
         <p>&copy; 2025 Turntable. All rights reserved.</p>
         <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank">Spotify®</a>
+        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
     </footer>
 </body>
 

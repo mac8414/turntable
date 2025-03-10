@@ -21,13 +21,9 @@ body {
     background: #9b3a33; /* Set background color to green */
 }
 
-.gradient2 {
-    background-color: #2f1d1b; /* For browsers that do not support gradients */
-    color: white;
-}
-
 header {
     padding: 10px 20px;
+    background-color: #2f1d1b;
 }
 
 main {
@@ -80,7 +76,7 @@ main {
   flex-direction: column;
   align-items: center; /* Centers input fields and button */
   width: 100%;
-  max-width: 1000px; /* Prevents form from stretching too much */
+  max-width: 600px; /* Prevents form from stretching too much */
 }
 
 .contact-form input,

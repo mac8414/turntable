@@ -2,17 +2,16 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
-    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </head>
 
 <body>
 
-    <header class="gradient2">
+    <header class="header">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <a href="/home">
@@ -21,10 +20,10 @@
                 <div style="font-size: 18px; color: #f8a235; text-align: center;">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
-                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
-                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: underline; color: white; margin-right: 20px;">Our Pick</a>
-                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: underline; color: white; margin-right: 20px;">About</a>
-                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: underline; color: white; margin-right: 20px;">Contact</a>
+                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: underline; color: white; margin-right: 20px;">Home</a>
+                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
+                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
+                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
             </div>
         </div>
     </header>
@@ -51,15 +50,17 @@
                     <option value="rap">Rap</option>
                     <option value="rock">Rock</option>
                     <option value="country">Country</option>
+                    <option value="indie">Indie</option>
                     <option value="folk">Folk</option>
                     <option value="r%26b">R&B</option>
                     <option value="punk">Punk</option>
                     <option value="soul">Soul</option>
+                    <option value="metal">Metal</option>
                     <option value="hip hop">Hip-Hop</option>
+                    <option value="reggae">Reggae</option>
+                    <option value="latin">Latin</option>
                     <option value="jazz">Jazz</option>
                     <option value="classical">Classical</option>
-                    <option value="metal">Metal</option>
-                    <option value="reggae">Reggae</option>
                 </select>
                 <select class="dropDownTimePeriod">
                     <option value="">Decade</option>
@@ -93,7 +94,7 @@
         <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
         <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
     </footer>
-
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </body>
 
 </html>

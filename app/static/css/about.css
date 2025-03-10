@@ -21,13 +21,10 @@ body {
     background: #9b3a33; /* Set background color to green */
 }
 
-.gradient2 {
-    background-color: #2f1d1b; /* For browsers that do not support gradients */
-    color: white;
-}
 
 header {
     padding: 10px 20px;
+    background-color: #2f1d1b;
 }
 
 main {

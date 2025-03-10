@@ -11,7 +11,7 @@
 
 <body>
 
-    <header class="gradient2">
+    <header class="header">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <a href="/home">
@@ -20,10 +20,10 @@
                 <div style="font-size: 18px; color: #f8a235; text-align: center;">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
-                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: underline; color: white; margin-right: 20px;">Home</a>
-                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: underline; color: white; margin-right: 20px;">Our Pick</a>
-                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: underline; color: white; margin-right: 20px;">About</a>
-                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
+                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
+                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
+                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
+                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: underline; color: white; margin-right: 20px;">Contact</a>
             </div>
         </div>
     </header>
@@ -36,7 +36,7 @@
         <section class="content">
             <img src="{{ url_for('static', filename='images/contactUs.png') }}" alt="ContactUs" class="contactUs-image" style="height: 40px;">
             <p style="margin-top: 30px; color: black;" >If you have any questions, feel free to get in touch with us through the form below.</p>
-            <p style="margin-top: 10px; color: black;">Or email us at <a href="mailto:turntablehelp@gmail.com" style="color: black; text-decoration: underline;">turntablehelp@gmail.com</a></p>
+            <p style="margin-bottom: 5px; color: black;">Or email us at <a href="mailto:turntablehelp@gmail.com" style="color: black; text-decoration: underline;">turntablehelp@gmail.com</a></p>
             <div class="contact-form">
                 <form action="/contact-help" method="POST">
                     <input type="text" name="name" placeholder="Your Name" required>

@@ -28,12 +28,9 @@ body {
     border-radius: 5px;
 }
 
-.gradient2 {
-    background-color: #2f1d1b; /* For browsers that do not support gradients */
-}
-
 header {
     padding: 10px 20px;
+    background-color: #2f1d1b;
 }
 
 main {

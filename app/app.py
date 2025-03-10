@@ -114,61 +114,90 @@ def random_song():
 
 @app.route('/random_album')
 def random_album():
+    """Fetch a random album from Spotify with optional year and genre filters."""
     year = request.args.get('year')
     genre = request.args.get('genre')
     logger.info(f"Random album request received with year: {year}, genre: {genre}")
 
-    # Start with a basic query to get albums
-    query_parts = []
-    if year and year != "Random Year":
-        query_parts.append(f"year:{year}")
-    
-    query = " ".join(query_parts) if query_parts else random.choice("abcdefghijklmnopqrstuvwxyz1234567890")
+    try:
+        if year and year != "Random Year":
+            query = f"year:{year}"
+        else:
+            search_options = "abcdefghijklmnopqrstuvwxyz0123456789"
+            query = random.choice(search_options)
+        
+        offset = random.randint(0, 200)
+        
+        results = spotify.search(q=query, type="album", limit=50, offset=offset)
+        albums = results['albums']['items']
+        
+        filtered_albums = []
+        artist_genre_cache = {}
+        
+        if albums:
+            for album in albums:
+                if not genre or genre == "":
+                    filtered_albums.append(album)
+                    continue
+                    
+                artist_id = album['artists'][0]['id']
+                if artist_id in artist_genre_cache:
+                    artist_genres = artist_genre_cache[artist_id]
+                else:
+                    try:
+                        artist_info = spotify.artist(artist_id)
+                        artist_genres = [g.lower() for g in artist_info['genres']]
+                        artist_genre_cache[artist_id] = artist_genres
+                    except Exception as e:
+                        logger.warning(f"Error fetching artist genres: {str(e)}")
+                        continue
 
-    offset = random.randint(0, 50)
-    
-    results = spotify.search(q=query, type="album", limit=50, offset=offset)
-    
-    filtered_albums = []
-    
-    if results['albums']['items']:
-        for album in results['albums']['items']:
-            if not genre or genre == "Random Genre":
-                filtered_albums.append(album)
-                continue
+                genre_lower = genre.lower()
+                genre_words = genre_lower.replace('-', ' ').split()
                 
-            artist_id = album['artists'][0]['id']
-            artist_info = spotify.artist(artist_id)
-            artist_genres = artist_info['genres']
-            
-            if any(genre.lower() in ag.lower() for ag in artist_genres):
-                filtered_albums.append(album)
+                if any(genre_lower in ag for ag in artist_genres) or \
+                   any(any(word in ag for word in genre_words if len(word) > 3) for ag in artist_genres):
+                    filtered_albums.append(album)
 
-    if filtered_albums:
-        random_album = random.choice(filtered_albums)
-        image_url = random_album['images'][0]['url'] if random_album['images'] else None
-        dominant_color = "#000000"  # Default to black
-        if image_url:
-            try:
-                response = requests.get(image_url)
-                image = Image.open(BytesIO(response.content))
-                color_thief = ColorThief(BytesIO(response.content))
-                dominant_color_rgb = color_thief.get_color(quality=10)
-                dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
-            except Exception as e:
-                logger.error(f"Error extracting color: {e}")
-        logger.info(f"Found album: {random_album['name']}")
-        return jsonify(
-            name=random_album['name'],
-            url=random_album['external_urls']['spotify'],
-            image=image_url,
-            artist=random_album['artists'][0]['name'],
-            type="album",
-            dominant_color=dominant_color
-        )
-    else:
-        logger.warning("No album found")
-        return jsonify(name=None)
+        if filtered_albums:
+            random_album = random.choice(filtered_albums)
+            image_url = random_album['images'][0]['url'] if random_album['images'] else None
+            dominant_color = "#000000"  # Default to black
+            
+            if image_url:
+                try:
+                    # Set timeout to avoid hanging
+                    response = requests.get(image_url, timeout=3)
+                    image_data = BytesIO(response.content)
+                    
+                    # Open with context manager for proper cleanup
+                    with Image.open(image_data) as image:
+                        # Resize for faster processing
+                        image.thumbnail((100, 100))
+                        color_thief = ColorThief(BytesIO(response.content))
+                        dominant_color_rgb = color_thief.get_color(quality=5)
+                        dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
+                except Exception as e:
+                    logger.error(f"Error extracting color: {str(e)}")
+            
+            logger.info(f"Found album: {random_album['name']} by {random_album['artists'][0]['name']}")
+            return jsonify(
+                name=random_album['name'],
+                url=random_album['external_urls']['spotify'],
+                image=image_url,
+                artist=random_album['artists'][0]['name'],
+                type="album",
+                dominant_color=dominant_color,
+                release_date=random_album.get('release_date'),
+                total_tracks=random_album.get('total_tracks')
+            )
+        else:
+            logger.warning("No matching albums found")
+            return jsonify(name=None, error="No matching albums found")
+            
+    except Exception as e:
+        logger.error(f"Error in random_album: {str(e)}", exc_info=True)
+        return jsonify(name=None, error="An error occurred while fetching albums"), 500
 
 @app.route('/random_artist')
 def random_artist():
@@ -178,51 +207,92 @@ def random_artist():
     max_attempts = 10
     attempts = 0
     
+    # More comprehensive character set for better diversity
+    query_chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+    
+    # Pre-define wildcards to improve search effectiveness
+    wildcards = ["%", "*", "", ""]  # Empty strings increase chance of regular character
+    
     while attempts < max_attempts:
         attempts += 1
         
-        if genre and genre.lower() != "random genre":
-            query = f"genre:{genre}"
-        else:
-            query = random.choice("abcdefghijklmnopqrstuvwxyz1234567890")
+        # Create more effective random query
+        query_char = random.choice(query_chars)
+        wildcard = random.choice(wildcards)
+        query = f"{wildcard}{query_char}{wildcard}"
         
-        offset = random.randint(0, 100)
-        results = spotify.search(q=query, type="artist", limit=50, offset=offset)
+        offset = random.randint(0, 950)  # Spotify allows up to 1000 in pagination
         
-        if results['artists']['items']:
-            random_index = random.randint(0, len(results['artists']['items']) - 1)
-            artist = results['artists']['items'][random_index]
-            image_url = artist['images'][0]['url'] if artist['images'] else None
-            dominant_color = "#000000"  # Default to black
-            if image_url:
-                try:
-                    response = requests.get(image_url)
-                    image = Image.open(BytesIO(response.content))
-                    color_thief = ColorThief(BytesIO(response.content))
-                    dominant_color_rgb = color_thief.get_color(quality=10)
-                    dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
-                except Exception as e:
-                    logger.error(f"Error extracting color: {e}")
-            if genre and genre.lower() != "random genre":
-                artist_id = artist['id']
-                artist_info = spotify.artist(artist_id)
-                artist_genres = [g.lower() for g in artist_info.get('genres', [])]
+        try:
+            results = spotify.search(q=query, type="artist", limit=50, offset=offset)
+            
+            artists = results['artists']['items']
+            if not artists:
+                logger.info(f"No results for query '{query}' with offset {offset}, trying again")
+                continue
                 
-                if not any(genre.lower() in g for g in artist_genres):
-                    logger.info(f"Genre {genre} not found for artist {artist['name']}, trying again")
-                    continue  # Try again if genre doesn't match
-
-            logger.info(f"Found artist: {artist['name']}")
+            if genre and genre.lower() != "random genre":
+                matching_artists = []
+                for artist in artists:
+                    artist_id = artist['id']
+                    try:
+                        artist_info = spotify.artist(artist_id)
+                        artist_genres = [g.lower() for g in artist_info.get('genres', [])]
+                        
+                        # More flexible genre matching - partial match or exact match
+                        if any(genre.lower() in g for g in artist_genres) or any(g == genre.lower() for g in artist_genres):
+                            matching_artists.append(artist)
+                    except Exception as e:
+                        logger.warning(f"Error fetching artist info for {artist['name']}: {e}")
+                        continue
+                
+                if matching_artists:
+                    artist = random.choice(matching_artists)
+                else:
+                    logger.info(f"No artists matching genre '{genre}' found in this batch, trying again")
+                    continue
+            else:
+                artist = random.choice(artists)
+            
+            # Get image and dominant color
+            image_url = None
+            dominant_color = "#000000"  # Default to black
+            
+            if artist['images']:
+                # Choose the medium-sized image if available for better performance
+                if len(artist['images']) > 1:
+                    image_url = artist['images'][1]['url']
+                else:
+                    image_url = artist['images'][0]['url']
+                
+                if image_url:
+                    try:
+                        response = requests.get(image_url, timeout=3)  # Add timeout
+                        if response.status_code == 200:
+                            color_thief = ColorThief(BytesIO(response.content))
+                            dominant_color_rgb = color_thief.get_color(quality=10)
+                            dominant_color = f"#{dominant_color_rgb[0]:02x}{dominant_color_rgb[1]:02x}{dominant_color_rgb[2]:02x}"
+                    except Exception as e:
+                        logger.error(f"Error extracting color for {artist['name']}: {e}")
+            
+            logger.info(f"Found artist: {artist['name']}, genre: {genre or 'any'}")
             return jsonify(
                 name=artist['name'],
-                url=artist['external_urls']['spotify'],
+                url=artist['external_urls'].get('spotify', ''),
                 image=image_url,
                 type="artist",
-                dominant_color=dominant_color
+                dominant_color=dominant_color,
+                genres=artist.get('genres', [])  # Added genres to response
             )
-
-    logger.warning("No artist found after maximum attempts")
-    return jsonify(name=None)
+            
+        except Exception as e:
+            logger.error(f"Error during Spotify search (attempt {attempts}): {e}")
+    
+    logger.warning(f"No suitable artist found after {max_attempts} attempts")
+    return jsonify(
+        name=None,
+        error=f"No artist found matching criteria after {max_attempts} attempts"
+    ), 404
 
 # Route for Contact Form Page
 @app.route('/contact-help', methods=['GET', 'POST'])
