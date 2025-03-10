@@ -15,18 +15,18 @@
     <header class="gradient2">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
-                <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
+                <a href="/home">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
+                </a>
                 <div style="font-size: 18px; color: #f8a235; text-align: center;">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
-                <a href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
-                <a href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
-                <a href="#" onclick="location.href='/about'" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
-                <a href="#" onclick="location.href='/contact'" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
+                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>
+                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: underline; color: white; margin-right: 20px;">Our Pick</a>
+                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: underline; color: white; margin-right: 20px;">About</a>
+                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: underline; color: white; margin-right: 20px;">Contact</a>
             </div>
-            
         </div>
-
     </header>
 
     <main>
@@ -37,7 +37,7 @@
         <section class="content">
             <img src="{{ url_for('static', filename='images/randomizer.png') }}" alt="Randomizer" class="randomizer-image" style="height: 40px;">
             <p style="text-align: center; color: black; margin-top: 30px; margin-bottom: 10px;">Select your options, then hit randomize.</p>
-            <p style="text-align: center; color: black; margin-top: 10px; margin-bottom: 10px;">Tap the picture to be taken to Spotify.</p>
+            <p style="text-align: center; color: black; margin-top: 10px; margin-bottom: 10px;">Press the picture to be taken to Spotify.</p>
             <img src="{{ url_for('static', filename='images/options.png') }}" alt="Options" class="options-image" style="height: 24px;">
             <div class="optionButtons">
                 <button class="optionButton" onclick="toggleSelection(this)">Song</button>
@@ -62,7 +62,7 @@
                     <option value="reggae">Reggae</option>
                 </select>
                 <select class="dropDownTimePeriod">
-                    <option value="">Year</option>
+                    <option value="">Decade</option>
                     <option value="1950-1959">1950s</option>
                     <option value="1960-1969">1960s</option>
                     <option value="1970-1979">1970s</option>
@@ -91,7 +91,7 @@
     <footer>
         <p>&copy; 2025 Turntable. All rights reserved.</p>
         <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank">Spotify®</a>
+        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
     </footer>
 
 </body>

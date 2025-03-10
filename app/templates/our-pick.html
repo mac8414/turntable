@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Contact</title>
+    <title>Our Pick</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/our-pick.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -13,16 +13,18 @@
 <body>
 
     <header class="gradient2">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
-            <div>
-                <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
-                <div style="font-size: 18px; color: #f8a235; text-align: center;">Listen Different. Explore new music.</div>
+        <div class="header-container">
+            <div class="logo-container">
+                <a href="/home">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable Logo" class="logo">
+                </a>
+                <div class="tagline">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
-                <a href="#" onclick="location.href='/home'" class="nav-link" style="margin-right: 20px; color: white;">Home</a>
-                <a href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
-                <a href="#" onclick="location.href='/about'" class="nav-link" style="margin-right: 20px; color: white;">About</a>
-                <a href="#" onclick="location.href='/contact'" class="nav-link" style="margin-right: 20px; color: white;">Contact</a>
+                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: underline; color: white; margin-right: 20px;">Home</a>
+                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
+                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: underline; color: white; margin-right: 20px;">About</a>
+                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: underline; color: white; margin-right: 20px;">Contact</a>
             </div>
         </div>
     </header>
@@ -30,24 +32,24 @@
     <main>
         <aside class="sidebarL">
         </aside>
-        
         <section class="content">
-            <img src="{{ url_for('static', filename='images/this-weeks-pick.png') }}" alt="this-weeks-pick" class="this-weeks-pick-image" style="height: 40px;">
-            <h1>As</h1> 
-            <h2>Stevie Wonder</h2>
-            <h3>Songs In The Key Of Life</h3>
-            <a href="https://open.spotify.com/track/13toFl1UwJPsRxDiD9jgtn" target="_blank"> <img src="{{ url_for('static', filename='images/Week1Pick.jpg') }}" alt="Week1Pick" class="Week1Pick-image" style="height: 600px;"> </a> 
+            <a href="/home">
+                <img src="{{ url_for('static', filename='images/this-weeks-pick.png') }}" alt="this-weeks-pick" class="this-weeks-pick-image">
+            </a>
+            <h1>{{ album.name }}</h1>
+            <h2>By {{ artist.name }}</h2>
+            <a href="{{ album.spotify_url }}" target="_blank">
+                <img src="{{ album.image_url }}" alt="Album Cover" class="Week1Pick-image">
+            </a>
         </section>
-
         <aside class="sidebarR">
         </aside>
     </main>
 
-
     <footer>
         <p>&copy; 2025 Turntable. All rights reserved.</p>
         <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank">Spotify®</a>
+        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
     </footer>
 
 </body>

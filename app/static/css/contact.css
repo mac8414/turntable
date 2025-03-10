@@ -6,7 +6,15 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
+    display: flex;
+    flex-direction: column;
     font-family: 'Dangrek', sans-serif;
     font-weight: bold;
     line-height: 1.6;
@@ -23,6 +31,7 @@ header {
 }
 
 main {
+    flex: 1;
     display: flex;
     margin: 20px;
     min-height: 80vh; /* Push footer down */
@@ -33,7 +42,7 @@ main {
 .sidebarR {
     flex: 1;
     padding: 20px;
-    background: white;
+    background: #9b3a33;
     margin: 0 5px; /* Add margin to move sidebars away from main content */
     border-radius: 10px;
 }
@@ -60,11 +69,13 @@ main {
 /* Contact Form Styles */
 
 .contact-form {
+  font-family: 'Dangrek', sans-serif;
   display: flex;
   justify-content: center; /* Centers the form horizontally */
 }
 
 .contact-form form {
+  font-family: 'Dangrek', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center; /* Centers input fields and button */
@@ -74,6 +85,7 @@ main {
 
 .contact-form input,
 .contact-form textarea {
+    font-family: 'Dangrek', sans-serif;
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -105,7 +117,7 @@ footer {
     color: #fff;
     text-align: center;
     padding: 10px;
-    margin-top: 20px;
+    margin-top: auto;
 }
 
 .nav-link {

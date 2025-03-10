@@ -10,13 +10,14 @@ from colorthief import ColorThief
 from flask_mail import Mail, Message
 import logging
 import traceback
-
+from flask_compress import Compress
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+Compress(app)
 
 # Configuring Flask-Mail with Gmail SMTP
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -256,7 +257,37 @@ def success():
 @app.route('/our-pick')
 def our_pick():
     logger.info("Rendering our pick page")
-    return render_template('our-pick.html')  
+    album = get_album("Songs in the Key of Life")
+    artist = get_artist("Stevie Wonder")
+    return render_template('our-pick.html', album=album, artist=artist)
+
+def get_album(album_name):
+    results = spotify.search(q=album_name, type="album", limit=1)
+    items = results.get("albums", {}).get("items", [])
+
+    if not items:
+        return None
+
+    album = items[0]  # First search result
+    return {
+        "name": album["name"],
+        "image_url": album["images"][0]["url"],
+        "spotify_url": album["external_urls"]["spotify"]
+    }
+
+def get_artist(artist_name):
+    results = spotify.search(q=artist_name, type="artist", limit=1)
+    items = results.get("artists", {}).get("items", [])
+
+    if not items:
+        return None
+
+    artist = items[0]  # First search result
+    return {
+        "name": artist["name"],
+        "image_url": artist["images"][0]["url"],
+        "spotify_url": artist["external_urls"]["spotify"]
+    }
 
 if __name__ == "__main__":
     app.run(debug=True)
