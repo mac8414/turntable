@@ -11,6 +11,9 @@ from flask_mail import Mail, Message
 import logging
 import traceback
 from flask_compress import Compress
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
