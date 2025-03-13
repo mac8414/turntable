@@ -36,8 +36,8 @@
             <a href="/home">
                 <img src="{{ url_for('static', filename='images/this-weeks-pick.png') }}" alt="this-weeks-pick" class="this-weeks-pick-image">
             </a>
-            <h1>{{ album.name }}</h1>
-            <h2>By {{ artist.name }}</h2>
+            <h1 style="color: white;">{{ album.name }}</h1>
+            <h2 style="color: white;">By {{ artist.name }}</h2>
             <a href="{{ album.spotify_url }}" target="_blank">
                 <img src="{{ album.image_url }}" alt="Album Cover" class="Week1Pick-image">
             </a>
