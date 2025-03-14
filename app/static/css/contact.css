@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Dangrek&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 
 * {
     margin: 0;
@@ -15,7 +15,7 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    font-family: 'Dangrek', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: bold;
     line-height: 1.6;
     background: #9b3a33; /* Set background color to green */
@@ -65,13 +65,13 @@ main {
 /* Contact Form Styles */
 
 .contact-form {
-  font-family: 'Dangrek', sans-serif;
+  font-family: 'Inter', sans-serif;
   display: flex;
   justify-content: center; /* Centers the form horizontally */
 }
 
 .contact-form form {
-  font-family: 'Dangrek', sans-serif;
+  font-family: 'Inter', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center; /* Centers input fields and button */
@@ -81,7 +81,7 @@ main {
 
 .contact-form input,
 .contact-form textarea {
-    font-family: 'Dangrek', sans-serif;
+    font-family: 'Inter', sans-serif;
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -94,10 +94,10 @@ main {
     padding: 10px 20px;
     background-color: #f8a235;
     display: inline-block;
-    font-family: 'Dangrek', sans-serif;
+    font-family: 'Inter', sans-serif;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 25px;
     cursor: pointer;
     font-size: 18px;
     transition: background-color 0.3s;
