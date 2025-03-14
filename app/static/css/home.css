@@ -68,7 +68,7 @@ main {
     border: none;
     cursor: pointer;
     border-radius: 25px;
-    transition: background 0.2s ease-in-out;
+    transition: background 0.1s ease-in-out;
     font-family: 'Comfortaa', sans-serif;
     font-weight: bold;
 }
