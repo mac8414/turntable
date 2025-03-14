@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap');
+
 
 * {
     margin: 0;
@@ -15,7 +16,7 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Comfortaa', sans-serif;
     font-weight: bold;
     line-height: 1.6;
     background: #9b3a33; /* Set background color to green */
@@ -65,13 +66,13 @@ main {
 /* Contact Form Styles */
 
 .contact-form {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Comfortaa', sans-serif;
   display: flex;
   justify-content: center; /* Centers the form horizontally */
 }
 
 .contact-form form {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Comfortaa', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center; /* Centers input fields and button */
@@ -81,7 +82,7 @@ main {
 
 .contact-form input,
 .contact-form textarea {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Comfortaa', sans-serif;
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -94,7 +95,7 @@ main {
     padding: 10px 20px;
     background-color: #f8a235;
     display: inline-block;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Comfortaa', sans-serif;
     color: white;
     border: none;
     border-radius: 25px;
