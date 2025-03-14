@@ -29,8 +29,6 @@ body {
 }
 
 header {
-    position: sticky;
-    top: 0;
     padding: 10px 20px;
     background-color: #2f1d1b;
 }
