@@ -133,6 +133,7 @@ footer {
     color: #f8a235;
     text-align: center;
 }
+
 @media (max-width: 768px) {
   .container {
     padding: 10px;
@@ -174,5 +175,8 @@ footer {
     display: inline-block;
     margin: 0 10px;
     font-size: 12px;
+  }
+  .tagline {
+    font-size: 14px; /* Smaller size for mobile */
   }
 }

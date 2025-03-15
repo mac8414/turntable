@@ -182,4 +182,7 @@ footer {
     margin: 0 10px;
     font-size: 12px;
   }
+  .tagline {
+    font-size: 14px; /* Smaller size for mobile */
+  }
 }

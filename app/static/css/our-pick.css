@@ -220,4 +220,7 @@ footer {
         height: auto;
         max-height: 250px; /* Set a maximum height */
     }
+    .tagline {
+        font-size: 14px; /* Smaller size for mobile */
+    }
 }

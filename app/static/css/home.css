@@ -266,4 +266,7 @@ footer {
   .randomizeButton:hover {
     background: #f8a235; /* Darker shade on hover */
   }
+  .tagline {
+    font-size: 14px; /* Smaller size for mobile */
+  }
 }
