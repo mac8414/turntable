@@ -128,6 +128,9 @@ footer {
     margin-right: auto;
 }
 
+.header-text {
+    font-size: 18px; /* Default size */
+}
 @media (max-width: 768px) {
   .container {
     padding: 10px;
@@ -144,6 +147,9 @@ footer {
     padding: 10px;
     margin: 0; /* Remove margin on mobile */
   }
+  .header-text {
+    font-size: 14px; /* Smaller size for mobile */
+  }
 }
 
 /* iPhone specific styles */
@@ -151,6 +157,9 @@ footer {
   header div {
     flex-direction: column;
     align-items: flex-start;
+  }
+  header .logo-container {
+    margin-bottom: 10px; /* Add some spacing below the logo */
   }
   header .nav-menu {
     display: flex;

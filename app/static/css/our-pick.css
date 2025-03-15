@@ -176,6 +176,9 @@ footer {
         width: 90%; /* Make images slightly smaller */
         height: auto;
     }
+    .tagline {
+        font-size: 12px; /* Smaller size for mobile */
+    }
 }
 
 /* iPhone specific styles */
@@ -216,5 +219,8 @@ footer {
         width: 80%; /* Make images even smaller */
         height: auto;
         max-height: 250px; /* Set a maximum height */
+    }
+    .tagline {
+        font-size: 12px; /* Smaller size for mobile */
     }
 }
