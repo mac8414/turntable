@@ -194,7 +194,7 @@ footer {
     header .nav-menu a {
         display: inline-block;
         margin: 0 10px;
-        font-size: 10px; /* Smaller font size for iPhone */
+        font-size: 12px; /* Smaller font size for iPhone */
     }
     .content {
         padding: 5px; /* Reduce padding for smaller screens */

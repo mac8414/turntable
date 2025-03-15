@@ -187,6 +187,16 @@ footer {
     margin-top: 30px;
 }
 
+.header-text {
+    font-size: 18px; /* Default size */
+}
+
+@media (max-width: 768px) {
+    .header-text {
+        font-size: 14px; /* Smaller size for mobile */
+    }
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
   .container {
@@ -236,6 +246,12 @@ footer {
   }
 }
 
+@media (max-width: 480px) {
+    .header-text {
+        font-size: 12px; /* Even smaller size for smaller screens */
+    }
+}
+
 /* iPhone specific styles */
 @media (max-width: 480px) {
   header div {
@@ -252,7 +268,7 @@ footer {
   header .nav-menu a {
     display: inline-block;
     margin: 0 10px;
-    font-size: 10px; /* Smaller font size for iPhone */
+    font-size: 12px; /* Smaller font size for iPhone */
   }
   .randomizeButton:hover {
     background: #f8a235; /* Darker shade on hover */
