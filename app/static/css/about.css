@@ -137,8 +137,10 @@ footer {
     margin-top: 75px;
 }
 
-.header-text {
+.tagline {
     font-size: 18px; /* Default size */
+    color: #f8a235;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
@@ -157,7 +159,7 @@ footer {
     padding: 10px;
     margin: 0; /* Remove margin on mobile */
   }
-  .header-text {
+  .tagline {
     font-size: 14px; /* Smaller size for mobile */
   }
 }
@@ -168,9 +170,6 @@ footer {
     flex-direction: column;
     align-items: flex-start;
   }
-  .header-text {
-    font-size: 12px; /* Even smaller size for smaller screens */
- }
   header .nav-menu {
     display: flex;
     flex-direction: row;

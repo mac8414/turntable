@@ -128,8 +128,10 @@ footer {
     margin-right: auto;
 }
 
-.header-text {
+.tagline {
     font-size: 18px; /* Default size */
+    color: #f8a235;
+    text-align: center;
 }
 @media (max-width: 768px) {
   .container {
@@ -147,7 +149,7 @@ footer {
     padding: 10px;
     margin: 0; /* Remove margin on mobile */
   }
-  .header-text {
+  tagline {
     font-size: 14px; /* Smaller size for mobile */
   }
 }

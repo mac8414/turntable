@@ -187,14 +187,10 @@ footer {
     margin-top: 30px;
 }
 
-.header-text {
+.tagline {
     font-size: 18px; /* Default size */
-}
-
-@media (max-width: 768px) {
-    .header-text {
-        font-size: 14px; /* Smaller size for mobile */
-    }
+    color: #f8a235; 
+    text-align: center;
 }
 
 /* Mobile styles */
@@ -244,12 +240,9 @@ footer {
   .randomizeButton:hover {
     background: #f8a235; /* Darker shade on hover */
   }
-}
-
-@media (max-width: 480px) {
-    .header-text {
-        font-size: 12px; /* Even smaller size for smaller screens */
-    }
+  .tagline {
+      font-size: 14px; /* Even smaller size for smaller screens */
+  }
 }
 
 /* iPhone specific styles */
