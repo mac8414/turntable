@@ -149,7 +149,7 @@ footer {
     padding: 10px;
     margin: 0; /* Remove margin on mobile */
   }
-  tagline {
+  .tagline {
     font-size: 14px; /* Smaller size for mobile */
   }
 }

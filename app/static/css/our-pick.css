@@ -177,7 +177,7 @@ footer {
         height: auto;
     }
     .tagline {
-        font-size: 12px; /* Smaller size for mobile */
+        font-size: 14px; /* Smaller size for mobile */
     }
 }
 
