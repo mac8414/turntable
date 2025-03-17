@@ -143,6 +143,19 @@ footer {
     text-align: center;
 }
 
+a {
+  text-decoration: none;
+  background: transparent;
+  display: inline-block; /* This can help with spacing */
+}
+
+.icon {
+    height: 32px; /* Match the logo height */
+    border: none;
+    margin: 0;
+    margin-bottom: 2px;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 10px;

@@ -14,9 +14,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable Logo" style="height: 32px;">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px; border: none">
                 </a>
-                <div class="tagline" style="font-size: 18px; color: #f8a235;">Listen Different. Explore new music.</div>
+                <img src="{{ url_for('static', filename='images/turntableIcon.png') }}" alt="Icon" class="icon">
+                <div class="tagline">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
                 <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: none; color: white; margin-right: 20px;">Home</a>

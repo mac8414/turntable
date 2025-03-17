@@ -7,6 +7,11 @@
     <title>Home</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <meta property="og:title" content="Turntable">
+    <meta property="og:description" content="Listen Different. Explore new music.">
+    <meta property="og:image" content="{{ url_for('static', filename='images/turntableIcon.jpg', _external=True) }}">
+    <!-- <meta property="og:url" content="https://example.com"> -->
+    <meta property="og:type" content="website">
 </head>
 
 <body>
@@ -15,8 +20,9 @@
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px; border: none">
                 </a>
+                <img src="{{ url_for('static', filename='images/turntableIcon.png') }}" alt="Icon" class="icon">
                 <div class="tagline">Listen Different. Explore new music.</div>
             </div>
             <div class="nav-menu" style="font-size: 25px;">
