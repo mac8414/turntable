@@ -5,7 +5,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" sizes="16x16 32x32 48x48 64x64 512x512" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     <meta property="og:title" content="Turntable">
     <meta property="og:description" content="Listen Different. Explore new music.">
@@ -13,14 +13,12 @@
     <!-- <meta property="og:url" content="https://example.com"> -->
     <meta property="og:type" content="website">
 </head>
-
 <body>
-
     <header class="header">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
             <div>
                 <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px; border: none">
+                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
                 </a>
                 <img src="{{ url_for('static', filename='images/turntableIcon.png') }}" alt="Icon" class="icon">
                 <div class="tagline">Listen Different. Explore new music.</div>

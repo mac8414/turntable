@@ -19,10 +19,10 @@ a {
 }
 
 .icon {
-    height: 32px; /* Match the logo height */
+    height: 100px; /* Match the logo height */
     border: none;
     margin: 0;
-    margin-bottom: 2px;
+    margin-bottom: -27px;
 }
 
 body {

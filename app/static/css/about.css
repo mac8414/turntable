@@ -141,6 +141,7 @@ footer {
     font-size: 18px; /* Default size */
     color: #f8a235;
     text-align: center;
+    margin-top: 5px;
 }
 
 a {
@@ -150,10 +151,10 @@ a {
 }
 
 .icon {
-    height: 32px; /* Match the logo height */
-    border: none;
-    margin: 0;
-    margin-bottom: 2px;
+  height: 100px; /* Match the logo height */
+  border: none;
+  margin: 0;
+  margin-bottom: -27px;
 }
 
 @media (max-width: 768px) {

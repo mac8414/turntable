@@ -124,6 +124,7 @@ footer {
     font-size: 18px;
     color: #f8a235;
     text-align: center;
+    margin-top: 5px;
 }
 
 .nav-menu {
@@ -143,10 +144,10 @@ a {
 }
 
 .icon {
-    height: 32px; /* Match the logo height */
+    height: 100px; /* Match the logo height */
     border: none;
     margin: 0;
-    margin-bottom: 2px;
+    margin-bottom: -27px;
 }
 
 /* Mobile styles */
