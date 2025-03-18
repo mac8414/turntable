@@ -161,6 +161,14 @@ a {
   .container {
     padding: 10px;
   }
+  header {
+    padding: 10px;
+  }
+  header div {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: -10px;
+  }
   .nav-menu {
     flex-direction: row;
   }

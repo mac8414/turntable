@@ -268,9 +268,13 @@ footer {
 
 /* iPhone specific styles */
 @media (max-width: 480px) {
+  header {
+    padding: 10px;
+  }
   header div {
     flex-direction: column;
     align-items: flex-start;
+    margin-top: -10px;
   }
   header .nav-menu {
     display: flex;
