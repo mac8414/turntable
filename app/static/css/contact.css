@@ -149,6 +149,12 @@ a {
 }
 
 @media (max-width: 768px) {
+  header {
+    padding: 10px;
+  }
+  header div {
+    margin-top: -30px;
+  }
   .container {
     padding: 10px;
   }
