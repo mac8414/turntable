@@ -76,7 +76,8 @@ def random_song():
         query_parts.append(f"genre:{genre}")
     else:
         # If only the year is given, append a common word to improve search results
-        query_parts.append(random.choice(["music", "song", "love", "dance", "classic", "hit"]))
+        query_parts.append(random.choice([ "Love", "You", "Me", "I", "My", "Baby", "Heart", "Night", "Time", "Day",
+                                            "We", "Girl", "Boy", "Dream", "Dance", "Rain", "World", "Feel", "Life", "Way"]))
 
     query = " ".join(query_parts)
     max_attempts = 10
