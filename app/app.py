@@ -331,8 +331,8 @@ def success():
 @app.route('/our-pick')
 def our_pick():
     logger.info("Rendering our pick page")
-    album = get_album("Songs in the Key of Life")
-    artist = get_artist("Stevie Wonder")
+    album = get_album("You Don't Mess Around With Jim")
+    artist = get_artist("Jim Croce")
     return render_template('our-pick.html', album=album, artist=artist)
 
 def get_album(album_name):
