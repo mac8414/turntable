@@ -41,6 +41,9 @@ client_credentials_manager = SpotifyClientCredentials(
 
 spotify = Spotify(client_credentials_manager=client_credentials_manager)
 
+API_KEY = os.getenv("LASTFM_API_KEY")
+BASE_URL = "http://ws.audioscrobbler.com/2.0/"
+
 geniusToken = os.getenv('GENIUS_TOKEN')
 
 genius = lyricsgenius.Genius(geniusToken)
@@ -48,174 +51,252 @@ genius = lyricsgenius.Genius(geniusToken)
 sentiment_analyzer = pipeline("sentiment-analysis")
 
 def get_recommendations(track_name, artist_name):
-    # Search for the original track
-    results = spotify.search(q=f"track:{track_name} artist:{artist_name}", type="track", limit=1)
+    recommendations = get_lastfm_similar_tracks(track_name, artist_name)
     
-    if not results['tracks']['items']:
-        return "Track not found"
-    
-    # Get original track info
-    track = results['tracks']['items'][0]
-    track_id = track['id']
-    artist_id = track['artists'][0]['id']
-    original_artist_name = track['artists'][0]['name']
-    
-    # Get release year from album
-    album = track['album']
-    release_date = album['release_date']
-    release_year = int(release_date.split('-')[0])
-    
-    # Calculate decade range
-    decade_start = (release_year // 10) * 10
-    decade_end = decade_start + 9
-    
-    # Get ALL genres from artist data - not just the first one
-    artist_data = spotify.artist(artist_id)
-    original_genres = artist_data.get('genres', [])
-    
-    if not original_genres:
-        return "Genre not found for the original artist"
-
-    # Track processed artists to avoid duplicates
-    similar_tracks = []
-    included_artists = set([original_artist_name.lower()])
-    
-    # 1. First try to find artists with similar genres
-    similar_artists = set()
-    
-    # For each of the original artist's genres, find related artists
-    for genre in original_genres:
-        # Search for artists with this genre
-        try:
-            # Format genre properly in search query (with quotes for exact matching)
-            artist_results = spotify.search(q=f'genre:"{genre}"', type="artist", limit=20)
-            
-            if 'artists' in artist_results and 'items' in artist_results['artists']:
-                for artist in artist_results['artists']['items']:
-                    artist_name = artist['name'].lower()
-                    if artist_name != original_artist_name.lower():
-                        similar_artists.add(artist['id'])
-        except Exception as e:
-            logger.error(f"Error searching artists for genre '{genre}': {str(e)}")
-            continue
-
-    # 2. For each similar artist, get their top tracks
-    for artist_id in list(similar_artists)[:10]:  # Limit to 10 artists for efficiency
-        try:
-            artist_data = spotify.artist(artist_id)
-            artist_name = artist_data['name']
-            
-            if artist_name.lower() in included_artists:
-                continue
-                
-            # Verify genre overlap with original artist
-            artist_genres = artist_data.get('genres', [])
-            
-            # Check if there's at least one genre in common
-            if not any(genre in artist_genres for genre in original_genres):
-                continue
-                
-            # Search for tracks by this artist in the same decade
-            track_results = spotify.search(
-                q=f"artist:{artist_name} year:{decade_start}-{decade_end}", 
-                type="track", 
-                limit=5
-            )
-            
-            if 'tracks' in track_results and 'items' in track_results['tracks']:
-                for item in track_results['tracks']['items'][:2]:  # Take up to 2 tracks per artist
-                    if item['id'] == track_id:
-                        continue
-                        
-                    similar_tracks.append(item)
-                    
-                    if len(similar_tracks) >= 20:
-                        break
-                        
-            included_artists.add(artist_name.lower())
-                
-        except Exception as e:
-            logger.error(f"Error getting tracks for artist {artist_id}: {str(e)}")
-            continue
-            
-        if len(similar_tracks) >= 20:
-            break
-    
-    # 3. If we don't have enough tracks yet, try more generic decade+genre searches
-    if len(similar_tracks) < 20:
-        # Use original artist's top genres to find more tracks
-        top_genres = original_genres[:3]  # Use top 3 genres
+    if not recommendations:
+        logger.info(f"No similar tracks from Last.fm for '{track_name}' by '{artist_name}', trying fallbacks")
         
-        for genre in top_genres:
-            if len(similar_tracks) >= 20:
-                break
-                
-            try:
-                # Search for tracks with this genre in the same decade
-                query = f'genre:"{genre}" year:{decade_start}-{decade_end}'
-                track_results = spotify.search(q=query, type="track", limit=20)
-                
-                if 'tracks' in track_results and 'items' in track_results['tracks']:
-                    for item in track_results['tracks']['items']:
-                        if item['id'] == track_id:
-                            continue
-                            
-                        current_artist_name = item['artists'][0]['name'].lower()
-                        if current_artist_name in included_artists:
-                            continue
-                            
-                        # Double-check genre match to avoid country songs for Drake, etc.
-                        current_artist_id = item['artists'][0]['id']
-                        current_artist_data = spotify.artist(current_artist_id)
-                        current_genres = current_artist_data.get('genres', [])
-                        
-                        # Check for genre overlap
-                        if not set(current_genres).intersection(set(original_genres)):
-                            continue
-                            
-                        similar_tracks.append(item)
-                        included_artists.add(current_artist_name)
-                        
-                        if len(similar_tracks) >= 20:
-                            break
-            except Exception as e:
-                logger.error(f"Error with genre search '{genre}': {str(e)}")
-                continue
-    
-    # 4. If still not enough, use decade-only search as last resort, but still filter by genre overlap
-    if len(similar_tracks) < 20:
-        try:
-            decade_query = f"year:{decade_start}-{decade_end}"
-            track_results = spotify.search(q=decade_query, type="track", limit=50)
+        recommendations = get_artist_top_tracks(artist_name, original_track_name=track_name)
+        
+        if not recommendations:
+            recommendations = get_genre_recommendations(track_name, artist_name)
             
-            if 'tracks' in track_results and 'items' in track_results['tracks']:
-                for item in track_results['tracks']['items']:
-                    if item['id'] == track_id:
-                        continue
-                    
-                    current_artist_name = item['artists'][0]['name'].lower()
-                    if current_artist_name in included_artists:
-                        continue
-                    
-                    # Strict genre validation
-                    current_artist_id = item['artists'][0]['id']
-                    current_artist_data = spotify.artist(current_artist_id)
-                    current_genres = current_artist_data.get('genres', [])
-                    
-                    # Must have at least one overlapping genre
-                    if not set(current_genres).intersection(set(original_genres)):
-                        continue
-                    
-                    similar_tracks.append(item)
-                    included_artists.add(current_artist_name)
-                    
-                    if len(similar_tracks) >= 20:
-                        break
-        except Exception as e:
-            logger.error(f"Error with decade search: {str(e)}")
-    
-    return similar_tracks[:20]
+        if not recommendations:
+            recommendations = get_popular_tracks()
+            
+    return recommendations
 
+def get_lastfm_similar_tracks(track_name, artist_name):
+    params = {
+        'method': 'track.getsimilar',
+        'artist': artist_name,
+        'track': track_name,
+        'api_key': API_KEY,
+        'format': 'json',
+        'limit': 20
+    }
+
+    try:
+        logger.info(f"Requesting similar tracks for '{track_name}' by '{artist_name}'")
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()  # Raise an error for HTTP issues
+        data = response.json()
+        
+        # Log the entire response for debugging
+        logger.debug(f"Last.fm API response: {data}")
+        
+        # More detailed error checking
+        if 'error' in data:
+            logger.warning(f"Last.fm API returned error: {data.get('message', 'Unknown error')}")
+            return []
+            
+        if 'similartracks' not in data:
+            logger.warning(f"Response missing 'similartracks' key for '{track_name}' by '{artist_name}'")
+            return []
+            
+        if 'track' not in data['similartracks'] or not data['similartracks']['track']:
+            logger.warning(f"No similar tracks found for '{track_name}' by '{artist_name}'")
+            return []
+
+        recommendations = []
+        for track in data['similartracks']['track']:
+            track_name = track.get('name', 'Unknown')
+            artist_name = track.get('artist', {}).get('name', 'Unknown Artist')
+            
+            logger.debug(f"Found similar track: '{track_name}' by '{artist_name}'")
+            
+            try:
+                spotify_results = spotify.search(q=f"{track_name} {artist_name}", type="track", limit=1)
+                spotify_url = None
+                if spotify_results.get('tracks', {}).get('items'):
+                    spotify_url = spotify_results['tracks']['items'][0].get('external_urls', {}).get('spotify')
+                    if spotify_url:
+                        logger.debug(f"Found Spotify URL for '{track_name}': {spotify_url}")
+                    else:
+                        logger.debug(f"No Spotify URL found for '{track_name}' by '{artist_name}'")
+                
+                recommendations.append({
+                    'name': track_name,
+                    'artist': artist_name,
+                    'spotify_url': spotify_url
+                })
+            except Exception as e:
+                logger.warning(f"Error processing Spotify search for '{track_name}': {e}")
+                # Still add the track even without Spotify URL
+                recommendations.append({
+                    'name': track_name,
+                    'artist': artist_name,
+                    'spotify_url': None
+                })
+
+        logger.info(f"Found {len(recommendations)} recommendations for '{track_name}' by '{artist_name}'")
+        return recommendations
+    except requests.exceptions.RequestException as e:
+        logger.error(f"HTTP error fetching recommendations: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Unexpected error in get_recommendations: {str(e)}")
+        return []
+
+def get_artist_top_tracks(artist_name, original_track_name=None, limit=10):
+    """Get top tracks from the same artist"""
+    params = {
+        'method': 'artist.getTopTracks',
+        'artist': artist_name,
+        'api_key': API_KEY,
+        'format': 'json',
+        'limit': limit
+    }
+    
+    try:
+        logger.info(f"Getting top tracks for artist: '{artist_name}'")
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'toptracks' not in data or 'track' not in data['toptracks']:
+            logger.warning(f"No top tracks found for artist '{artist_name}'")
+            return []
+            
+        recommendations = []
+        for track in data['toptracks']['track']:
+            # Skip the original track if a track name was provided
+            if original_track_name and track.get('name') == original_track_name:
+                continue
+                
+            spotify_results = spotify.search(q=f"{track['name']} {artist_name}", type="track", limit=1)
+            spotify_url = None
+            if spotify_results.get('tracks', {}).get('items'):
+                spotify_url = spotify_results['tracks']['items'][0].get('external_urls', {}).get('spotify')
+            
+            recommendations.append({
+                'name': track['name'],
+                'artist': artist_name,
+                'spotify_url': spotify_url
+            })
+                
+        logger.info(f"Found {len(recommendations)} top tracks for artist '{artist_name}'")
+        return recommendations
+    except Exception as e:
+        logger.error(f"Error getting artist top tracks: {e}")
+        return []
+
+def get_genre_recommendations(track_name, artist_name, limit=10):
+    """Get recommendations based on genre/tags of the original track"""
+    # First, get the tags for the track
+    params = {
+        'method': 'track.getInfo',
+        'artist': artist_name,
+        'track': track_name,
+        'api_key': API_KEY,
+        'format': 'json'
+    }
+    
+    try:
+        logger.info(f"Getting tags for '{track_name}' by '{artist_name}'")
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        tags = []
+        if 'track' in data and 'toptags' in data['track'] and 'tag' in data['track']['toptags']:
+            tags = [tag['name'] for tag in data['track']['toptags']['tag']]
+        
+        # If no tags, get artist tags instead
+        if not tags:
+            params = {
+                'method': 'artist.getTopTags',
+                'artist': artist_name,
+                'api_key': API_KEY,
+                'format': 'json'
+            }
+            response = requests.get(BASE_URL, params=params)
+            data = response.json()
+            
+            if 'toptags' in data and 'tag' in data['toptags']:
+                tags = [tag['name'] for tag in data['toptags']['tag']]
+        
+        if not tags:
+            logger.warning(f"No tags found for '{track_name}' or artist '{artist_name}'")
+            return []
+            
+        logger.info(f"Found tags: {tags}")
+        
+        # Now get tracks by tag (use the first/most relevant tag)
+        if tags:
+            params = {
+                'method': 'tag.getTopTracks',
+                'tag': tags[0],
+                'api_key': API_KEY,
+                'format': 'json',
+                'limit': limit
+            }
+            
+            response = requests.get(BASE_URL, params=params)
+            data = response.json()
+            
+            if 'tracks' in data and 'track' in data['tracks']:
+                recommendations = []
+                for track in data['tracks']['track']:
+                    # Skip if it's the original track or from the same artist
+                    if track['name'] == track_name and track['artist']['name'] == artist_name:
+                        continue
+                        
+                    spotify_results = spotify.search(q=f"{track['name']} {track['artist']['name']}", type="track", limit=1)
+                    spotify_url = None
+                    if spotify_results.get('tracks', {}).get('items'):
+                        spotify_url = spotify_results['tracks']['items'][0].get('external_urls', {}).get('spotify')
+                    
+                    recommendations.append({
+                        'name': track['name'],
+                        'artist': track['artist']['name'],
+                        'spotify_url': spotify_url
+                    })
+                
+                logger.info(f"Found {len(recommendations)} recommendations by tag '{tags[0]}'")
+                return recommendations
+                
+        return []
+    except Exception as e:
+        logger.error(f"Error getting genre recommendations: {e}")
+        return []
+
+def get_popular_tracks(limit=10):
+    """Last resort: get overall popular tracks"""
+    params = {
+        'method': 'chart.getTopTracks',
+        'api_key': API_KEY,
+        'format': 'json',
+        'limit': limit
+    }
+    
+    try:
+        logger.info("Getting popular tracks as last resort")
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'tracks' in data and 'track' in data['tracks']:
+            recommendations = []
+            for track in data['tracks']['track']:
+                spotify_results = spotify.search(q=f"{track['name']} {track['artist']['name']}", type="track", limit=1)
+                spotify_url = None
+                if spotify_results.get('tracks', {}).get('items'):
+                    spotify_url = spotify_results['tracks']['items'][0].get('external_urls', {}).get('spotify')
+                
+                recommendations.append({
+                    'name': track['name'],
+                    'artist': track['artist']['name'],
+                    'spotify_url': spotify_url
+                })
+            
+            logger.info(f"Found {len(recommendations)} popular tracks")
+            return recommendations
+        return []
+    except Exception as e:
+        logger.error(f"Error getting popular tracks: {e}")
+        return []
+    
 def analyze_and_rank_recommendations(recommendations, original_track, original_artist):
     if not isinstance(recommendations, list):
         return "Invalid recommendations format"
@@ -227,16 +308,34 @@ def analyze_and_rank_recommendations(recommendations, original_track, original_a
     # Truncate lyrics to fit the model's maximum sequence length
     original_lyrics = original_song.lyrics[:512]
     original_sentiment = sentiment_analyzer(original_lyrics)[0]
-    print(f"Original Song Sentiment: {original_sentiment['label']} (Score: {original_sentiment['score']:.4f})")
+    original_label = original_sentiment['label']  # Get the sentiment label (POSITIVE or NEGATIVE)
+    print(f"Original Song Sentiment: {original_label} (Score: {original_sentiment['score']:.4f})")
 
+    # Track already processed songs to avoid duplicates
+    processed_tracks = set()
     scored_recommendations = []
 
     for track in recommendations:
-        if not isinstance(track, dict) or 'name' not in track or 'artists' not in track:
+        # Ensure the track has the required fields
+        if not isinstance(track, dict) or 'name' not in track or 'artist' not in track:
             continue  # Skip malformed data
 
-        artist = track['artists'][0]['name']
+        artist = track['artist']
         name = track['name']
+        
+        # Skip the original song
+        if name.lower() == original_track.lower() and artist.lower() == original_artist.lower():
+            continue
+
+        # Create a unique key for this track
+        track_key = f"{name.lower()}|{artist.lower()}"
+        
+        # Skip if we've already processed this track
+        if track_key in processed_tracks:
+            continue
+            
+        processed_tracks.add(track_key)
+        spotify_url = track.get('spotify_url')  # Handle missing Spotify URL gracefully
 
         try:
             song = genius.search_song(name, artist)
@@ -244,24 +343,28 @@ def analyze_and_rank_recommendations(recommendations, original_track, original_a
                 # Truncate lyrics to fit the model's maximum sequence length
                 lyrics = song.lyrics[:512]
                 sentiment = sentiment_analyzer(lyrics)[0]
+                current_label = sentiment['label']
 
                 # Print sentiment stats for the current song
                 print(f"Analyzing: {name} by {artist}")
-                print(f"  Sentiment: {sentiment['label']} (Score: {sentiment['score']:.4f})")
+                print(f"  Sentiment: {current_label} (Score: {sentiment['score']:.4f})")
 
-                similarity = abs(sentiment['score'] - original_sentiment['score'])
+                # Only consider songs with matching sentiment label (POSITIVE or NEGATIVE)
+                if current_label == original_label:
+                    similarity = abs(sentiment['score'] - original_sentiment['score'])
 
-                scored_recommendations.append({
-                    'title': name,
-                    'artist': artist,
-                    'sentiment': sentiment,
-                    'similarity': similarity,
-                    'spotify_url': track['external_urls']['spotify']
-                })
+                    scored_recommendations.append({
+                        'title': name,
+                        'artist': artist,
+                        'sentiment': sentiment,
+                        'similarity': similarity,
+                        'spotify_url': spotify_url  # Include Spotify URL
+                    })
         except Exception as e:
             logger.error(f"Error analyzing song '{name}' by '{artist}': {e}")
             continue  # Skip errors gracefully
 
+    # Sort by sentiment similarity (lower value = more similar)
     scored_recommendations.sort(key=lambda x: x['similarity'])
 
     return scored_recommendations[:5]
