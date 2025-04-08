@@ -389,6 +389,11 @@ def home():
     logger.info("Rendering home page")
     return render_template('home.html')
 
+@app.route('/randomizer')
+def randomizer():
+    logger.info("Rendering randomizer page")
+    return render_template('randomizer.html')
+
 @app.route('/random_song')
 def random_song():
     year = request.args.get('year')
@@ -531,6 +536,7 @@ def random_album():
     except Exception as e:
         logger.error(f"Error in random_album: {str(e)}", exc_info=True)
         return jsonify(name=None, error="An error occurred while fetching albums"), 500
+
 
 @app.route('/random_artist')
 def random_artist():
@@ -745,6 +751,46 @@ def test_recommendation_system():
         except Exception as e:
             print(f"Error processing test case: {str(e)}")
     print("\nTesting completed!")
+
+@app.route('/spotify-search')
+def spotify_search():
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify([])
+
+    try:
+        results = spotify.search(q=query, type='track', limit=10)
+        tracks = results.get('tracks', {}).get('items', [])
+        return jsonify([
+            {
+                'id': track['id'],
+                'name': track['name'],
+                'artist': track['artists'][0]['name'],
+                'image': track['album']['images'][1]['url'] if track['album']['images'] else ''
+            } for track in tracks
+        ])
+    except Exception as e:
+        logger.error(f"Spotify search error: {e}")
+        return jsonify([])
+    
+
+
+@app.route('/submit-song', methods=['POST'])
+def submit_song():
+    data = request.get_json()
+    track_name = data.get('track')
+    artist_name = data.get('artist')
+
+    if not track_name or not artist_name:
+        return jsonify({'error': 'Missing track or artist'}), 400
+
+    logger.info(f"Song selected: {track_name} by {artist_name}")
+
+    # Get recommendations
+    recommendations = get_recommendations(track_name, artist_name)
+    ranked = analyze_and_rank_recommendations(recommendations, track_name, artist_name)
+
+    return jsonify(ranked)
 
 
 # Run the test
