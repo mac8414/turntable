@@ -1,3 +1,4 @@
+// --- RANDOMIZER LOGIC ---
 function randomizeSelection() {
     const button = document.querySelector('.randomizeButton');
     button.disabled = true;
@@ -90,3 +91,74 @@ function toggleSelection(button) {
     }
 }
 
+// --- SEARCH BAR LOGIC + RECOMMENDATION FETCH ---
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('songSearch');
+    const results = document.getElementById('searchResults');
+    const recommendationBox = document.querySelector('.recommendationBox');
+
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        const query = input.value.trim();
+        if (query.length < 2) {
+            results.innerHTML = '';
+            return;
+        }
+
+        fetch(`/spotify-search?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                results.innerHTML = '';
+
+                if (!data.length) {
+                    results.innerHTML = `<p style="color: white;">No results found.</p>`;
+                    return;
+                }
+
+                data.forEach(song => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <div style="display: flex; align-items: center; padding: 10px; cursor: pointer; border-bottom: 1px solid #ccc;">
+                            <img src="${song.image}" style="width: 50px; height: 50px; border-radius: 4px; margin-right: 10px;">
+                            <div style="color: white;">
+                                <strong>${song.name}</strong><br>
+                                <small>${song.artist}</small>
+                            </div>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => {
+                        input.value = `${song.name} - ${song.artist}`;
+                        results.innerHTML = '';
+
+                        // Send song to backend
+                        fetch('/submit-song', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ track: song.name, artist: song.artist })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            recommendationBox.innerHTML = `<h3 style="color:white;">Top Recommendations for "${song.name}"</h3>`;
+
+                            if (!data || !data.length) {
+                                recommendationBox.innerHTML += `<p style="color:white;">No recommendations found.</p>`;
+                                return;
+                            }
+
+                            data.forEach(rec => {
+                                recommendationBox.innerHTML += `
+                                    <div style="margin-bottom: 15px;">
+                                        <p style="color:white;"><strong>${rec.title}</strong> by ${rec.artist}</p>
+                                        ${rec.spotify_url ? `<a href="${rec.spotify_url}" target="_blank" style="color:#1DB954;">Listen on Spotify</a>` : ''}
+                                        <p style="color:white; font-size: 0.9em;">Sentiment: ${rec.sentiment.label} (${(rec.sentiment.score * 100).toFixed(2)}%)</p>
+                                    </div>
+                                `;
+                            });
+                        });
+                    });
+                    results.appendChild(div);
+                });
+            });
+    });
+});

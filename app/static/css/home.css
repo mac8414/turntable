@@ -163,8 +163,95 @@ main {
     padding: 20px;
     background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
     color: #2f1d1b; /* Set text color to white */
+    text-align: center;
     border-radius: 10px;
 }
+
+.content h2 {
+  color: #fff;
+  font-family: monospace;
+  overflow: hidden; /* Ensures the content is not revealed until the animation */
+  border-right: .15em solid orange; /* The typwriter cursor */
+  white-space: nowrap; /* Keeps the content on a single line */
+  margin: 0 auto; /* Gives that scrolling effect as the typing happens */
+  letter-spacing: .15em; /* Adjust as needed */
+  width: 0;
+  display: inline-block;
+  animation: 
+    typing 5s steps(30, end) forwards,
+    blink-caret .5s step-end infinite;
+  animation-delay: 0s, 4s; /* Cursor blinks after typing is done */
+}
+
+/* The typing effect */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 0% }
+}
+
+/* The typewriter cursor effect */
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: orange }
+}
+
+.search-title {
+  color: white;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.search-results {
+  border: 1px solid #ccc;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgb(102, 101, 101);
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.search-results div {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+  transition: background 0.2s;
+}
+
+.search-results div:hover {
+  background: #f0f0f0;
+}
+
+.search-results img {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.search-results .track-info {
+  color: black;
+  font-size: 14px;
+}
+
 
 footer {
     background: #2f1d1b;
