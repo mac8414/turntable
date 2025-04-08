@@ -128,8 +128,6 @@ def get_lastfm_similar_tracks(track_name, artist_name):
                     'artist': artist_name,
                     'spotify_url': None
                 })
-
-        logger.info(f"Found {len(recommendations)} recommendations for '{track_name}' by '{artist_name}'")
         return recommendations
     except requests.exceptions.RequestException as e:
         logger.error(f"HTTP error fetching recommendations: {e}")
@@ -734,8 +732,11 @@ def test_recommendation_system():
             if isinstance(ranked_recommendations, str):
                 print(f"Error: {ranked_recommendations}")
                 continue
-
-            print("\nTOP 5 RECOMMENDATIONS (Ranked):")
+            print("\nORIGINAL 5 RECOMMENDATIONS (Unranked) for {track_name} by {artist_name}:")
+            for rec in recommendations[:5]:
+                print(f"  - {rec['name']} by {rec['artist']} (Spotify URL: {rec['spotify_url']})")
+                print()
+            print("\nTOP 5 RECOMMENDATIONS (Ranked) for {track_name} by {artist_name}:")
             for i, rec in enumerate(ranked_recommendations):
                 print(f"{i + 1}. {rec['title']} by {rec['artist']}")
                 print(f"   Sentiment: {rec['sentiment']}")
