@@ -7,6 +7,7 @@
     <title>Contact</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/contact.css') }}">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -40,9 +41,19 @@
             <p style="margin-bottom: 5px; color: white;">Or email us at <a href="mailto:turntablehelp@gmail.com" style="color: white; text-decoration: underline;">turntablehelp@gmail.com</a></p>
             <div class="contact-form">
                 <form action="/contact-help" method="POST">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="flash-container">
+                                {% for category, message in messages %}
+                                    <div class="flash-message {{ category }}">{{ message }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
                     <input type="text" name="name" placeholder="Your Name" required>
                     <input type="email" name="email" placeholder="Your Email" required>
                     <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+                    <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
                     <button type="submit" style="font-weight: bold;">Send Message</button>
                 </form>
             </div>

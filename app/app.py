@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, flash, render_template, jsonify, request, redirect, url_for
 import random
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY")
 Compress(app)
 
 # Configuring Flask-Mail with Gmail SMTP
@@ -43,6 +44,10 @@ spotify = Spotify(client_credentials_manager=client_credentials_manager)
 
 API_KEY = os.getenv("LASTFM_API_KEY")
 BASE_URL = "http://ws.audioscrobbler.com/2.0/"
+
+
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 geniusToken = os.getenv('GENIUS_TOKEN')
 
@@ -380,7 +385,8 @@ def about():
 @app.route('/contact')
 def contact():
     logger.info("Rendering contact page")
-    return render_template('contact.html')
+    return render_template('contact.html', recaptcha_site_key=RECAPTCHA_SITE_KEY)
+
 
 @app.route('/home')
 def home():
@@ -631,30 +637,6 @@ def random_artist():
         error=f"No artist found matching criteria after {max_attempts} attempts"
     ), 404
 
-# Route for Contact Form Page
-@app.route('/contact-help', methods=['GET', 'POST'])
-def contact_help():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        message = request.form['message']
-        logger.info(f"Contact form submitted by {name} ({email})")
-
-        # Create the email message
-        msg = Message(f'New message from {name} ({email})',
-                      recipients=['turntablehelp@gmail.com'])  
-        msg.body = f'Name: {name}\nEmail: {email}\n\nMessage:\n{message}'
-
-        try:
-            mail.send(msg)
-            logger.info("Email sent successfully")
-            return redirect(url_for('success'))  # Redirect to success page
-        except Exception as e:
-            logger.error("Error sending email", exc_info=True)
-            return 'An error occurred while sending your message. Please try again.'
-
-    return render_template('contact.html')
-
 # Route for Success Page
 @app.route('/success')
 def success():
@@ -793,6 +775,51 @@ def submit_song():
 
     return jsonify(ranked)
 
+@app.route("/contact-help", methods=["POST"])
+def contact_help():
+    name = request.form.get("name")
+    email = request.form.get("email")
+    message = request.form.get("message")
+    recaptcha_response = request.form.get("g-recaptcha-response")
+
+    if not name or not email or not message:
+        flash("All fields are required.", "error")
+        return redirect(url_for("contact"))
+
+    if not recaptcha_response:
+        flash("Please complete the CAPTCHA.", "error")
+        return redirect(url_for("contact"))
+
+    verify_url = "https://www.google.com/recaptcha/api/siteverify"
+    payload = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": recaptcha_response
+    }
+
+    try:
+        r = requests.post(verify_url, data=payload)
+        result = r.json()
+        if not result.get("success"):
+            flash("CAPTCHA failed. Please try again.", "error")
+            return redirect(url_for("contact"))
+    except Exception:
+        flash("CAPTCHA validation error.", "error")
+        return redirect(url_for("contact"))
+
+    try:
+        msg = Message(
+            subject="New Contact Message",
+            sender=email,
+            recipients=["turntablehelp@gmail.com"],
+            body=f"From: {name}\nEmail: {email}\n\nMessage:\n{message}"
+        )
+        mail.send(msg)
+        flash("Message sent successfully!", "success")
+        return redirect(url_for("success"))
+    except Exception as e:
+        logger.error(f"Email sending failed: {e}")
+        flash("There was an error sending your message. Please try again.", "error")
+        return redirect(url_for("contact"))
 
 # Run the test
 if __name__ == "__main__":
