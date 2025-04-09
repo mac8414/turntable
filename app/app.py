@@ -22,6 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY")
 Compress(app)
 
 # Configuring Flask-Mail with Gmail SMTP
@@ -52,10 +53,10 @@ def about():
     logger.info("Rendering about page")
     return render_template('about.html')
 
-@app.route('/contact')
+@app.route('/contact', methods=['GET', 'POST'])
 def contact():
     logger.info("Rendering contact page")
-    return render_template('contact.html')
+    return render_template('contact.html', recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY"))
 
 @app.route('/home')
 def home():
@@ -342,51 +343,57 @@ def get_artist(artist_name):
         "spotify_url": artist["external_urls"]["spotify"]
     }
 
-@app.route("/contact", methods=["POST"])
+@app.route('/contact-help', methods=['GET', 'POST'])
 def contact_help():
-    name = request.form.get("name")
-    email = request.form.get("email")
-    message = request.form.get("message")
-    recaptcha_response = request.form.get("g-recaptcha-response")
+    if request.method == 'POST':
+        name = request.form.get("name")
+        email = request.form.get("email")
+        message = request.form.get("message")
+        recaptcha_response = request.form.get("g-recaptcha-response")
 
-    if not name or not email or not message:
-        flash("All fields are required.", "error")
-        return redirect(url_for("contact"))
-
-    if not recaptcha_response:
-        flash("Please complete the CAPTCHA.", "error")
-        return redirect(url_for("contact"))
-
-    verify_url = "https://www.google.com/recaptcha/api/siteverify"
-    payload = {
-        "secret": RECAPTCHA_SECRET_KEY,
-        "response": recaptcha_response
-    }
-
-    try:
-        r = requests.post(verify_url, data=payload)
-        result = r.json()
-        if not result.get("success"):
-            flash("CAPTCHA failed. Please try again.", "error")
+        if not name or not email or not message:
+            flash("All fields are required.", "error")
             return redirect(url_for("contact"))
-    except Exception:
-        flash("CAPTCHA validation error.", "error")
-        return redirect(url_for("contact"))
 
-    try:
-        msg = Message(
-            subject="New Contact Message",
-            sender=email,
-            recipients=["turntablehelp@gmail.com"],
-            body=f"From: {name}\nEmail: {email}\n\nMessage:\n{message}"
-        )
-        mail.send(msg)
-        flash("Message sent successfully!", "success")
-        return redirect(url_for("success"))
-    except Exception as e:
-        logger.error(f"Email sending failed: {e}")
-        flash("There was an error sending your message. Please try again.", "error")
-        return redirect(url_for("contact"))
+        if not recaptcha_response:
+            flash("Please complete the CAPTCHA.", "error")
+            return redirect(url_for("contact"))
+
+        verify_url = "https://www.google.com/recaptcha/api/siteverify"
+        payload = {
+            "secret": RECAPTCHA_SECRET_KEY,
+            "response": recaptcha_response
+        }
+
+        try:
+            r = requests.post(verify_url, data=payload)
+            result = r.json()
+            if not result.get("success"):
+                flash("CAPTCHA failed. Please try again.", "error")
+                return redirect(url_for("contact"))
+        except Exception:
+            flash("CAPTCHA validation error.", "error")
+            return redirect(url_for("contact"))
+
+        try:
+            msg = Message(
+                subject="New Contact Message",
+                sender=email,
+                recipients=["turntablehelp@gmail.com"],
+                body=f"From: {name}\nEmail: {email}\n\nMessage:\n{message}"
+            )
+            mail.send(msg)
+            flash("Message sent successfully!", "success")
+            logger.info("Email sent successfully. Redirecting to success page.")
+            return redirect(url_for("success"))
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
+            flash("There was an error sending your message. Please try again.", "error")
+            return redirect(url_for("contact"))
+
+    # GET request: render contact form with site key
+    return render_template('contact.html', recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY"))
+
 
 
 

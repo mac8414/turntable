@@ -13,6 +13,13 @@ html, body {
     padding: 0;
 }
 
+.icon {
+  height: 100px; /* Match the logo height */
+  border: none;
+  margin: 0;
+  margin-bottom: -27px;
+}
+
 body {
     display: flex;
     flex-direction: column;
