@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 
 load_dotenv() 
 
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -340,7 +342,7 @@ def get_artist(artist_name):
         "spotify_url": artist["external_urls"]["spotify"]
     }
 
-@app.route("/contact-help", methods=["POST"])
+@app.route("/contact", methods=["POST"])
 def contact_help():
     name = request.form.get("name")
     email = request.form.get("email")
