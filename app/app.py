@@ -298,29 +298,6 @@ def random_artist():
         error=f"No artist found matching criteria after {max_attempts} attempts"
     ), 404
 
-# Route for Contact Form Page
-@app.route('/contact-help', methods=['GET', 'POST'])
-def contact_help():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        message = request.form['message']
-        logger.info(f"Contact form submitted by {name} ({email})")
-
-        # Create the email message
-        msg = Message(f'New message from {name} ({email})',
-                      recipients=['turntablehelp@gmail.com'])  
-        msg.body = f'Name: {name}\nEmail: {email}\n\nMessage:\n{message}'
-
-        try:
-            mail.send(msg)
-            logger.info("Email sent successfully")
-            return redirect(url_for('success'))  # Redirect to success page
-        except Exception as e:
-            logger.error("Error sending email", exc_info=True)
-            return 'An error occurred while sending your message. Please try again.'
-
-    return render_template('contact.html')
 
 # Route for Success Page
 @app.route('/success')
