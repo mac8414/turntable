@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, flash, render_template, jsonify, request, redirect, url_for
 import random
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -362,6 +362,53 @@ def get_artist(artist_name):
         "image_url": artist["images"][0]["url"],
         "spotify_url": artist["external_urls"]["spotify"]
     }
+
+@app.route("/contact-help", methods=["POST"])
+def contact_help():
+    name = request.form.get("name")
+    email = request.form.get("email")
+    message = request.form.get("message")
+    recaptcha_response = request.form.get("g-recaptcha-response")
+
+    if not name or not email or not message:
+        flash("All fields are required.", "error")
+        return redirect(url_for("contact"))
+
+    if not recaptcha_response:
+        flash("Please complete the CAPTCHA.", "error")
+        return redirect(url_for("contact"))
+
+    verify_url = "https://www.google.com/recaptcha/api/siteverify"
+    payload = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": recaptcha_response
+    }
+
+    try:
+        r = requests.post(verify_url, data=payload)
+        result = r.json()
+        if not result.get("success"):
+            flash("CAPTCHA failed. Please try again.", "error")
+            return redirect(url_for("contact"))
+    except Exception:
+        flash("CAPTCHA validation error.", "error")
+        return redirect(url_for("contact"))
+
+    try:
+        msg = Message(
+            subject="New Contact Message",
+            sender=email,
+            recipients=["turntablehelp@gmail.com"],
+            body=f"From: {name}\nEmail: {email}\n\nMessage:\n{message}"
+        )
+        mail.send(msg)
+        flash("Message sent successfully!", "success")
+        return redirect(url_for("success"))
+    except Exception as e:
+        logger.error(f"Email sending failed: {e}")
+        flash("There was an error sending your message. Please try again.", "error")
+        return redirect(url_for("contact"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
