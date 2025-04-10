@@ -1,102 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- randomizer.html -->
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" sizes="16x16 32x32 48x48 64x64 512x512" type="image/png">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% block title %}Randomizer{% endblock %}
+
+{% block extra_head %}
     <meta property="og:title" content="Turntable">
     <meta property="og:description" content="Listen Different. Explore new music.">
     <meta property="og:image" content="{{ url_for('static', filename='images/turntableIcon.png', _external=True) }}">
     <meta property="og:url" content="https://turntableshuffle.com">
     <meta property="og:type" content="website">
-</head>
-<body>
-    <header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
-            <div style="margin-top: -30px;">
-                <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
-                </a>
-                <img src="{{ url_for('static', filename='images/turntableIcon.png') }}" alt="Icon" class="icon">
-                <div class="tagline">Listen Different. Explore new music.</div>
-            </div>
-            <div class="nav-menu" style="font-size: 25px;">
-                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: underline; color: white; margin-right: 20px;">Home</a>
-                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
-                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
-                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
-            </div>
-        </div>
-    </header>
+{% endblock %}
 
-    <main>
-        <aside class="sidebarL" style="border-radius: 10px;">
-            <!-- <h3>Left Sidebar</h3> -->
-            <!-- <p>This is space is for ads.</p> -->
-        </aside>
-        <section class="content">
-            <img src="{{ url_for('static', filename='images/randomizer.png') }}" alt="Randomizer" class="randomizer-image" style="height: 40px;">
-            <p style="text-align: center; color: white; margin-top: 30px; margin-bottom: 10px;">Select your options, then hit randomize.</p>
-            <p style="text-align: center; color: white; margin-top: -10px; margin-bottom: 10px;">Press the picture to be taken to Spotify.</p>
-            <img src="{{ url_for('static', filename='images/options.png') }}" alt="Options" class="options-image" style="height: 24px; margin-bottom: 30px;">
-            <div class="optionButtons">
-                <button class="optionButton" onclick="toggleSelection(this)">Song</button>
-                <button class="optionButton" onclick="toggleSelection(this)">Album</button>
-                <button class="optionButton" onclick="toggleSelection(this)">Artist</button>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <select class="dropDownGenre">
-                    <option value="">Genre</option>
-                    <option value="pop">Pop</option>
-                    <option value="rap">Rap</option>
-                    <option value="rock">Rock</option>
-                    <option value="country">Country</option>
-                    <option value="indie">Indie</option>
-                    <option value="folk">Folk</option>
-                    <option value="r%26b">R&B</option>
-                    <option value="punk">Punk</option>
-                    <option value="soul">Soul</option>
-                    <option value="metal">Metal</option>
-                    <option value="hip hop">Hip-Hop</option>
-                    <option value="reggae">Reggae</option>
-                    <option value="latin">Latin</option>
-                    <option value="jazz">Jazz</option>
-                    <option value="classical">Classical</option>
-                </select>
-                <select class="dropDownTimePeriod">
-                    <option value="">Decade</option>
-                    <option value="1950-1959">1950s</option>
-                    <option value="1960-1969">1960s</option>
-                    <option value="1970-1979">1970s</option>
-                    <option value="1980-1989">1980s</option>
-                    <option value="1990-1999">1990s</option>
-                    <option value="2000-2009">2000s</option>
-                    <option value="2010-2019">2010s</option>
-                    <option value="2020-2025">2020s</option>
-                </select>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="randomizeButton" onclick="randomizeSelection()">Randomize</button>
-            </div> 
-            <div class="contentBox">
-                <p>No result found. Try refreshing!</p>
-            </div>            
-        </section>
-        <aside class="sidebarR" style="border-radius: 10px;">
-            <!-- <h3>Right Sidebar</h3> -->
-            <!-- <p>This is space is for ads.</p> -->
-        </aside>
-    </main>
+{% block content %}
+    <img src="{{ url_for('static', filename='images/randomizer.png') }}" alt="Randomizer" class="randomizer-image" style="height: 40px;">
+    <p style="text-align: center; color: white; margin-top: 30px; margin-bottom: 10px;">Select your options, then hit randomize.</p>
+    <p style="text-align: center; color: white; margin-top: -10px; margin-bottom: 10px;">Press the picture to be taken to Spotify.</p>
+    <img src="{{ url_for('static', filename='images/options.png') }}" alt="Options" class="options-image" style="height: 24px; margin-bottom: 30px;">
+    <div class="optionButtons">
+        <button class="optionButton" onclick="toggleSelection(this)">Song</button>
+        <button class="optionButton" onclick="toggleSelection(this)">Album</button>
+        <button class="optionButton" onclick="toggleSelection(this)">Artist</button>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+        <select class="dropDownGenre">
+            <option value="">Genre</option>
+            <option value="pop">Pop</option>
+            <option value="rap">Rap</option>
+            <option value="rock">Rock</option>
+            <option value="country">Country</option>
+            <option value="indie">Indie</option>
+            <option value="folk">Folk</option>
+            <option value="r%26b">R&B</option>
+            <option value="punk">Punk</option>
+            <option value="soul">Soul</option>
+            <option value="metal">Metal</option>
+            <option value="hip hop">Hip-Hop</option>
+            <option value="reggae">Reggae</option>
+            <option value="latin">Latin</option>
+            <option value="jazz">Jazz</option>
+            <option value="classical">Classical</option>
+        </select>
+        <select class="dropDownTimePeriod">
+            <option value="">Decade</option>
+            <option value="1950-1959">1950s</option>
+            <option value="1960-1969">1960s</option>
+            <option value="1970-1979">1970s</option>
+            <option value="1980-1989">1980s</option>
+            <option value="1990-1999">1990s</option>
+            <option value="2000-2009">2000s</option>
+            <option value="2010-2019">2010s</option>
+            <option value="2020-2025">2020s</option>
+        </select>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+        <button class="randomizeButton" onclick="randomizeSelection()">Randomize</button>
+    </div> 
+    <div class="contentBox">
+        <p>No result found. Try refreshing!</p>
+    </div>
+{% endblock %}
 
-    <footer>
-        <p>&copy; 2025 Turntable. All rights reserved.</p>
-        <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Powered by Spotify®</a>
-    </footer>
+{% block scripts %}
     <script src="{{ url_for('static', filename='js/home.js') }}"></script>
-</body>
-
-</html>
+{% endblock %}

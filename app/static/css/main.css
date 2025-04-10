@@ -1,0 +1,547 @@
+/* ===== COMMON STYLES ===== */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: bold;
+    line-height: 1.6;
+    background: #9b3a33;
+}
+
+/* ===== LAYOUT STRUCTURE ===== */
+header {
+    padding: 10px 20px;
+    background-color: #2f1d1b;
+    color: white;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.logo-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    height: 32px;
+}
+
+.tagline {
+    font-size: 18px;
+    color: #f8a235;
+    text-align: center;
+}
+
+.nav-menu {
+    font-size: 25px;
+}
+
+.nav-link {
+    margin-right: 20px;
+    color: white;
+    text-decoration: none;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    margin: 20px;
+}
+
+/* Sidebar styles */
+.sidebarL,
+.sidebarR {
+    flex: 1;
+    padding: 20px;
+    background: #9b3a33;
+    margin: 0 5px;
+    border-radius: 10px;
+}
+
+/* Main content style */
+.content {
+    flex: 3;
+    padding: 20px;
+    background: linear-gradient(to top, #9b3a33, #f1573b, #f8a235);
+    color: white;
+    border-radius: 10px;
+}
+
+.content h2 {
+    text-align: center;
+    color: #f8a235;
+    margin-bottom: 15px;
+}
+
+.content p {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+footer {
+    background: #2f1d1b;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    margin-top: auto;
+}
+
+.highlight {
+    background-color: white;
+    padding: 5px;
+    display: inline-block;
+    border-radius: 5px;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    .nav-menu {
+        flex-direction: row;
+    }
+    .sidebarL,
+    .sidebarR {
+        display: none; /* Hide sidebars on mobile */
+    }
+    .content {
+        flex: 1;
+        padding: 10px;
+        margin: 0; /* Remove margin on mobile */
+    }
+    .tagline {
+        font-size: 14px; /* Smaller size for mobile */
+    }
+}
+
+/* iPhone specific styles */
+@media (max-width: 480px) {
+    header div {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    header .nav-menu {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px; /* Add some spacing */
+    }
+    header .nav-menu a {
+        display: inline-block;
+        margin: 0 10px;
+        font-size: 12px;
+    }
+    .tagline {
+        font-size: 14px; /* Smaller size for mobile */
+    }
+}
+
+/* ===== HOME PAGE STYLES ===== */
+.search-title {
+    color: white;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.search-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.search-results {
+    border: 1px solid #ccc;
+    max-height: 300px;
+    overflow-y: auto;
+    background: rgb(102, 101, 101);
+    position: absolute;
+    width: 100%;
+    z-index: 10;
+    border-radius: 4px;
+}
+
+.search-results div {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.2s;
+}
+
+.search-results div:hover {
+    background: #f0f0f0;
+}
+
+.search-results img {
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.search-results .track-info {
+    color: black;
+    font-size: 14px;
+}
+
+/* ===== RANDOMIZER STYLES ===== */
+.optionButtons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.optionButton {
+    padding: 10px 15px;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0);
+    outline: 2px solid #2f1d1b;
+    color: #2f1d1b;
+    border: none;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: background 0.1s ease-in-out;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: bold;
+}
+
+.optionButton:focus,
+.optionButton:hover {
+    background: #2f1d1b;
+    color: white;
+    outline: none;
+    box-shadow: 0 0 0 2px #2f1d1b;
+}   
+
+.optionButton.selected {
+    background: #2f1d1b;
+    outline: none;
+    box-shadow: 0 0 0 2px #2f1d1b;
+    color: white;
+}
+
+.dropDownGenre, 
+.dropDownTimePeriod {
+    padding: 10px 10px;
+    font-size: 18px;
+    background: #2f1d1b;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: bold;
+}
+
+.dropDownGenre:hover,
+.dropDownTimePeriod:hover {
+    background: #221514;
+}
+
+.randomizeButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #f8a235;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: background 0.3s ease;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: bold;
+}
+
+.randomizeButton:hover {
+    background: #cc872c;
+}
+
+.contentBox {
+    width: 80%; 
+    height: 500px; 
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    background-color: white; 
+}
+
+.randomizer-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.options-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 30px;
+}
+
+/* ===== ABOUT PAGE STYLES ===== */
+.team-members {
+    margin-bottom: 30px;
+}
+
+.team-members h3 {
+    font-size: 24px;
+    text-align: center;
+    color: #f8a235;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+.team {
+    display: flex;
+    text-align: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+.team-member {
+    text-align: center;
+    width: 150px;
+    margin-top: 50px;
+}
+
+.team-member img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.team-member h4 {
+    font-size: 18px;
+    color: #f8a235;
+    margin-bottom: 5px;
+}
+
+.team-member p {
+    font-size: 16px;
+    color: #fff;
+}
+
+.aboutUs-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mtt-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 75px;
+}
+
+/* ===== CONTACT PAGE STYLES ===== */
+.contact-form {
+    font-family: 'Comfortaa', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+.contact-form form {
+    font-family: 'Comfortaa', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+}
+
+.contact-form input,
+.contact-form textarea {
+    font-family: 'Comfortaa', sans-serif;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.flash-container {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.flash-message {
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.flash-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.contact-form button {
+    padding: 10px 20px;
+    background-color: #f8a235;
+    display: inline-block;
+    font-family: 'Comfortaa', sans-serif;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.contact-form button:hover {
+    background-color: #cc872c;
+}
+
+.contactUs-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ===== OUR PICK PAGE STYLES ===== */
+.content h1 {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 2.5rem;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.content h2 {
+    margin-top: 15px;
+    font-size: 1.8rem;
+    animation: fadeIn 4s ease-in-out;
+}
+
+.this-weeks-pick-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    height: 40px;
+    max-height: 200px;
+}
+
+.Week1Pick-image {
+    display: block;  
+    margin: 20px auto;  
+    max-width: 100%;  
+    height: auto; 
+    border-radius: 10px;  
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2); 
+    animation: fadeIn 8s ease-in-out;
+    height: 600px;
+}
+
+/* ===== MEDIA QUERIES FOR SPECIFIC PAGES ===== */
+
+/* Our Pick page mobile styles */
+@media (max-width: 768px) {
+    .content h1 {
+        font-size: 1.5rem;
+    }
+    .content h2 {
+        font-size: 1.2rem;
+    }
+    .content h3 {
+        font-size: 1rem;
+    }
+    .this-weeks-pick-image,
+    .Week1Pick-image {
+        width: 90%;
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .content h1 {
+        font-size: 1.2rem;
+    }
+    .content h2 {
+        font-size: 1rem;
+    }
+    .content h3 {
+        font-size: 0.8rem;
+    }
+    .this-weeks-pick-image,
+    .Week1Pick-image {
+        width: 80%;
+        height: auto;
+        max-height: 250px;
+    }
+}
+
+/* Home/Randomizer page mobile styles */
+@media (max-width: 768px) {
+    .optionButtons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .optionButton {
+        width: 100%;
+    }
+    .dropDownGenre,
+    .dropDownTimePeriod {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .randomizeButton {
+        width: 100%;
+    }
+    .contentBox {
+        width: 100%;
+        height: auto;
+        margin: 10px 0;
+    }
+    .randomizeButton:hover {
+        background: #f8a235;
+    }
+}

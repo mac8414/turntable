@@ -821,6 +821,9 @@ def contact_help():
         flash("There was an error sending your message. Please try again.", "error")
         return redirect(url_for("contact"))
 
-# Run the test
+# # Run the test
+# if __name__ == "__main__":
+#     test_recommendation_system()
+    
 if __name__ == "__main__":
-    test_recommendation_system()
+    app.run(debug=True)

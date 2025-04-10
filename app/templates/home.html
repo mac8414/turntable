@@ -1,65 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
+{# home.html - Homepage template #}
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
-</head>
+{% block title %}Home{% endblock %}
 
-<body>
+{% block content %}
+<h2 class="search-title">Find Similar Songs</h2>
 
-    <header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
-            <div>
-                <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
-                </a>
-                <div class="tagline">Listen Different. Explore new music.</div>
-            </div>
-            <div class="nav-menu" style="font-size: 25px;">
-                <a title="Home page" href="#" onclick="location.href='/home'" style="text-decoration: underline; color: white; margin-right: 20px;">Home</a>
-                <a title="Randomize" href="#" onclick="location.href='/randomizer'" style="text-decoration: none; color: white; margin-right: 20px;">Randomizer</a>
-                <a title="Our pick for album of the week" href="#" onclick="location.href='/our-pick'" style="text-decoration: none; color: white; margin-right: 20px;">Our Pick</a>
-                <a title="About Turntable" href="#" onclick="location.href='/about'" style="text-decoration: none; color: white; margin-right: 20px;">About</a>
-                <a title="Get in touch with us" href="#" onclick="location.href='/contact'" style="text-decoration: none; color: white; margin-right: 20px;">Contact</a>
-            </div>
-        </div>
-    </header>
+<!-- SEARCH BAR -->
+<div class="search-container">
+    <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." />
+    <div id="searchResults" class="search-results"></div>
+</div>
 
-    <main>
-        <aside class="sidebarL" style="border-radius: 10px;">
-            <!-- <h3>Left Sidebar</h3> -->
-            <!-- <p>This is space is for ads.</p> -->
-        </aside>
-        <section class="content">
-            <h2 class="search-title">Find Similar Songs</h2>
-        
-            <!-- SEARCH BAR -->
-            <div class="search-container">
-                <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." />
-                <div id="searchResults" class="search-results"></div>
-            </div>
+<!-- RECOMMENDATION RESULTS -->
+<div class="recommendationBox" style="margin-top: 40px;"></div>
+{% endblock %}
 
-            <!-- RECOMMENDATION RESULTS -->
-            <div class="recommendationBox" style="margin-top: 40px;"></div>
-
-        </section>
-        
-        <aside class="sidebarR" style="border-radius: 10px;">
-            <!-- <h3>Right Sidebar</h3> -->
-            <!-- <p>This is space is for ads.</p> -->
-        </aside>
-    </main>
-
-    <footer>
-        <p>&copy; 2025 Turntable. All rights reserved.</p>
-        <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
-    </footer>
-    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
-</body>
-
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
