@@ -822,8 +822,8 @@ def contact_help():
         return redirect(url_for("contact"))
 
 # # Run the test
-# if __name__ == "__main__":
-#     test_recommendation_system()
-    
 if __name__ == "__main__":
-    app.run(debug=True)
+    test_recommendation_system()
+    
+# if __name__ == "__main__":
+#     app.run(debug=True)
