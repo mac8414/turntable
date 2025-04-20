@@ -284,7 +284,7 @@ class MusicRecommender:
         all_tracks = artist_tracks + similar_tracks
         
         # Filter out tracks with unwanted keywords
-        unwanted_keywords = ["extended", "remix", "live", "single"]
+        unwanted_keywords = ["extended", "remix", "live", "single", "remastered"]
         filtered_tracks = [
             track for track in all_tracks
             if not any(keyword in track.title.lower() for keyword in unwanted_keywords)
