@@ -1,6 +1,8 @@
 import os
 import tempfile
 import logging
+import urllib.parse
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Dict, Any
@@ -281,9 +283,16 @@ class MusicRecommender:
         
         all_tracks = artist_tracks + similar_tracks
         
+        # Filter out tracks with unwanted keywords
+        unwanted_keywords = ["extended", "remix", "live", "single"]
+        filtered_tracks = [
+            track for track in all_tracks
+            if not any(keyword in track.title.lower() for keyword in unwanted_keywords)
+        ]
+        
         # Process all tracks in parallel
         with ThreadPoolExecutor(max_workers=5) as executor:
-            processed_tracks = list(executor.map(self.process_track, all_tracks))
+            processed_tracks = list(executor.map(self.process_track, filtered_tracks))
         
         # Filter out tracks without features
         valid_tracks = [track for track in processed_tracks if track.features is not None]
@@ -312,6 +321,43 @@ class MusicRecommender:
         # Return top recommendations
         return valid_tracks[:FINAL_RECOMMENDATIONS_COUNT]
 
+def clean_track_name(track_name: str) -> str:
+    """
+    Cleans the track name by removing unwanted text like "(explicit version)"
+    and normalizing whitespace.
+    """
+    # Remove text in parentheses (e.g., "(explicit version)", "(Extended Remix)")
+    cleaned_name = re.sub(r"\(.*?\)", "", track_name)
+    # Normalize whitespace
+    cleaned_name = re.sub(r"\s+", " ", cleaned_name).strip()
+    return cleaned_name
+
+def clean_artist_name(artist_name: str) -> str:
+    """
+    Cleans the artist name by normalizing whitespace.
+    """
+    # Normalize whitespace
+    return re.sub(r"\s+", " ", artist_name).strip()
+
+def get_spotify_search_link(track_name: str, artist_name: str) -> str:
+    """
+    Generates a Spotify search link for the given track and artist.
+    """
+    cleaned_track_name = clean_track_name(track_name)
+    cleaned_artist_name = clean_artist_name(artist_name)
+    query = f"{cleaned_track_name} {cleaned_artist_name}"
+    encoded_query = urllib.parse.quote(query)
+    return f"https://open.spotify.com/search/{encoded_query}"
+
+def get_apple_music_search_link(track_name: str, artist_name: str) -> str:
+    """
+    Generates an Apple Music search link for the given track and artist.
+    """
+    cleaned_track_name = clean_track_name(track_name)
+    cleaned_artist_name = clean_artist_name(artist_name)
+    query = f"{cleaned_track_name} {cleaned_artist_name}"
+    encoded_query = urllib.parse.quote(query)
+    return f"https://music.apple.com/us/search?term={encoded_query}"
 
 def main():
     try:
@@ -324,10 +370,12 @@ def main():
         print(f"\nTop {len(recommendations)} Recommendations for '{track_name}' by '{artist_name}':")
         for i, rec in enumerate(recommendations, start=1):
             print(f"{i}. {rec} (Similarity Score: {rec.similarity_score:.4f})")
+            print(get_spotify_search_link(rec.title, rec.artist_name))
+            print(get_apple_music_search_link(rec.title, rec.artist_name))
+            print()
             
     except Exception as e:
         logger.error(f"An error occurred in the main function: {e}")
-
 
 if __name__ == "__main__":
     main()
