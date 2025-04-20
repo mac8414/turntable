@@ -284,11 +284,21 @@ class MusicRecommender:
         all_tracks = artist_tracks + similar_tracks
         
         # Filter out tracks with unwanted keywords
-        unwanted_keywords = ["extended", "remix", "live", "single", "remastered"]
-        filtered_tracks = [
-            track for track in all_tracks
-            if not any(keyword in track.title.lower() for keyword in unwanted_keywords)
-        ]
+        unwanted_keywords = ["extended", "remix", "live", "single"]
+        filtered_tracks = []
+        for track in all_tracks:
+            # Exclude "remastered" only for the queried song
+            if (track.title.lower() == track_name.lower() and 
+                track.artist_name.lower() == artist_name.lower() and 
+                "remastered" in track.title.lower()):
+                continue
+
+            # Exclude tracks with other unwanted keywords
+            if any(keyword in track.title.lower() for keyword in unwanted_keywords):
+                continue
+
+            # Allow "remastered" for other songs
+            filtered_tracks.append(track)
         
         # Process all tracks in parallel
         with ThreadPoolExecutor(max_workers=5) as executor:
