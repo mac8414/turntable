@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 DEFAULT_PREVIEW_FILENAME = "preview.mp3"
-TOP_RECOMMENDATIONS_COUNT = 50
-SIMILAR_RECOMMENDATIONS_COUNT = 50
+TOP_RECOMMENDATIONS_COUNT = 25
+SIMILAR_RECOMMENDATIONS_COUNT = 25
 FINAL_RECOMMENDATIONS_COUNT = 5
 
 
@@ -141,6 +141,43 @@ class DeezerClient:
             logger.error(f"Error getting similar artist tracks: {e}")
             return tracks
 
+    def get_artist_radio(self, track_name: str, artist_name: str, limit: int = 50) -> List[Track]:
+        """Gets tracks from the artist's radio."""
+        tracks = []
+        artist_id = self.get_artist_id(track_name, artist_name)
+        
+        if not artist_id:
+            return tracks
+        
+        try:
+            url = f"https://api.deezer.com/artist/{artist_id}/radio"
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for HTTP issues
+            data = response.json()
+            
+            for track_data in data.get("data", [])[:limit]:
+                track_id = track_data.get("id")
+                preview_url = track_data.get("preview")
+                
+                # If preview URL is missing, try to fetch it directly
+                if not preview_url and track_id:
+                    preview_url = self.get_track_preview(track_id)
+                
+                # Only add tracks that have a preview URL
+                if preview_url:
+                    tracks.append(Track(
+                        id=track_id,
+                        title=track_data.get("title"),
+                        artist_name=track_data.get("artist", {}).get("name", "Unknown Artist"),
+                        preview_url=preview_url
+                    ))
+                else:
+                    logger.debug(f"Skipping track without preview: {track_data.get('title')}")
+            
+            return tracks
+        except (requests.RequestException, ValueError, KeyError) as e:
+            logger.error(f"Error fetching artist radio: {e}")
+            return tracks
 
 class AudioProcessor:
     @staticmethod
@@ -261,13 +298,13 @@ class MusicRecommender:
         return track
     
     def get_recommendations(self, track_name: str, artist_name: str) -> List[Track]:
-        """Gets and processes music recommendations."""
+        """Gets and processes music recommendations based on audio feature similarity."""
         # First, process the reference track to get its features
         track_id = self.deezer_client.search_track(track_name, artist_name)
         if not track_id:
             logger.error(f"Could not find reference track: {track_name} by {artist_name}")
             return []
-            
+        
         reference_track = Track(id=track_id, title=track_name, artist_name=artist_name)
         reference_track = self.process_track(reference_track)
         
@@ -275,34 +312,97 @@ class MusicRecommender:
             logger.error("Could not extract features from reference track")
             return []
         
-        # Get recommendations from the same artist and similar artists
-        artist_tracks = self.deezer_client.get_artist_top_tracks(
-            track_name, artist_name, limit=TOP_RECOMMENDATIONS_COUNT)
-        similar_tracks = self.deezer_client.get_similar_artist_tracks(
-            track_name, artist_name, limit=SIMILAR_RECOMMENDATIONS_COUNT)
+        # Get recommendations from various sources with balanced distribution
+        logger.info(f"Fetching recommendations for {track_name} by {artist_name}")
         
-        all_tracks = artist_tracks + similar_tracks
+        # Calculate distribution for different recommendation sources
+        artist_limit = TOP_RECOMMENDATIONS_COUNT // 4
+        similar_limit = TOP_RECOMMENDATIONS_COUNT // 2
+        radio_limit = TOP_RECOMMENDATIONS_COUNT // 4
         
-        # Filter out tracks with unwanted keywords
-        unwanted_keywords = ["extended", "remix", "live", "single"]
+        # Fetch recommendations in parallel for better performance
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            artist_future = executor.submit(self.deezer_client.get_artist_top_tracks, 
+                                        track_name, artist_name, limit=artist_limit)
+            similar_future = executor.submit(self.deezer_client.get_similar_artist_tracks, 
+                                            track_name, artist_name, limit=similar_limit)
+            radio_future = executor.submit(self.deezer_client.get_artist_radio, 
+                                        track_name, artist_name, limit=radio_limit)
+            
+            # Collect results
+            artist_tracks = artist_future.result()
+            similar_tracks = similar_future.result()
+            radio_tracks = radio_future.result()
+        
+        # Log recommendation sources for debugging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Found {len(artist_tracks)} artist tracks, {len(similar_tracks)} similar tracks, {len(radio_tracks)} radio tracks")
+            
+            for i, track in enumerate(artist_tracks[:3], 1):
+                logger.debug(f"Artist track {i}: {track.title} by {track.artist_name}")
+            for i, track in enumerate(similar_tracks[:3], 1):
+                logger.debug(f"Similar track {i}: {track.title} by {track.artist_name}")
+            for i, track in enumerate(radio_tracks[:3], 1):
+                logger.debug(f"Radio track {i}: {track.title} by {track.artist_name}")
+        
+        all_tracks = artist_tracks + similar_tracks + radio_tracks
+        
+        # Enhanced filtering logic
+        unwanted_keywords = ["extended", "remix", "live", "instrumental", "karaoke", "acoustic", "cover"]
         filtered_tracks = []
+        excluded_count = 0
+        
         for track in all_tracks:
-            # Exclude "remastered" only for the queried song
+            # Skip exact matches to the reference track
             if (track.title.lower() == track_name.lower() and 
-                track.artist_name.lower() == artist_name.lower() and 
-                "remastered" in track.title.lower()):
+                track.artist_name.lower() == artist_name.lower()):
+                excluded_count += 1
                 continue
-
-            # Exclude tracks with other unwanted keywords
+                
+            # Skip variations of the reference track (like remasters)
+            if (track.title.lower().startswith(track_name.lower()) and 
+                track.artist_name.lower() == artist_name.lower() and
+                any(keyword in track.title.lower() for keyword in ["remaster", "version", "edit"])):
+                excluded_count += 1
+                continue
+                
+            # Skip tracks with unwanted keywords
             if any(keyword in track.title.lower() for keyword in unwanted_keywords):
+                excluded_count += 1
                 continue
-
-            # Allow "remastered" for other songs
+                
+            # Track passes all filters
             filtered_tracks.append(track)
         
-        # Process all tracks in parallel
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            processed_tracks = list(executor.map(self.process_track, filtered_tracks))
+        logger.info(f"Filtered out {excluded_count} tracks, {len(filtered_tracks)} remaining")
+        
+        # Deduplicate tracks based on track ID
+        track_dict = {}
+        for track in filtered_tracks:
+            track_dict[track.id] = track
+        filtered_tracks = list(track_dict.values())
+        
+        logger.info(f"After deduplication: {len(filtered_tracks)} unique tracks")
+        
+        # Ensure we have enough tracks to process
+        if len(filtered_tracks) < FINAL_RECOMMENDATIONS_COUNT:
+            logger.warning(f"Not enough filtered tracks ({len(filtered_tracks)}), fetching additional recommendations")
+            # If we don't have enough tracks, try getting more from similar artists with relaxed filters
+            additional_tracks = self.deezer_client.get_similar_artist_tracks(
+                track_name, artist_name, limit=SIMILAR_RECOMMENDATIONS_COUNT)
+            
+            # Add new tracks that aren't duplicates
+            for track in additional_tracks:
+                if track.id not in track_dict:
+                    filtered_tracks.append(track)
+                    track_dict[track.id] = track
+        
+        # Process tracks in parallel with a process pool for CPU-intensive feature extraction
+        if filtered_tracks:
+            with ThreadPoolExecutor(max_workers=min(8, len(filtered_tracks))) as executor:
+                processed_tracks = list(executor.map(self.process_track, filtered_tracks))
+        else:
+            processed_tracks = []
         
         # Filter out tracks without features
         valid_tracks = [track for track in processed_tracks if track.features is not None]
@@ -315,21 +415,54 @@ class MusicRecommender:
         feature_list = [track.features for track in valid_tracks]
         similarities = self.audio_processor.calculate_similarity(reference_track.features, feature_list)
         
-        # Assign similarity scores
+        # Assign similarity scores and add source info for debugging
         for track, score in zip(valid_tracks, similarities):
             track.similarity_score = score
-        
-        # Filter out the input track from the recommendations
-        valid_tracks = [
-            track for track in valid_tracks
-            if not (track.title.lower() == track_name.lower() and track.artist_name.lower() == artist_name.lower())
-        ]
+            
+            # Determine the source for logging purposes
+            source = "unknown"
+            if track in artist_tracks:
+                source = "artist"
+            elif track in similar_tracks:
+                source = "similar"
+            elif track in radio_tracks:
+                source = "radio"
+            
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Track '{track.title}' by {track.artist_name} from {source} source has similarity score: {score:.4f}")
         
         # Sort by similarity score (descending)
         valid_tracks.sort(key=lambda x: x.similarity_score, reverse=True)
         
-        # Return top recommendations
-        return valid_tracks[:FINAL_RECOMMENDATIONS_COUNT]
+        # Ensure diversity in final recommendations (at least one from each source if possible)
+        final_recommendations = []
+        source_counts = {"artist": 0, "similar": 0, "radio": 0}
+        
+        # First, try to include at least one track from each source
+        for source in ["artist", "similar", "radio"]:
+            for track in valid_tracks:
+                if track in locals()[f"{source}_tracks"] and track not in final_recommendations:
+                    final_recommendations.append(track)
+                    source_counts[source] += 1
+                    break
+        
+        # Then fill the remaining slots with the highest similarity scores
+        remaining_slots = FINAL_RECOMMENDATIONS_COUNT - len(final_recommendations)
+        if remaining_slots > 0:
+            # Add remaining tracks by similarity score, skipping those already included
+            for track in valid_tracks:
+                if track not in final_recommendations:
+                    final_recommendations.append(track)
+                    remaining_slots -= 1
+                    if remaining_slots == 0:
+                        break
+        
+        # Log final recommendation sources
+        if logger.isEnabledFor(logging.INFO):
+            logger.info(f"Final recommendations include {source_counts['artist']} artist tracks, "
+                    f"{source_counts['similar']} similar artist tracks, and {source_counts['radio']} radio tracks")
+        
+        return final_recommendations[:FINAL_RECOMMENDATIONS_COUNT]
 
 def clean_track_name(track_name: str) -> str:
     """
@@ -379,7 +512,7 @@ def main():
         
         print(f"\nTop {len(recommendations)} Recommendations for '{track_name}' by '{artist_name}':")
         for i, rec in enumerate(recommendations, start=1):
-            print(f"{i}. {rec} (Similarity Score: {rec.similarity_score:.4f})")
+            print(f"{i}. {rec} (Similarity Score: {rec.similarity_score * 100:.2f}%)")
             print(get_spotify_search_link(rec.title, rec.artist_name))
             print(get_apple_music_search_link(rec.title, rec.artist_name))
             print()
