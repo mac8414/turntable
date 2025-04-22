@@ -252,7 +252,7 @@ class AudioProcessor:
     @staticmethod
     def calculate_similarity(reference_features: np.ndarray, comparison_features: List[np.ndarray]) -> List[float]:
         """Calculates cosine similarity between reference features and a list of comparison features."""
-        if not comparison_features:
+        if not comparison_features or len(comparison_features) == 0:
             return []
             
         # Stack all comparison features into a 2D array
@@ -287,14 +287,16 @@ class MusicRecommender:
             temp_file = self.audio_processor.download_audio(track.preview_url)
             if temp_file:
                 features = self.audio_processor.extract_audio_features(temp_file)
-                if features is not None:
+                if features is not None and features.size > 0:
                     track.features = features
+                else:
+                    logger.warning(f"Invalid features extracted for track: {track}")
         except Exception as e:
             logger.error(f"Error processing track {track}: {e}")
         finally:
             if temp_file and os.path.exists(temp_file):
                 os.remove(temp_file)
-                
+            
         return track
     
     def get_recommendations(self, track_name: str, artist_name: str) -> List[Track]:
@@ -316,9 +318,9 @@ class MusicRecommender:
         logger.info(f"Fetching recommendations for {track_name} by {artist_name}")
         
         # Calculate distribution for different recommendation sources
-        artist_limit = TOP_RECOMMENDATIONS_COUNT // 4
-        similar_limit = TOP_RECOMMENDATIONS_COUNT // 2
-        radio_limit = TOP_RECOMMENDATIONS_COUNT // 4
+        artist_limit = TOP_RECOMMENDATIONS_COUNT 
+        similar_limit = TOP_RECOMMENDATIONS_COUNT 
+        radio_limit = TOP_RECOMMENDATIONS_COUNT 
         
         # Fetch recommendations in parallel for better performance
         with ThreadPoolExecutor(max_workers=3) as executor:
