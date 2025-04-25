@@ -1,10 +1,6 @@
 from flask import Flask, flash, render_template, jsonify, request, redirect, url_for
-import random
 import os
 import requests
-from io import BytesIO
-from PIL import Image
-from colorthief import ColorThief
 from flask_mail import Mail, Message
 import logging
 from flask_compress import Compress
