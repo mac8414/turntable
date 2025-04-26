@@ -3,6 +3,9 @@ import os
 import requests
 from flask_mail import Mail, Message
 import logging
+import deezer
+import crud
+from crud import MusicRecommender
 from flask_compress import Compress
 
 # Configure logging
@@ -105,6 +108,60 @@ def contact_help():
         logger.error(f"Email sending failed: {e}")
         flash("There was an error sending your message. Please try again.", "error")
         return redirect(url_for("contact"))
+
+@app.route('/api/search', methods=['POST'])
+def api_search():
+    data = request.get_json()
+    query = data.get('query')
+
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    client = deezer.Client()
+    try:
+        results = client.search(query)
+        tracks = [
+            {
+                "title": track.title,
+                "artist": track.artist.name,
+                "album_cover": track.album.cover_medium 
+            }
+            for track in results
+        ]
+        return jsonify({"results": tracks})
+    except Exception as e:
+        logger.error(f"API search failed: {e}")
+        return jsonify({"error": "Search failed"}), 500
+
+@app.route('/api/recommend', methods=['POST'])
+def recommend():
+    data = request.get_json()
+    track_name = data.get('track_name')
+    artist_name = data.get('artist_name')
+
+    if not track_name or not artist_name:
+        return jsonify({"error": "Missing track or artist name"}), 400
+
+    try:
+        recommender = MusicRecommender()
+        recommendations = recommender.get_recommendations(track_name, artist_name)
+
+        recommendations.sort(key=lambda x: x.similarity_score, reverse=True)
+
+        results = []
+        for track in recommendations:
+            results.append({
+                "title": track.title,
+                "artist": track.artist_name,
+                "similarity_score": round(track.similarity_score * 100, 2) 
+            })
+
+        return jsonify({"recommendations": results})
+
+    except Exception as e:
+        logger.error(f"Recommendation error: {e}")
+        return jsonify({"error": "Recommendation failed"}), 500
+
 
 # # Run the test    
 if __name__ == "__main__":
