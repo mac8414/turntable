@@ -1,6 +1,6 @@
 # Contributers
 
-McKay Hunter, Rasim Crnica, Zach Ainge
+McKay Hunter, Rasim Crnica
 
 Start Date: February 3rd, 2025
 End of Version 1 production: March 11th,  2025
