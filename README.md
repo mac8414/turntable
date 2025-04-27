@@ -1,9 +1,9 @@
 # Contributers
 
-McKay Hunter & Rasim Crnica
+McKay Hunter, Rasim Crnica, Zach Ainge
 
 Start Date: February 3rd, 2025
-End of Version 1 production:
+End of Version 1 production: March 11th, 2025
 
 # Turntable
 
