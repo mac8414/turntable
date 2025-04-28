@@ -406,17 +406,12 @@ class MusicRecommender:
             with ThreadPoolExecutor(max_workers=min(8, len(filtered_tracks))) as executor:
                 processed_tracks = list(executor.map(self.process_track, filtered_tracks))
         
-<<<<<<< HEAD
         # Filter out tracks without features - explicit check for None and empty arrays
         valid_tracks = []
         for track in processed_tracks:
             if track.features is not None and track.features.size > 0:
                 valid_tracks.append(track)
-=======
-        # Filter out tracks without features
-        valid_tracks = [track for track in processed_tracks if track.features is not None and track.features.size > 0]
->>>>>>> bdafd8a94707ca737391575414559978b867a293
-        
+        # Filter out tracks without features 
         if not valid_tracks:
             logger.warning("No valid tracks with features found")
             return []
