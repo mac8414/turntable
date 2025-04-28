@@ -310,7 +310,8 @@ class MusicRecommender:
         reference_track = Track(id=track_id, title=track_name, artist_name=artist_name)
         reference_track = self.process_track(reference_track)
         
-        if reference_track.features is None:
+        # Explicitly check if reference track features exist and are valid
+        if reference_track.features is None or reference_track.features.size == 0:
             logger.error("Could not extract features from reference track")
             return []
         
@@ -400,14 +401,16 @@ class MusicRecommender:
                     track_dict[track.id] = track
         
         # Process tracks in parallel with a process pool for CPU-intensive feature extraction
+        processed_tracks = []
         if filtered_tracks:
             with ThreadPoolExecutor(max_workers=min(8, len(filtered_tracks))) as executor:
                 processed_tracks = list(executor.map(self.process_track, filtered_tracks))
-        else:
-            processed_tracks = []
         
-        # Filter out tracks without features
-        valid_tracks = [track for track in processed_tracks if track.features is not None]
+        # Filter out tracks without features - explicit check for None and empty arrays
+        valid_tracks = []
+        for track in processed_tracks:
+            if track.features is not None and track.features.size > 0:
+                valid_tracks.append(track)
         
         if not valid_tracks:
             logger.warning("No valid tracks with features found")
@@ -419,7 +422,7 @@ class MusicRecommender:
         
         # Assign similarity scores and add source info for debugging
         for track, score in zip(valid_tracks, similarities):
-            track.similarity_score = score
+            track.similarity_score = float(score)  # Ensure score is a Python float, not NumPy type
             
             # Determine the source for logging purposes
             source = "unknown"
@@ -442,8 +445,10 @@ class MusicRecommender:
         
         # First, try to include at least one track from each source
         for source in ["artist", "similar", "radio"]:
+            source_tracks = locals()[f"{source}_tracks"]
             for track in valid_tracks:
-                if track in locals()[f"{source}_tracks"] and track not in final_recommendations:
+                # Use explicit check for membership without relying on __eq__
+                if any(t.id == track.id for t in source_tracks) and not any(r.id == track.id for r in final_recommendations):
                     final_recommendations.append(track)
                     source_counts[source] += 1
                     break
@@ -453,7 +458,7 @@ class MusicRecommender:
         if remaining_slots > 0:
             # Add remaining tracks by similarity score, skipping those already included
             for track in valid_tracks:
-                if track not in final_recommendations:
+                if not any(r.id == track.id for r in final_recommendations):
                     final_recommendations.append(track)
                     remaining_slots -= 1
                     if remaining_slots == 0:
