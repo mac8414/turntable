@@ -287,7 +287,7 @@ class MusicRecommender:
             temp_file = self.audio_processor.download_audio(track.preview_url)
             if temp_file:
                 features = self.audio_processor.extract_audio_features(temp_file)
-                if features is not None and features.size > 0:
+                if features is not None and features.size > 0:  # Explicitly check size
                     track.features = features
                 else:
                     logger.warning(f"Invalid features extracted for track: {track}")
@@ -296,7 +296,7 @@ class MusicRecommender:
         finally:
             if temp_file and os.path.exists(temp_file):
                 os.remove(temp_file)
-            
+        
         return track
     
     def get_recommendations(self, track_name: str, artist_name: str) -> List[Track]:
@@ -406,11 +406,16 @@ class MusicRecommender:
             with ThreadPoolExecutor(max_workers=min(8, len(filtered_tracks))) as executor:
                 processed_tracks = list(executor.map(self.process_track, filtered_tracks))
         
+<<<<<<< HEAD
         # Filter out tracks without features - explicit check for None and empty arrays
         valid_tracks = []
         for track in processed_tracks:
             if track.features is not None and track.features.size > 0:
                 valid_tracks.append(track)
+=======
+        # Filter out tracks without features
+        valid_tracks = [track for track in processed_tracks if track.features is not None and track.features.size > 0]
+>>>>>>> bdafd8a94707ca737391575414559978b867a293
         
         if not valid_tracks:
             logger.warning("No valid tracks with features found")
@@ -426,7 +431,7 @@ class MusicRecommender:
             
             # Determine the source for logging purposes
             source = "unknown"
-            if track in artist_tracks:
+            if any(track.id == t.id for t in artist_tracks):
                 source = "artist"
             elif track in similar_tracks:
                 source = "similar"
