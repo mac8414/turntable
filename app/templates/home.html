@@ -1,21 +1,930 @@
-{# home.html - Homepage template #}
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Recommendation Turntable</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Special+Gothic+Expanded+One&display=swap');
 
-{% block title %}Home{% endblock %}
+        body {
+            font-family: "Arial", sans-serif;
+            background-color: #ffffff;
+            background-image: radial-gradient(circle at 5px 5px, rgba(255, 150, 0, 0.9) 60%, #000000 60%);
+            background-size: 500px 500px;
+            background-repeat: repeat;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: auto;
+            
+            /* Animation */
+            animation: moveBackground 20s linear infinite;
+        }
 
-{% block content %}
-<h2 class="search-title">Find Similar Songs</h2>
+        @keyframes moveBackground {
+            0% {
+              background-position: 0% 100%; /* bottom-left */
+            }
+            100% {
+              background-position: 100% 0%; /* top-right */
+            }
+        }          
+        
+        .container {
+            max-width: 750px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-family: "Special Gothic Expanded One", sans-serif;
+            font-weight: 700;
+            font-style: italic;
+            font-size: 2.5rem;
+            color: #FE9900;
+            margin: 0px;
+        }
 
-<!-- SEARCH BAR -->
-<div class="search-container">
-    <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." />
-    <div id="searchResults" class="search-results"></div>
-</div>
+        p {
 
-<!-- RECOMMENDATION RESULTS -->
-<div class="recommendationBox" style="margin-top: 40px;"></div>
-{% endblock %}
+        }
+        
+        .turntable {
+            width: auto;
+            max-width: 900px;
+            padding: 2%;
+            background-color: rgba(255, 150, 0, 0.3); /* semi-transparent white */
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }        
+        
+        .turntable-deck {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: nowrap;
+            width: 100%;
+        }
+        
+        
+        .record-player {
+            flex-shrink: 0;
+            width: 400px;
+            height: 400px;
+            position: relative;
+        }      
+        
+        .record-base {
+            width: 100%;
+            height: 100%;
+            background-color: #222;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .record {
+            width: 95%;
+            height: 95%;
+            background-color: #111;
+            border-radius: 50%;
+            position: absolute;
+            top: 2.5%;
+            left: 2.5%;
+            animation: spin 10s linear infinite paused;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .record.playing {
+            animation-play-state: running;
+        }
+        
+        .record::after {
+            content: '';
+            width: 5%;
+            height: 5%;
+            background-color: #000000;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
+        }
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/home.js') }}"></script>
-{% endblock %}
+        .record::before {
+            content: '';
+            width: 15%;
+            height: 15%;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
+        }
+        
+        .record-grooves {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 75%;
+            background: repeating-radial-gradient(
+                circle at center,
+                #111,
+                #111 1px,
+                #222 1px,
+                #222 2px
+            );
+        }
+        
+        .album-cover {
+            width: 55%;
+            height: 55%;
+            border-radius: 50%;
+            border: solid 5px #ff8530;
+            position: absolute;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .album-cover-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .record-arm {
+            position: absolute;
+            width: 150px;
+            height: 10px;
+            background-color: #555;
+            top: 50px;
+            right: -30px;
+            transform-origin: right center;
+            transform: rotate(-90deg);
+            z-index: 50;
+            border-radius: 5px;
+            transition: transform 0.5s ease;
+        }
+        
+        .record-arm::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #666;
+            border-radius: 25%;
+            left: 0;
+            top: 0;
+        }
+        
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            width: 120px;
+        }
+        
+        .knob {
+            width: 70px;
+            height: 70px;
+            background-color: #444;
+            border-radius: 50%;
+            border: solid 5px #333;
+            position: relative;
+            cursor: grab;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            transition: transform 0.1s ease-out;
+            margin: 5px;
+        }
+
+        .knob-active {
+            cursor: grabbing;
+            transform-origin: center !important;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        }
+        
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            width: 2px;
+            height: 20%;
+            background-color: white;
+            transform: translateX(-50%);
+        }
+        
+        .knob-label {
+            font-size: 0.9rem;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .knob-value {
+            background-color: white;
+            border: solid 2px #FE9900;
+            color: #FE9900;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: bold;
+            height: 1rem;
+            padding: 5px 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            width: 120px;
+        }
+
+        .knob-container button{
+            padding: 5px 20px;
+            background-color: white;
+            color: #FE9900;
+            border: outset 2px #FE9900;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .knob-container button:hover{
+            transform: scale(1.1);
+            background-color: white
+        }
+        
+        .search-container {
+            width: 100%;
+            margin: 20px auto 0;
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        .search-input-container {
+            position: relative;
+        }
+        
+        .search-input {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 100px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Slider control */
+        .slider-vertical-container {
+            flex-shrink: 0;
+            height: 300px;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .recommendation-slider-vertical {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 300px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            outline: none;
+            margin: 0;
+            position: absolute;
+            transform: rotate(270deg);
+            transform-origin: center;
+        }
+        
+        .recommendation-slider-vertical::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 40px;
+            background: #444;
+            border: inset 2px #666;
+            cursor: grab;
+        }
+
+        .slider-ticks {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            right: 50px;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Style for individual tick marks */
+        .slider-tick {
+            width: 15px;
+            height: 3px;
+            background-color: #fff;
+            margin: 5px;
+        }
+        
+        .slider-value {
+            background-color: white;
+            border: solid 2px #FE9900;
+            color: #FE9900;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 1rem;
+            margin-top: 5px;
+            position: absolute;
+            bottom: -30px;
+            width: 75%;
+        }
+
+        #searchResults {
+            position: absolute;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #333;
+            border-radius: 5px;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+        
+        .searchResultItem {
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .searchResultItem:hover {
+            background-color: #444;
+        }
+        
+        .recommendations {
+            background-color: rgba(255, 0, 0, 0.0);
+            border-radius: 10px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+            opacity: 0;
+        }
+        
+        .recommendations.show {
+            max-height: 1000px;
+            opacity: 1; 
+        }
+        
+        .recommendation-list {
+            list-style: none;
+            padding: 10px 0 0 0;
+        }
+        
+        .recommendation-item {
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: start;
+            border-radius: 0 15px 15px 0;
+            border: 1px solid #333;
+            margin-top: 5px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        .recommendation-cover {
+            width: 100px;
+            height: 100px;
+            background-color: #333;
+            border-radius: 0;
+            overflow: hidden;
+        }
+        
+        .recommendation-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .recommendation-info {
+            flex: 1;
+        }
+        
+        .recommendation-title {
+            margin: 10px;
+            font-weight: bold;
+        }
+        
+        .recommendation-artist {
+            margin: 10px;
+            color: #aaa;
+        }
+        
+        .recommendation-match {
+            margin: 10px;
+            background-color: #ff8530;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* Center play control */
+        .play-control-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .turntable-deck {
+                flex-direction: column;
+            }
+            
+            .record-player {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .slider-vertical-container {
+                height: 200px;
+                margin-top: 20px;
+            }
+            
+            .recommendation-slider-vertical {
+                width: 200px;
+            }
+            
+            .slider-labels-vertical {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>T u r n t a b le</h1>
+            <p><em>We don't just find songs - we find favorites<em></p>
+        </div>
+        
+        <div class="turntable">
+            <div class="turntable-deck">
+                <!-- Record player -->
+                <div class="record-player">
+                    <div class="record-base"></div>
+                    <div class="record" id="record">
+                        <div class="record-grooves"></div>
+                        <div class="album-cover" id="albumCover">
+                            <div class="album-cover-placeholder">Album art will appear here</div>
+                        </div>
+                    </div>
+                    <div class="record-arm" id="recordArm"></div>
+                </div>
+
+                <div class="control-right">
+                    <div class="control-panel">
+                        <div class="knob-container">
+                            <div>
+                                <button>⏹</button>
+                                <button>▶</button>
+                            </div>
+                        </div>
+
+                        <div class="knob-container">
+                            <div class="knob-label">Time Frame</div>
+                            <div class="knob" id="timeframeKnob" data-value="0"></div>
+                            <div class="knob-value" id="timeframeValue">Any</div>
+                        </div>
+                        
+                        <div class="knob-container">
+                            <div class="knob-label">Genre</div>
+                            <div class="knob" id="genreKnob" data-value="0"></div>
+                            <div class="knob-value" id="genreValue">Any</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slider-vertical-container">
+                    <!-- Added tick marks -->
+                    <div class="slider-ticks">
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                        <div class="slider-tick"></div>
+                    </div>
+                    <input type="range" min="1" max="10" value="5" class="recommendation-slider-vertical" id="recommendationSlider">
+                    <div class="slider-value" id="sliderValue">5</div>
+                </div>
+
+            </div>
+            <!-- SEARCH BAR -->
+            <div class="search-container">
+                <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." />
+                <div id="searchResults" class="search-results"></div>
+            </div>
+        </div>
+        
+        <!-- RECOMMENDATION RESULTS -->
+        <div class="recommendationBox" style="margin-top: 40px;"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('songSearch');
+            const searchResults = document.getElementById('searchResults');
+            const albumCover = document.getElementById('albumCover');
+            const record = document.getElementById('record');
+            const recordArm = document.getElementById('recordArm');
+            const recommendationBox = document.querySelector('.recommendationBox');
+            
+            // Knob controls - only timeframe and genre remain
+            const timeframeKnob = document.getElementById('timeframeKnob');
+            const timeframeValue = document.getElementById('timeframeValue');
+            const genreKnob = document.getElementById('genreKnob');
+            const genreValue = document.getElementById('genreValue');
+            
+            // Play/Stop buttons
+            const playButton = document.querySelector('button:nth-child(2)'); // Play button (▶)
+            const stopButton = document.querySelector('button:nth-child(1)'); // Stop button (⏹)
+            
+            // Slider
+            const recommendationSlider = document.getElementById('recommendationSlider');
+            const sliderValue = document.getElementById('sliderValue');
+            
+            let typingTimer;
+            const typingDelay = 500;
+            
+            // Timeframe options
+            const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
+            
+            // Genre options
+            const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
+            
+            // Initialize knob positions
+            function rotateKnob(knob, value, maxValue) {
+                const rotation = value * (270 / maxValue) - 135;
+                knob.style.transform = `rotate(${rotation}deg)`;
+            }
+            
+            // Initialize knobs
+            rotateKnob(timeframeKnob, timeframeKnob.dataset.value, timeframes.length - 1);
+            rotateKnob(genreKnob, genreKnob.dataset.value, genres.length - 1);
+            
+            // Update knob values
+            timeframeValue.textContent = timeframes[timeframeKnob.dataset.value];
+            genreValue.textContent = genres[genreKnob.dataset.value];
+            
+            // Set up play/stop buttons
+            playButton.addEventListener('click', () => {
+                record.classList.add('playing');
+                recordArm.style.transform = 'rotate(-15deg)';
+            });
+            
+            stopButton.addEventListener('click', () => {
+                record.classList.remove('playing');
+                recordArm.style.transform = 'rotate(-90deg)';
+            });
+            
+            // Improved knob event listeners
+            function setupKnob(knob, valueDisplay, options) {
+                let isDragging = false;
+                let startAngle = 0;
+                let startValue = 0;
+                
+                // Calculate angle between points
+                function getAngle(centerX, centerY, pointX, pointY) {
+                    return Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
+                }
+                
+                // Convert value to angle (for knob display)
+                function valueToAngle(value, maxValue) {
+                    return value * (270 / maxValue) - 135;
+                }
+                
+                // Convert angle to value
+                function angleToValue(angle, maxValue) {
+                    // Normalize angle to 0-270 range
+                    let normalizedAngle = angle + 135;
+                    if (normalizedAngle < 0) normalizedAngle += 360;
+                    if (normalizedAngle > 270) normalizedAngle = 270;
+                    
+                    return Math.round(normalizedAngle / (270 / maxValue));
+                }
+                
+                // Update knob rotation and value display
+                function updateKnob(newValue) {
+                    // Clamp value to valid range
+                    newValue = Math.max(0, Math.min(options.length - 1, newValue));
+                    
+                    // Only update if value changed
+                    if (newValue !== parseInt(knob.dataset.value)) {
+                        knob.dataset.value = newValue;
+                        rotateKnob(knob, newValue, options.length - 1);
+                        valueDisplay.textContent = options[newValue];
+                    }
+                }
+            
+                // Start dragging handler
+                knob.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // Prevent text selection
+                    
+                    const rect = knob.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    isDragging = true;
+                    startAngle = getAngle(centerX, centerY, e.clientX, e.clientY);
+                    startValue = parseInt(knob.dataset.value);
+                    
+                    document.body.style.cursor = 'grabbing';
+                    
+                    // Add visual feedback
+                    knob.classList.add('knob-active');
+                });
+                
+                // Dragging handler
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    
+                    const rect = knob.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    const currentAngle = getAngle(centerX, centerY, e.clientX, e.clientY);
+                    let angleDelta = currentAngle - startAngle;
+                    
+                    // Handle angle wrap-around
+                    if (angleDelta > 180) angleDelta -= 360;
+                    if (angleDelta < -180) angleDelta += 360;
+                    
+                    // Calculate how much this should change the value
+                    const maxAngle = 270; // Total angle range of knob (from -135 to +135)
+                    const valueChange = Math.round(angleDelta / (maxAngle / (options.length - 1)));
+                    const newValue = startValue + valueChange;
+                    
+                    updateKnob(newValue);
+                    
+                    // Important: Update the start angle to prevent snapping
+                    startAngle = currentAngle;
+                    startValue = parseInt(knob.dataset.value);
+                });
+                
+                // End dragging handler
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        document.body.style.cursor = 'default';
+                        knob.classList.remove('knob-active');
+                    }
+                });
+                
+                // Click to increment
+                knob.addEventListener('click', (e) => {
+                    if (isDragging) return; // Don't increment if we were dragging
+                    
+                    const rect = knob.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    // Determine if click was on left or right half of knob
+                    const isRightSide = e.clientX > centerX;
+                    
+                    // Current value
+                    const currentValue = parseInt(knob.dataset.value);
+                    
+                    // Increment or decrement
+                    const newValue = isRightSide 
+                        ? Math.min(currentValue + 1, options.length - 1) 
+                        : Math.max(currentValue - 1, 0);
+                    
+                    updateKnob(newValue);
+                });
+            }          
+            
+            // Set up all knobs
+            setupKnob(timeframeKnob, timeframeValue, timeframes);
+            setupKnob(genreKnob, genreValue, genres);
+            
+            // Slider event listener
+            recommendationSlider.addEventListener('input', function() {
+                sliderValue.textContent = this.value;
+            });
+            
+            // Search input event listener
+            searchInput.addEventListener('input', function() {
+                clearTimeout(typingTimer);
+                
+                const query = searchInput.value.trim();
+                
+                if (query) {
+                    // Show the loading message in search results
+                    searchResults.innerHTML = '<div class="searchResultItem">Searching...</div>';
+                    searchResults.style.display = 'block';
+                    
+                    typingTimer = setTimeout(() => {
+                        // Make an actual API call in a real implementation
+                        fetch('/api/search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ query: query })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            searchResults.innerHTML = '';
+                            
+                            // Check if the response contains results
+                            if (data.results && data.results.length > 0) {
+                                data.results.forEach(track => {
+                                    const div = document.createElement('div');
+                                    div.className = 'searchResultItem';
+                                    div.setAttribute('data-title', track.title);
+                                    div.setAttribute('data-artist', track.artist);
+                                    div.setAttribute('data-album-cover', track.album_cover);
+                                    div.innerHTML = `
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <img src="${track.album_cover}" alt="Album Cover" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
+                                            <p><strong>${track.title}</strong> by ${track.artist}</p>
+                                        </div>
+                                    `;
+                                    searchResults.appendChild(div);
+                                });
+                            } else {
+                                searchResults.innerHTML = '<div class="searchResultItem">No results found.</div>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error searching:', error);
+                            searchResults.innerHTML = '<div class="searchResultItem">Error searching. Try again.</div>';
+                        });
+                    }, typingDelay);
+                } else {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            // Hide search results when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+            
+            // Search result click handler
+            searchResults.addEventListener('click', function(event) {
+                const clicked = event.target.closest('.searchResultItem');
+                if (!clicked) return;
+                
+                const title = clicked.getAttribute('data-title');
+                const artist = clicked.getAttribute('data-artist');
+                const albumCoverUrl = clicked.getAttribute('data-album-cover');
+                
+                if (title && artist) {
+                    // Update the record player with the selected song
+                    albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
+                    searchInput.value = `${title} - ${artist}`;
+                    searchResults.style.display = 'none';
+
+                    // Start the record playing
+                    if (!record.classList.contains('playing')) {
+                        record.classList.add('playing');
+                        recordArm.style.transform = 'rotate(-15deg)';
+                    }
+                    
+                    // Get current timeframe, genre and recommendations count
+                    const timeframe = timeframes[parseInt(timeframeKnob.dataset.value)];
+                    const genre = genres[parseInt(genreKnob.dataset.value)];
+                    const count = parseInt(recommendationSlider.value);
+                    
+                    // Show loading in recommendation box
+                    recommendationBox.innerHTML = `
+                        <div class="recommendations show">
+                            <h3>Loading recommendations for ${title} by ${artist}...</h3>
+                            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
+                        </div>
+                    `;
+                    
+                    // Make the API call for recommendations
+                    fetch('/api/recommend', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            track_name: title, 
+                            artist_name: artist,
+                            timeframe: timeframe === 'Any' ? '' : timeframe,
+                            genre: genre === 'Any' ? '' : genre,
+                            count: count
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Create recommendations HTML
+                        let recHTML = `
+                            <div class="recommendations show">
+                                <h3>Recommended Songs for: ${title} by ${artist}</h3>
+                                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                                <ul class="recommendation-list">
+                        `;
+                        
+                        if (data.recommendations && data.recommendations.length > 0) {
+                            data.recommendations.forEach(rec => {
+                                recHTML += `
+                                    <li class="recommendation-item">
+                                        <div class="recommendation-cover">
+                                            <img src="${rec.album_cover || '/api/placeholder/50/50'}" alt="${rec.title}">
+                                        </div>
+                                        <div class="recommendation-info">
+                                            <h4 class="recommendation-title">${rec.title}</h4>
+                                            <p class="recommendation-artist">${rec.artist}</p>
+                                        </div>
+                                        <div class="recommendation-match">${rec.similarity_score}% match</div>
+                                    </li>
+                                `;
+                            });
+                        } else {
+                            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
+                        }
+                        
+                        recHTML += `
+                                </ul>
+                            </div>
+                        `;
+                        
+                        recommendationBox.innerHTML = recHTML;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching recommendations:', error);
+                        recommendationBox.innerHTML = `
+                            <div class="recommendations show">
+                                <h3>Error loading recommendations</h3>
+                                <p>Please try again later.</p>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
