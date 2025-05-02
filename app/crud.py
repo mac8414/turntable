@@ -254,9 +254,15 @@ class AudioProcessor:
         """Calculates cosine similarity between reference features and a list of comparison features."""
         if not comparison_features or len(comparison_features) == 0:
             return []
-            
+        
         # Stack all comparison features into a 2D array
         comparison_matrix = np.vstack(comparison_features)
+        
+        # Handle invalid values (e.g., NaN, inf) in the feature vectors
+        if not np.isfinite(reference_features).all():
+            raise ValueError("Reference features contain invalid values (NaN or inf).")
+        if not np.isfinite(comparison_matrix).all():
+            raise ValueError("Comparison features contain invalid values (NaN or inf).")
         
         # Scale features to have zero mean and unit variance
         scaler = StandardScaler()
