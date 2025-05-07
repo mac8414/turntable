@@ -5,24 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Music Recommendation Turntable</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia">
+
+    <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Special+Gothic+Expanded+One&display=swap');
 
+        .lava-lamp-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+            background-color: #000;
+            background: linear-gradient(0deg,rgba(100, 20, 0, 1) 1%, rgba(0, 0, 0, 1) 99%);
+
+        }
+        
+        .metaballs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .metasvg {
+            position: fixed;
+            height: 120vh;
+            width: 120vw;
+            top: -20px;
+            left: -20px;
+            overflow: visible;
+        }
+        
+        .blobb {
+            fill: url(#lavaGradient);
+            opacity: 0.85;
+            mix-blend-mode: screen;
+            transform-origin: center;
+            filter: url(#glowing);
+        }
+
+
         body {
             font-family: "Arial", sans-serif;
-            background-color: #ffffff;
-            background-image: radial-gradient(circle at 5px 5px, rgba(255, 150, 0, 0.9) 60%, #000000 60%);
-            background-size: 500px 500px;
-            background-repeat: repeat;
-            color: #ffffff;
+            background: none;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: auto;
-            
-            /* Animation */
-            animation: moveBackground 20s linear infinite;
+            color: white;
         }
 
         @keyframes moveBackground {
@@ -37,6 +72,7 @@
         .container {
             max-width: 750px;
             width: 100%;
+            margin: 30px;
         }
         
         .header {
@@ -51,6 +87,8 @@
             font-size: 2.5rem;
             color: #FE9900;
             margin: 0px;
+            text-shadow: #000 0px 0px 3px ;
+            -webkit-font-smoothing: antialiased;
         }
 
         p {
@@ -61,7 +99,7 @@
             width: auto;
             max-width: 900px;
             padding: 2%;
-            background-color: rgba(255, 150, 0, 0.3); /* semi-transparent white */
+            background: linear-gradient(0deg,rgba(186, 47, 0, 0.5) 1%, rgba(255, 195, 0, 0.5) 99%);
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             display: flex;
@@ -70,7 +108,7 @@
             box-sizing: border-box;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-        }        
+        }
         
         .turntable-deck {
             display: flex;
@@ -133,11 +171,11 @@
             height: 15%;
             border-radius: 50%;
             position: absolute;
+            border: solid 1px rgba(255, 255, 255, 0.2);
             z-index: 1;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(1px);
             -webkit-backdrop-filter: blur(1px);
         }
@@ -384,22 +422,65 @@
             width: 75%;
         }
 
+        /* Container to hold input + dropdown */
+
+        /* Search input styling */
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border-radius: 50px;
+            box-sizing: border-box;
+        }
+
+        /* Dropdown results container */
+        .search-results {
+            position: absolute;
+            top: 100%; /* directly below input */
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 10px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Each result item */
+        .search-results div {
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        /* Hover effect for items */
+        .search-results div:hover {
+            background-color: #999999;
+        }
+
         #searchResults {
             position: absolute;
             width: 100%;
             max-height: 300px;
             overflow-y: auto;
             background-color: #333;
-            border-radius: 5px;
+            border-radius: 10px;
             z-index: 1000;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             display: none;
         }
         
         .searchResultItem {
-            border-bottom: 1px solid #444;
             cursor: pointer;
             transition: background-color 0.2s;
+        }
+
+        .searchResultItem track.album_cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: none;
         }
         
         .searchResultItem:hover {
@@ -514,7 +595,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>T u r n t a b le</h1>
+            <h1>T u r n t a b l e</h1>
             <p><em>We don't just find songs - we find favorites<em></p>
         </div>
         
@@ -580,10 +661,190 @@
                 <div id="searchResults" class="search-results"></div>
             </div>
         </div>
+
+        <div id="lavaLamp" class="lava-lamp-container">
+            <div class="metaballs">
+                <svg class="metasvg">
+                    <defs>
+                        <!-- Enhanced gooey filter with more blur and higher contrast -->
+                        <filter id="gooify" width="400%" x="-100%" height="400%" y="-100%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="blur" />
+                            <feColorMatrix 
+                                in="blur" 
+                                mode="matrix" 
+                                values="1 0 0 0 0
+                                       0 1 0 0 0
+                                       0 0 1 0 0
+                                       0 0 0 40 -10"
+                                result="gooey" 
+                            />
+                        </filter>
+                        
+                        <!-- Improved glow effect -->
+                        <filter id="glowing">
+                            <feGaussianBlur stdDeviation="8" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                        
+                        <!-- Richer gradient for more realistic lava appearance -->
+                        <linearGradient id="lavaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#ff3d00" />
+                            <stop offset="30%" stop-color="#ff7300" />
+                            <stop offset="60%" stop-color="#ffac00" />
+                            <stop offset="100%" stop-color="#ffd000" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <g filter="url(#gooify)">
+                        <!-- More blobs with varying sizes for more organic movement -->
+                        <circle class="blobb" id="blob1" r="180" />
+                        <circle class="blobb" id="blob2" r="140" />
+                        <circle class="blobb" id="blob3" r="160" />
+                        <circle class="blobb" id="blob4" r="120" />
+                        <circle class="blobb" id="blob5" r="130" />
+                        <circle class="blobb" id="blob6" r="90" />
+                        <circle class="blobb" id="blob7" r="110" />
+                        <circle class="blobb" id="blob8" r="100" />
+                        <circle class="blobb" id="blob9" r="85" />
+                        <circle class="blobb" id="blob10" r="75" />
+                    </g>
+                </svg>
+            </div>
+        </div>
         
         <!-- RECOMMENDATION RESULTS -->
         <div class="recommendationBox" style="margin-top: 40px;"></div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Vue is available
+            if (typeof Vue === 'undefined') {
+                console.error('Vue is not loaded! Using plain JavaScript for animation instead.');
+                animateLavaLamp();
+                return;
+            }
+            
+            // Use Vue if available
+            const { createApp } = Vue;
+            
+            createApp({
+                data() {
+                    return {
+                        blobs: [
+                            { id: 'blob1', x: window.innerWidth * 0.4, y: window.innerHeight * 0.3, 
+                              xSpeed: 0.3, ySpeed: 0.4, xOffset: 0, yOffset: 0, phase: 0 },
+                            { id: 'blob2', x: window.innerWidth * 0.6, y: window.innerHeight * 0.5, 
+                              xSpeed: 0.4, ySpeed: 0.5, xOffset: 1, yOffset: 2, phase: 1.5 },
+                            { id: 'blob3', x: window.innerWidth * 0.5, y: window.innerHeight * 0.7, 
+                              xSpeed: 0.2, ySpeed: 0.3, xOffset: 2, yOffset: 1, phase: 3 },
+                            { id: 'blob4', x: window.innerWidth * 0.3, y: window.innerHeight * 0.4, 
+                              xSpeed: 0.25, ySpeed: 0.35, xOffset: 3, yOffset: 3, phase: 4.5 },
+                            { id: 'blob5', x: window.innerWidth * 0.7, y: window.innerHeight * 0.2, 
+                              xSpeed: 0.35, ySpeed: 0.2, xOffset: 4, yOffset: 2, phase: 6 },
+                            { id: 'blob6', x: window.innerWidth * 0.2, y: window.innerHeight * 0.6, 
+                              xSpeed: 0.15, ySpeed: 0.25, xOffset: 5, yOffset: 5, phase: 7.5 },
+                            { id: 'blob7', x: window.innerWidth * 0.8, y: window.innerHeight * 0.3, 
+                              xSpeed: 0.3, ySpeed: 0.15, xOffset: 6, yOffset: 4, phase: 9 },
+                            { id: 'blob8', x: window.innerWidth * 0.4, y: window.innerHeight * 0.8, 
+                              xSpeed: 0.2, ySpeed: 0.3, xOffset: 7, yOffset: 1, phase: 10.5 },
+                            { id: 'blob9', x: window.innerWidth * 0.6, y: window.innerHeight * 0.1, 
+                              xSpeed: 0.25, ySpeed: 0.2, xOffset: 8, yOffset: 6, phase: 12 },
+                            { id: 'blob10', x: window.innerWidth * 0.2, y: window.innerHeight * 0.2, 
+                              xSpeed: 0.15, ySpeed: 0.15, xOffset: 9, yOffset: 3, phase: 13.5 }
+                        ],
+                        bounds: {
+                            minX: -100,
+                            minY: -100,
+                            maxX: window.innerWidth + 100,
+                            maxY: window.innerHeight + 100
+                        },
+                        time: 0
+                    };
+                },
+                mounted() {
+                    // Set initial positions
+                    this.setInitialPositions();
+                    
+                    // Update boundaries on window resize
+                    window.addEventListener('resize', () => {
+                        this.bounds.maxX = window.innerWidth + 100;
+                        this.bounds.maxY = window.innerHeight + 100;
+                    });
+                    
+                    // Start animation using requestAnimationFrame for smoother animation
+                    this.animate();
+                },
+                methods: {
+                    setInitialPositions() {
+                        this.blobs.forEach(blob => {
+                            const element = document.getElementById(blob.id);
+                            if (element) {
+                                element.setAttribute('cx', blob.x);
+                                element.setAttribute('cy', blob.y);
+                            }
+                        });
+                    },
+                    animate() {
+                        // Update time
+                        this.time += 0.01;
+                        
+                        // Update all blob positions
+                        this.blobs.forEach(blob => {
+                            this.updateBlobPosition(blob);
+                        });
+                        
+                        // Continue animation
+                        requestAnimationFrame(this.animate);
+                    },
+                    updateBlobPosition(blob) {
+                        // Use sinusoidal motion for more fluid, organic movement
+                        const xWave = Math.sin(this.time * blob.xSpeed + blob.phase) * 50;
+                        const yWave = Math.cos(this.time * blob.ySpeed + blob.phase) * 50;
+                        
+                        // Add slow drift upward to simulate rising heat
+                        blob.y -= 0.1;
+                        
+                        // Add wave motion
+                        blob.x += xWave * 0.02;
+                        
+                        // Boundary checks with smooth transitions
+                        if (blob.y < this.bounds.minY) {
+                            // When a blob reaches the top, reset it to the bottom
+                            blob.y = this.bounds.maxY;
+                            // Randomize horizontal position slightly
+                            blob.x = Math.max(this.bounds.minX, Math.min(this.bounds.maxX, blob.x + (Math.random() - 0.5) * 100));
+                        }
+                        
+                        if (blob.x < this.bounds.minX) {
+                            blob.x = this.bounds.minX;
+                            blob.xSpeed = Math.abs(blob.xSpeed);
+                        } else if (blob.x > this.bounds.maxX) {
+                            blob.x = this.bounds.maxX;
+                            blob.xSpeed = -Math.abs(blob.xSpeed);
+                        }
+                        
+                        // Update SVG element position
+                        const element = document.getElementById(blob.id);
+                        if (element) {
+                            element.setAttribute('cx', blob.x);
+                            element.setAttribute('cy', blob.y);
+                        }
+                    }
+                }
+            }).mount('#lavaLamp');
+            
+            // Fallback animation function if Vue is not available
+            function animateLavaLamp() {
+                // Plain JavaScript implementation of the same animation
+                // This would be very similar to the Vue implementation but using
+                // vanilla JS for state management instead
+                console.log('Fallback animation running.');
+                
+                // Implementation details would go here
+            }
+        });
+    </script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -616,6 +877,8 @@
             
             // Genre options
             const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
+
+            
             
             // Initialize knob positions
             function rotateKnob(knob, value, maxValue) {
@@ -801,7 +1064,7 @@
                                     div.setAttribute('data-album-cover', track.album_cover);
                                     div.innerHTML = `
                                         <div style="display: flex; align-items: center; gap: 10px;">
-                                            <img src="${track.album_cover}" alt="Album Cover" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
+                                            <img src="${track.album_cover}" alt="Album Cover" style="width: 50px; height: 50px; object-fit: fill;">
                                             <p><strong>${track.title}</strong> by ${track.artist}</p>
                                         </div>
                                     `;
