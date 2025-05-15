@@ -305,7 +305,7 @@ class MusicRecommender:
         
         return track
     
-    def get_recommendations(self, track_name: str, artist_name: str) -> List[Track]:
+    def get_recommendations(self, track_name: str, artist_name: str, recommendations_count: int = FINAL_RECOMMENDATIONS_COUNT) -> List[Track]:
         """Gets and processes music recommendations based on audio feature similarity."""
         # First, process the reference track to get its features
         track_id = self.deezer_client.search_track(track_name, artist_name)
@@ -475,7 +475,7 @@ class MusicRecommender:
             logger.info(f"Final recommendations include {source_counts['artist']} artist tracks, "
                     f"{source_counts['similar']} similar artist tracks, and {source_counts['radio']} radio tracks")
         
-        return final_recommendations[:FINAL_RECOMMENDATIONS_COUNT]
+        return final_recommendations[:recommendations_count]
 
 def clean_track_name(track_name: str) -> str:
     """
@@ -521,7 +521,7 @@ def main():
         artist_name = input("Enter the artist name: ")
         
         recommender = MusicRecommender()
-        recommendations = recommender.get_recommendations(track_name, artist_name)
+        recommendations = recommender.get_recommendations(track_name, artist_name)  # Now works with default
         
         print(f"\nTop {len(recommendations)} Recommendations for '{track_name}' by '{artist_name}':")
         for i, rec in enumerate(recommendations, start=1):

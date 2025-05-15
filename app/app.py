@@ -138,13 +138,20 @@ def recommend():
     data = request.get_json()
     track_name = data.get('track_name')
     artist_name = data.get('artist_name')
+    recommendations_count = data.get('count')
 
     if not track_name or not artist_name:
         return jsonify({"error": "Missing track or artist name"}), 400
 
+    # Convert to int and provide a default if needed
+    try:
+        recommendations_count = int(recommendations_count)
+    except (TypeError, ValueError):
+        recommendations_count = 5  # or whatever default you want
+
     try:
         recommender = MusicRecommender()
-        recommendations = recommender.get_recommendations(track_name, artist_name)
+        recommendations = recommender.get_recommendations(track_name, artist_name, recommendations_count)
 
         recommendations.sort(key=lambda x: x.similarity_score, reverse=True)
 
