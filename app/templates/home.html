@@ -87,7 +87,7 @@
             font-size: 2.5rem;
             color: #FE9900;
             margin: 0px;
-            text-shadow: #000 0px 0px 3px ;
+            text-shadow: #220000 0px 0px 35px ;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -130,7 +130,7 @@
         .record-base {
             width: 100%;
             height: 100%;
-            background-color: #222;
+            background-color: rgba(10, 0, 0, 0.85);
             border-radius: 50%;
             position: absolute;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
@@ -184,13 +184,10 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            border-radius: 75%;
             background: repeating-radial-gradient(
                 circle at center,
-                #111,
                 #111 1px,
-                #222 1px,
-                #222 2px
+                #222 6px
             );
         }
         
@@ -261,12 +258,12 @@
         .knob {
             width: 70px;
             height: 70px;
-            background-color: #444;
+            background-color: rgba(50, 50, 50, 0.8);
             border-radius: 50%;
-            border: solid 5px #333;
+            border: solid 5px rgba(0, 0, 0, 0.3);
             position: relative;
             cursor: grab;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 15px #552000;
             user-select: none;
             transition: transform 0.1s ease-out;
             margin: 5px;
@@ -275,7 +272,7 @@
         .knob-active {
             cursor: grabbing;
             transform-origin: center !important;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+            transform: scale(1.2);
         }
         
         .knob::after {
@@ -387,8 +384,10 @@
             appearance: none;
             width: 15px;
             height: 40px;
-            background: #444;
-            border: inset 2px #666;
+            background: #333;
+            border-left: inset 2px #666;
+            border-right: inset 2px #000;
+            box-shadow: -5px 0px 10px #552000;
             cursor: grab;
         }
 
@@ -403,10 +402,11 @@
         
         /* Style for individual tick marks */
         .slider-tick {
-            width: 15px;
+            width: 12px;
             height: 3px;
             background-color: #fff;
-            margin: 5px;
+            box-shadow: -3px 0px 10px #552000;
+            margin: 7px;
         }
         
         .slider-value {
@@ -465,10 +465,16 @@
             max-height: 300px;
             overflow-y: auto;
             background-color: #333;
-            border-radius: 10px;
+            border-radius: 15px;
+            border: none;
             z-index: 1000;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             display: none;
+        }
+
+        .searchResultItem p {
+            margin: 0px;
+            padding: 5px 10px;
         }
         
         .searchResultItem {
@@ -486,24 +492,40 @@
         .searchResultItem:hover {
             background-color: #444;
         }
-        
-        .recommendations {
-            background-color: rgba(255, 0, 0, 0.0);
-            border-radius: 10px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease, opacity 0.5s ease;
-            opacity: 0;
-        }
-        
-        .recommendations.show {
+
+        .recommendations-show {
+            margin-top: 40px;
+            margin-bottom: 0px;
+            background-color: rgba(100, 100, 100, 0.5);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+            border-radius: 15px;
+            border: 1px solid #333;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             max-height: 1000px;
-            opacity: 1; 
+            opacity: 1;
+        }
+
+        .recommendations-show h3, p {
+            margin: 0 0 10px 0;
+        }
+        .recommendations-show h5 {
+            margin: 0px;
+            font-weight: normal;
         }
         
         .recommendation-list {
             list-style: none;
-            padding: 10px 0 0 0;
+            padding: 0px;
+        }
+
+        .recommendation-list ul {
+            margin-block-start: 0em;
+            margin-block-end: 0em;
+            padding-inline-start: 0px;
         }
         
         .recommendation-item {
@@ -544,14 +566,35 @@
             margin: 10px;
             color: #aaa;
         }
+
+        .recommendation-right {
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: end;
+            justify-content: end;
+        }        
         
         .recommendation-match {
-            margin: 10px;
             background-color: #ff8530;
             padding: 5px 10px;
             border-radius: 15px;
             font-size: 0.8rem;
         }
+
+        .musicLink a {
+            margin-top: 20px;
+            color: #ff8530;
+            padding: 5px 0;
+            font-size: 0.75rem;
+            text-decoration: none;
+        }
+
+        .musicLink a:hover {
+            color:rgb(255, 198, 158);
+        }
+
+
 
         /* Center play control */
         .play-control-container {
@@ -615,12 +658,6 @@
 
                 <div class="control-right">
                     <div class="control-panel">
-                        <div class="knob-container">
-                            <div>
-                                <button>⏹</button>
-                                <button>▶</button>
-                            </div>
-                        </div>
 
                         <div class="knob-container">
                             <div class="knob-label">Time Frame</div>
@@ -661,6 +698,9 @@
                 <div id="searchResults" class="search-results"></div>
             </div>
         </div>
+
+        <!-- RECOMMENDATION RESULTS -->
+        <div class="recommendationBox"></div>
 
         <div id="lavaLamp" class="lava-lamp-container">
             <div class="metaballs">
@@ -711,9 +751,6 @@
                 </svg>
             </div>
         </div>
-        
-        <!-- RECOMMENDATION RESULTS -->
-        <div class="recommendationBox" style="margin-top: 40px;"></div>
     </div>
 
     <script>
@@ -861,10 +898,6 @@
             const genreKnob = document.getElementById('genreKnob');
             const genreValue = document.getElementById('genreValue');
             
-            // Play/Stop buttons
-            const playButton = document.querySelector('button:nth-child(2)'); // Play button (▶)
-            const stopButton = document.querySelector('button:nth-child(1)'); // Stop button (⏹)
-            
             // Slider
             const recommendationSlider = document.getElementById('recommendationSlider');
             const sliderValue = document.getElementById('sliderValue');
@@ -878,7 +911,27 @@
             // Genre options
             const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
 
+            // Track whether a song is playing
+            let isPlaying = false;
             
+            // Add cursor:pointer to record CSS
+            record.style.cursor = 'pointer';
+            
+            // Function to toggle play/stop
+            function togglePlayState() {
+                isPlaying = !isPlaying;
+                
+                if (isPlaying) {
+                    record.classList.add('playing');
+                    recordArm.style.transform = 'rotate(-15deg)';
+                } else {
+                    record.classList.remove('playing');
+                    recordArm.style.transform = 'rotate(-90deg)';
+                }
+            }
+            
+            // Make record clickable
+            record.addEventListener('click', togglePlayState);
             
             // Initialize knob positions
             function rotateKnob(knob, value, maxValue) {
@@ -894,132 +947,137 @@
             timeframeValue.textContent = timeframes[timeframeKnob.dataset.value];
             genreValue.textContent = genres[genreKnob.dataset.value];
             
-            // Set up play/stop buttons
-            playButton.addEventListener('click', () => {
-                record.classList.add('playing');
-                recordArm.style.transform = 'rotate(-15deg)';
-            });
-            
-            stopButton.addEventListener('click', () => {
-                record.classList.remove('playing');
-                recordArm.style.transform = 'rotate(-90deg)';
-            });
-            
             // Improved knob event listeners
             function setupKnob(knob, valueDisplay, options) {
                 let isDragging = false;
                 let startAngle = 0;
-                let startValue = 0;
+                let startRotation = 0;
+                let currentRotation = 0;
+                let knobRect = knob.getBoundingClientRect();
+                let knobCenter = {
+                    x: knobRect.left + knobRect.width / 2,
+                    y: knobRect.top + knobRect.height / 2
+                };
                 
-                // Calculate angle between points
-                function getAngle(centerX, centerY, pointX, pointY) {
-                    return Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
-                }
+                // Add visual indication that knobs are interactive
+                knob.style.cursor = 'grab';
                 
-                // Convert value to angle (for knob display)
-                function valueToAngle(value, maxValue) {
-                    return value * (270 / maxValue) - 135;
-                }
-                
-                // Convert angle to value
-                function angleToValue(angle, maxValue) {
-                    // Normalize angle to 0-270 range
-                    let normalizedAngle = angle + 135;
-                    if (normalizedAngle < 0) normalizedAngle += 360;
-                    if (normalizedAngle > 270) normalizedAngle = 270;
-                    
-                    return Math.round(normalizedAngle / (270 / maxValue));
+                // Get angle between points
+                function getAngle(x1, y1, x2, y2) {
+                    return Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
                 }
                 
                 // Update knob rotation and value display
-                function updateKnob(newValue) {
-                    // Clamp value to valid range
-                    newValue = Math.max(0, Math.min(options.length - 1, newValue));
+                function updateKnobValue(rotation) {
+                    // Normalize rotation to 0-270 range (-135 to +135 degrees)
+                    let normalizedRotation = rotation;
+                    while (normalizedRotation < -135) normalizedRotation += 360;
+                    while (normalizedRotation > 135) normalizedRotation -= 360;
                     
-                    // Only update if value changed
-                    if (newValue !== parseInt(knob.dataset.value)) {
-                        knob.dataset.value = newValue;
-                        rotateKnob(knob, newValue, options.length - 1);
-                        valueDisplay.textContent = options[newValue];
-                    }
+                    // Clamp to valid range
+                    normalizedRotation = Math.max(-135, Math.min(135, normalizedRotation));
+                    
+                    // Convert to 0-270 scale
+                    const normalizedAngle = normalizedRotation + 135;
+                    
+                    // Calculate value based on angle
+                    const value = Math.round(normalizedAngle / (270 / (options.length - 1)));
+                    
+                    // Update knob
+                    knob.style.transform = `rotate(${normalizedRotation}deg)`;
+                    knob.dataset.value = value;
+                    valueDisplay.textContent = options[value];
+                    
+                    return normalizedRotation;
                 }
-            
-                // Start dragging handler
+                
                 knob.addEventListener('mousedown', (e) => {
-                    e.preventDefault(); // Prevent text selection
+                    e.preventDefault();
                     
-                    const rect = knob.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
+                    // Update knob center position
+                    knobRect = knob.getBoundingClientRect();
+                    knobCenter = {
+                        x: knobRect.left + knobRect.width / 2,
+                        y: knobRect.top + knobRect.height / 2
+                    };
+                    
+                    // Get initial angle
+                    startAngle = getAngle(knobCenter.x, knobCenter.y, e.clientX, e.clientY);
+                    
+                    // Get current rotation from transform or default to 0
+                    const transform = window.getComputedStyle(knob).getPropertyValue('transform');
+                    let matrix = new DOMMatrix(transform);
+                    startRotation = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
+                    currentRotation = startRotation;
                     
                     isDragging = true;
-                    startAngle = getAngle(centerX, centerY, e.clientX, e.clientY);
-                    startValue = parseInt(knob.dataset.value);
-                    
+                    knob.style.cursor = 'grabbing';
                     document.body.style.cursor = 'grabbing';
                     
-                    // Add visual feedback
                     knob.classList.add('knob-active');
                 });
                 
-                // Dragging handler
                 document.addEventListener('mousemove', (e) => {
                     if (!isDragging) return;
                     
-                    const rect = knob.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
+                    // Calculate new angle
+                    const currentAngle = getAngle(knobCenter.x, knobCenter.y, e.clientX, e.clientY);
+                    const angleDelta = currentAngle - startAngle;
                     
-                    const currentAngle = getAngle(centerX, centerY, e.clientX, e.clientY);
-                    let angleDelta = currentAngle - startAngle;
+                    // Calculate new rotation
+                    let newRotation = startRotation + angleDelta;
                     
-                    // Handle angle wrap-around
-                    if (angleDelta > 180) angleDelta -= 360;
-                    if (angleDelta < -180) angleDelta += 360;
-                    
-                    // Calculate how much this should change the value
-                    const maxAngle = 270; // Total angle range of knob (from -135 to +135)
-                    const valueChange = Math.round(angleDelta / (maxAngle / (options.length - 1)));
-                    const newValue = startValue + valueChange;
-                    
-                    updateKnob(newValue);
-                    
-                    // Important: Update the start angle to prevent snapping
-                    startAngle = currentAngle;
-                    startValue = parseInt(knob.dataset.value);
+                    // Update knob position and value
+                    currentRotation = updateKnobValue(newRotation);
                 });
                 
-                // End dragging handler
                 document.addEventListener('mouseup', () => {
                     if (isDragging) {
                         isDragging = false;
+                        knob.style.cursor = 'grab';
                         document.body.style.cursor = 'default';
                         knob.classList.remove('knob-active');
+                        
+                        // Update start positions for next drag
+                        startRotation = currentRotation;
                     }
                 });
                 
-                // Click to increment
+                // Click to increment/decrement
                 knob.addEventListener('click', (e) => {
-                    if (isDragging) return; // Don't increment if we were dragging
+                    if (e.target !== knob) return; // Make sure we clicked on the knob itself
                     
-                    const rect = knob.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
+                    // Update knob center position
+                    knobRect = knob.getBoundingClientRect();
+                    knobCenter = {
+                        x: knobRect.left + knobRect.width / 2,
+                        y: knobRect.top + knobRect.height / 2
+                    };
                     
-                    // Determine if click was on left or right half of knob
-                    const isRightSide = e.clientX > centerX;
+                    // Determine if click was on left or right half
+                    const isRightSide = e.clientX > knobCenter.x;
                     
-                    // Current value
+                    // Get current value
                     const currentValue = parseInt(knob.dataset.value);
                     
-                    // Increment or decrement
-                    const newValue = isRightSide 
-                        ? Math.min(currentValue + 1, options.length - 1) 
-                        : Math.max(currentValue - 1, 0);
+                    // Calculate new value
+                    let newValue;
+                    if (isRightSide) {
+                        newValue = Math.min(currentValue + 1, options.length - 1);
+                    } else {
+                        newValue = Math.max(currentValue - 1, 0);
+                    }
                     
-                    updateKnob(newValue);
+                    // Update knob
+                    const newRotation = (newValue * (270 / (options.length - 1))) - 135;
+                    knob.style.transform = `rotate(${newRotation}deg)`;
+                    knob.dataset.value = newValue;
+                    valueDisplay.textContent = options[newValue];
+                    
+                    // Update start rotation for next drag
+                    startRotation = newRotation;
                 });
-            }          
+            }
             
             // Set up all knobs
             setupKnob(timeframeKnob, timeframeValue, timeframes);
@@ -1038,7 +1096,7 @@
                 
                 if (query) {
                     // Show the loading message in search results
-                    searchResults.innerHTML = '<div class="searchResultItem">Searching...</div>';
+                    searchResults.innerHTML = '<div class="searchResultItem"><p>Searching...</p></div>';
                     searchResults.style.display = 'block';
                     
                     typingTimer = setTimeout(() => {
@@ -1108,7 +1166,8 @@
                     searchResults.style.display = 'none';
 
                     // Start the record playing
-                    if (!record.classList.contains('playing')) {
+                    if (!isPlaying) {
+                        isPlaying = true;
                         record.classList.add('playing');
                         recordArm.style.transform = 'rotate(-15deg)';
                     }
@@ -1120,9 +1179,10 @@
                     
                     // Show loading in recommendation box
                     recommendationBox.innerHTML = `
-                        <div class="recommendations show">
+                        <div class="recommendations-show">
                             <h3>Loading recommendations for ${title} by ${artist}...</h3>
                             <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
+                            <h5>Powered by <strong>CadenceAI</strong></h5>
                         </div>
                     `;
                     
@@ -1144,9 +1204,12 @@
                     .then(data => {
                         // Create recommendations HTML
                         let recHTML = `
-                            <div class="recommendations show">
+                            <div class="recommendations-show">
                                 <h3>Recommended Songs for: ${title} by ${artist}</h3>
                                 <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                                <h5>Powered by <strong>CadenceAI</strong></h5>
+                            </div>
+                            <div>
                                 <ul class="recommendation-list">
                         `;
                         
@@ -1161,7 +1224,11 @@
                                             <h4 class="recommendation-title">${rec.title}</h4>
                                             <p class="recommendation-artist">${rec.artist}</p>
                                         </div>
-                                        <div class="recommendation-match">${rec.similarity_score}% match</div>
+                                        <div class="recommendation-right">
+                                            <div class="recommendation-match">${rec.similarity_score}% match</div>
+                                            <div class="musicLink"><a href="">Listen on Apple Music</a></div>
+                                            <div class="musicLink"><a href="">Listen on Spotify</a></div>
+                                        </div>
                                     </li>
                                 `;
                             });
