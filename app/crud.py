@@ -202,51 +202,139 @@ class AudioProcessor:
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             file.write(chunk)
+                # Check file size
+                if os.path.getsize(filename) < 10 * 1024:  # 10 KB threshold
+                    logger.error(f"Downloaded file too small, likely invalid: {filename}")
+                    os.remove(filename)
+                    return None
                 return filename
             else:
                 logger.error(f"Error downloading audio: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
             logger.error(f"Exception downloading audio: {e}")
-            if os.path.exists(filename):
+            if filename and os.path.exists(filename):
                 os.remove(filename)
             return None
     
     @staticmethod
+    def convert_mp3_to_wav(mp3_path: str) -> Optional[str]:
+        """Converts an MP3 file to WAV format using ffmpeg."""
+        wav_path = mp3_path.replace('.mp3', '.wav')
+        try:
+            # Check if ffmpeg is available
+            try:
+                subprocess.run(['ffmpeg', '-version'], 
+                               check=True, 
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+            except (subprocess.SubprocessError, FileNotFoundError):
+                # If ffmpeg is not available, try to use librosa directly
+                logger.warning("ffmpeg not available, attempting to use librosa directly")
+                return mp3_path
+                
+            subprocess.run(
+                ['ffmpeg', '-y', '-i', mp3_path, wav_path],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            if os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
+                return wav_path
+            else:
+                logger.error(f"ffmpeg did not produce a valid WAV file: {wav_path}")
+                return None
+        except Exception as e:
+            logger.error(f"Error converting MP3 to WAV: {e}")
+            return None
+
+    @staticmethod
     def extract_audio_features(audio_path: str) -> Optional[np.ndarray]:
         """Extracts audio features from the given audio file."""
+        # Skip conversion if librosa can handle MP3 directly
         try:
-            y, sr = librosa.load(audio_path, sr=None)
-            
-            # Extract a variety of audio features
-            features = []
-            
-            # MFCCs (Mel-frequency cepstral coefficients)
-            mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-            features.append(np.mean(mfccs.T, axis=0))
-            
-            # Spectral centroid (brightness)
-            spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
-            features.append(np.mean(spectral_centroid.T, axis=0))
-            
-            # Spectral bandwidth (range of frequencies)
-            spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
-            features.append(np.mean(spectral_bandwidth.T, axis=0))
-            
-            # Spectral contrast
-            spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
-            features.append(np.mean(spectral_contrast.T, axis=0))
-            
-            # Tempo (BPM)
-            tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-            features.append(np.array([tempo]))
-            
-            # Flatten and concatenate all features
-            feature_vector = np.concatenate([f.flatten() for f in features])
-            return feature_vector
-            
+            # Log file info before loading
+            if not os.path.exists(audio_path):
+                logger.error(f"Audio file does not exist: {audio_path}")
+                return None
+                
+            if os.path.getsize(audio_path) < 10 * 1024:
+                logger.error(f"Audio file too small for feature extraction: {audio_path} ({os.path.getsize(audio_path)} bytes)")
+                return None
+
+            # Load audio with librosa - let librosa handle MP3 directly
+            try:
+                y, sr = librosa.load(audio_path, sr=None, res_type='kaiser_fast')
+            except Exception as e:
+                logger.error(f"Error loading audio with librosa: {e}")
+                
+                # Fallback to WAV conversion if it's an MP3
+                if audio_path.endswith('.mp3'):
+                    wav_path = AudioProcessor.convert_mp3_to_wav(audio_path)
+                    if not wav_path:
+                        logger.error(f"Failed to convert MP3 to WAV: {audio_path}")
+                        return None
+                    
+                    # Try loading the WAV file
+                    try:
+                        y, sr = librosa.load(wav_path, sr=None, res_type='kaiser_fast')
+                    except Exception as inner_e:
+                        logger.error(f"Error loading converted WAV file: {inner_e}")
+                        return None
+                else:
+                    return None
+
+            # Check if audio data was successfully loaded
+            if y is None or len(y) == 0:
+                logger.error(f"librosa.load returned empty audio for: {audio_path}")
+                return None
+                
+            # Extract features in a try-except block to catch specific features that might fail
+            try:
+                # Extract a variety of audio features
+                features = []
+                
+                # MFCCs (Mel-frequency cepstral coefficients)
+                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+                features.append(np.mean(mfccs.T, axis=0))
+                
+                # Spectral centroid (brightness)
+                spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+                features.append(np.mean(spectral_centroid.T, axis=0))
+                
+                # Spectral bandwidth (range of frequencies)
+                spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
+                features.append(np.mean(spectral_bandwidth.T, axis=0))
+                
+                # Spectral contrast
+                spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+                features.append(np.mean(spectral_contrast.T, axis=0))
+                
+                # Tempo (BPM)
+                tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+                features.append(np.array([tempo]))
+                
+                # Flatten and concatenate all features
+                feature_vector = np.concatenate([f.flatten() for f in features])
+                
+                # Verify feature vector validity
+                if not np.isfinite(feature_vector).all():
+                    logger.warning(f"Feature vector contains NaN or inf values for: {audio_path}")
+                    # Replace any NaN or inf values with zeros
+                    feature_vector = np.nan_to_num(feature_vector)
+                
+                if feature_vector.size == 0:
+                    logger.error(f"Empty feature vector generated for: {audio_path}")
+                    return None
+                    
+                return feature_vector
+                
+            except Exception as e:
+                logger.error(f"Error extracting specific audio features: {e}")
+                return None
+                
         except Exception as e:
-            logger.error(f"Error extracting audio features: {e}")
+            logger.error(f"Error in extract_audio_features: {e}")
             return None
         
     @staticmethod
@@ -259,10 +347,8 @@ class AudioProcessor:
         comparison_matrix = np.vstack(comparison_features)
         
         # Handle invalid values (e.g., NaN, inf) in the feature vectors
-        if not np.isfinite(reference_features).all():
-            raise ValueError("Reference features contain invalid values (NaN or inf).")
-        if not np.isfinite(comparison_matrix).all():
-            raise ValueError("Comparison features contain invalid values (NaN or inf).")
+        reference_features = np.nan_to_num(reference_features)
+        comparison_matrix = np.nan_to_num(comparison_matrix)
         
         # Scale features to have zero mean and unit variance
         scaler = StandardScaler()
@@ -290,13 +376,22 @@ class MusicRecommender:
             
         temp_file = None
         try:
+            # Debug log to track download process
+            logger.info(f"Downloading preview for: {track.title} by {track.artist_name}")
             temp_file = self.audio_processor.download_audio(track.preview_url)
+            
             if temp_file:
+                logger.info(f"Successfully downloaded to: {temp_file} ({os.path.getsize(temp_file)} bytes)")
                 features = self.audio_processor.extract_audio_features(temp_file)
-                if features is not None and features.size > 0:  # Explicitly check size
+                
+                if features is not None and features.size > 0:
                     track.features = features
+                    logger.info(f"Successfully extracted features for: {track.title} (feature size: {features.size})")
                 else:
                     logger.warning(f"Invalid features extracted for track: {track}")
+            else:
+                logger.warning(f"Failed to download preview for: {track.title}")
+                
         except Exception as e:
             logger.error(f"Error processing track {track}: {e}")
         finally:
@@ -314,14 +409,30 @@ class MusicRecommender:
             return []
         
         reference_track = Track(id=track_id, title=track_name, artist_name=artist_name)
+        logger.info(f"Processing reference track: {reference_track.title} by {reference_track.artist_name}")
         reference_track = self.process_track(reference_track)
         
-        # Explicitly check if reference track features exist and are valid
+        # If reference track processing failed, try a less complex approach
         if reference_track.features is None or reference_track.features.size == 0:
-            logger.error("Could not extract features from reference track")
-            return []
-        
-        # Get recommendations from various sources with balanced distribution
+            logger.warning("Initial feature extraction failed for reference track, trying different approach")
+            
+            # Try to get recommendations without audio similarity
+            # Just return a mix of artist and similar artist tracks as fallback
+            artist_tracks = self.deezer_client.get_artist_top_tracks(track_name, artist_name, limit=3)
+            similar_tracks = self.deezer_client.get_similar_artist_tracks(track_name, artist_name, limit=recommendations_count - len(artist_tracks))
+            
+            # Combine and filter to avoid the reference track
+            fallback_recommendations = []
+            for track in artist_tracks + similar_tracks:
+                if track.title.lower() != track_name.lower() or track.artist_name.lower() != artist_name.lower():
+                    fallback_recommendations.append(track)
+                    if len(fallback_recommendations) >= recommendations_count:
+                        break
+            
+            logger.info(f"Returning {len(fallback_recommendations)} fallback recommendations without audio similarity")
+            return fallback_recommendations[:recommendations_count]
+
+        # Continue with normal recommendation process if we have reference features
         logger.info(f"Fetching recommendations for {track_name} by {artist_name}")
         
         # Calculate distribution for different recommendation sources
@@ -343,16 +454,7 @@ class MusicRecommender:
             similar_tracks = similar_future.result()
             radio_tracks = radio_future.result()
         
-        # Log recommendation sources for debugging
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Found {len(artist_tracks)} artist tracks, {len(similar_tracks)} similar tracks, {len(radio_tracks)} radio tracks")
-            
-            for i, track in enumerate(artist_tracks[:3], 1):
-                logger.debug(f"Artist track {i}: {track.title} by {track.artist_name}")
-            for i, track in enumerate(similar_tracks[:3], 1):
-                logger.debug(f"Similar track {i}: {track.title} by {track.artist_name}")
-            for i, track in enumerate(radio_tracks[:3], 1):
-                logger.debug(f"Radio track {i}: {track.title} by {track.artist_name}")
+        logger.info(f"Found {len(artist_tracks)} artist tracks, {len(similar_tracks)} similar tracks, {len(radio_tracks)} radio tracks")
         
         all_tracks = artist_tracks + similar_tracks + radio_tracks
         
@@ -417,33 +519,62 @@ class MusicRecommender:
         for track in processed_tracks:
             if track.features is not None and track.features.size > 0:
                 valid_tracks.append(track)
-        # Filter out tracks without features 
+                
+        # If we don't have enough valid tracks with features, include some without features
+        if len(valid_tracks) < recommendations_count:
+            logger.warning(f"Only found {len(valid_tracks)} tracks with valid features")
+            # Sort remaining tracks alphabetically as a fallback
+            remaining_tracks = [t for t in processed_tracks if t not in valid_tracks]
+            remaining_tracks.sort(key=lambda x: f"{x.artist_name} - {x.title}")
+            
+            # Add them until we reach desired count or run out
+            for track in remaining_tracks:
+                if len(valid_tracks) >= recommendations_count:
+                    break
+                valid_tracks.append(track)
+        
+        # If we still have no valid tracks, return the filtered tracks without processing
         if not valid_tracks:
-            logger.warning("No valid tracks with features found")
-            return []
+            logger.warning("No valid tracks with features found, returning unprocessed recommendations")
+            # Sort by source priority (artist > similar > radio) and alphabetically within each source
+            result = []
+            # Add artist tracks first
+            for track in [t for t in filtered_tracks if any(t.id == at.id for at in artist_tracks)]:
+                result.append(track)
+                if len(result) >= recommendations_count:
+                    return result
+            # Then similar artist tracks
+            for track in [t for t in filtered_tracks if any(t.id == st.id for st in similar_tracks)]:
+                if not any(t.id == track.id for t in result):
+                    result.append(track)
+                    if len(result) >= recommendations_count:
+                        return result
+            # Finally radio tracks
+            for track in filtered_tracks:
+                if not any(t.id == track.id for t in result):
+                    result.append(track)
+                    if len(result) >= recommendations_count:
+                        break
+            return result[:recommendations_count]
         
-        # Calculate similarity scores
-        feature_list = [track.features for track in valid_tracks]
-        similarities = self.audio_processor.calculate_similarity(reference_track.features, feature_list)
-        
-        # Assign similarity scores and add source info for debugging
-        for track, score in zip(valid_tracks, similarities):
-            track.similarity_score = float(score)  # Ensure score is a Python float, not NumPy type
-            
-            # Determine the source for logging purposes
-            source = "unknown"
-            if any(track.id == t.id for t in artist_tracks):
-                source = "artist"
-            elif track in similar_tracks:
-                source = "similar"
-            elif track in radio_tracks:
-                source = "radio"
-            
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Track '{track.title}' by {track.artist_name} from {source} source has similarity score: {score:.4f}")
+        # Calculate similarity scores for tracks with features
+        tracks_with_features = [t for t in valid_tracks if t.features is not None and t.features.size > 0]
+        if tracks_with_features:
+            feature_list = [track.features for track in tracks_with_features]
+            try:
+                similarities = self.audio_processor.calculate_similarity(reference_track.features, feature_list)
+                
+                # Assign similarity scores
+                for track, score in zip(tracks_with_features, similarities):
+                    track.similarity_score = float(score)  # Ensure score is a Python float
+            except Exception as e:
+                logger.error(f"Error calculating similarities: {e}")
+                # Set default similarity scores
+                for track in tracks_with_features:
+                    track.similarity_score = 0.5  # Default middle value
         
         # Sort by similarity score (descending)
-        valid_tracks.sort(key=lambda x: x.similarity_score, reverse=True)
+        valid_tracks.sort(key=lambda x: x.similarity_score if hasattr(x, 'similarity_score') else 0, reverse=True)
         
         # Ensure diversity in final recommendations (at least one from each source if possible)
         final_recommendations = []
@@ -460,7 +591,7 @@ class MusicRecommender:
                     break
         
         # Then fill the remaining slots with the highest similarity scores
-        remaining_slots = FINAL_RECOMMENDATIONS_COUNT - len(final_recommendations)
+        remaining_slots = recommendations_count - len(final_recommendations)
         if remaining_slots > 0:
             # Add remaining tracks by similarity score, skipping those already included
             for track in valid_tracks:
@@ -470,13 +601,11 @@ class MusicRecommender:
                     if remaining_slots == 0:
                         break
         
-        # Log final recommendation sources
-        if logger.isEnabledFor(logging.INFO):
-            logger.info(f"Final recommendations include {source_counts['artist']} artist tracks, "
-                    f"{source_counts['similar']} similar artist tracks, and {source_counts['radio']} radio tracks")
+        logger.info(f"Final recommendations include {source_counts['artist']} artist tracks, "
+                f"{source_counts['similar']} similar artist tracks, and {source_counts['radio']} radio tracks")
         
         return final_recommendations[:recommendations_count]
-
+    
 def clean_track_name(track_name: str) -> str:
     """
     Cleans the track name by removing unwanted text like "(explicit version)"
