@@ -157,10 +157,13 @@ def recommend():
 
         results = []
         for track in recommendations:
+            album_cover = get_album_cover_from_deezer(track.title, track.artist_name)
+            
             results.append({
                 "title": track.title,
                 "artist": track.artist_name,
-                "similarity_score": round(track.similarity_score * 100, 2) 
+                "similarity_score": round(track.similarity_score * 100, 2),
+                "album_cover": album_cover
             })
 
         return jsonify({"recommendations": results})
@@ -169,6 +172,30 @@ def recommend():
         logger.error(f"Recommendation error: {e}")
         return jsonify({"error": "Recommendation failed"}), 500
 
+def get_album_cover_from_deezer(title, artist):
+    try:
+        import requests
+        import urllib.parse
+        
+        # Create search query
+        query = urllib.parse.quote(f"{artist} {title}")
+        url = f"https://api.deezer.com/search?q={query}&limit=1"
+        
+        response = requests.get(url, timeout=5)
+        data = response.json()
+        
+        if data.get('data') and len(data['data']) > 0:
+            track_data = data['data'][0]
+            # Return medium size cover (250x250), fallback to other sizes
+            return (track_data.get('album', {}).get('cover_medium') or 
+                   track_data.get('album', {}).get('cover') or 
+                   track_data.get('album', {}).get('cover_small'))
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error fetching album cover for {title} by {artist}: {e}")
+        return None
 
 # # Run the test    
 if __name__ == "__main__":
