@@ -596,8 +596,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (data.recommendations && data.recommendations.length > 0) {
                             console.log('Recommendation data:', data.recommendations[0]);
                             data.recommendations.forEach(rec => {
-                                // Use the same field name as search results - album_cover
+                                // Use the album_cover from the backend
                                 const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
+                                
+                                // Use the music links provided by the backend (preferred method)
+                                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
                                 
                                 recHTML += `
                                     <li class="recommendation-item">
@@ -611,8 +615,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </div>
                                         <div class="recommendation-right">
                                             <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                                            <div class="musicLink"><a href="">Listen on Apple Music</a></div>
-                                            <div class="musicLink"><a href="">Listen on Spotify</a></div>
+                                            <div class="musicLink">
+                                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
+                                                    Listen on Apple Music
+                                                </a>
+                                            </div>
+                                            <div class="musicLink">
+                                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
+                                                    Listen on Spotify
+                                                </a>
+                                            </div>
                                         </div>
                                     </li>
                                 `;
