@@ -439,129 +439,139 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Enhanced search input event listener
     if (searchInput && searchResults) {
-        function doSearch(query) {
-            // Abort previous fetch if still running
-            if (lastSearchController) {
-                lastSearchController.abort();
-            }
-            lastSearchController = new AbortController();
-
-            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Searching...</p></div></div>';
-            searchResults.style.display = 'block';
-
-            fetch('/api/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query }),
-                signal: lastSearchController.signal
-            })
-            .then(response => response.json())
-            .then(data => {
-                searchResults.innerHTML = '';
-                
-                // Check if the response contains results
-                if (data.results && data.results.length > 0) {
-                    data.results.forEach(track => {
-                        const div = document.createElement('div');
-                        div.className = 'searchResultItem';
-                        div.setAttribute('data-title', track.title);
-                        div.setAttribute('data-artist', track.artist);
-                        div.setAttribute('data-album-cover', track.album_cover);
-                        
-                        // Create enhanced search result with background and styling
-                        const bg = document.createElement('div');
-                        bg.className = 'searchResultItem-bg';
-                        bg.style.backgroundImage = `url("${track.album_cover}")`;
-                        
-                        const content = document.createElement('div');
-                        content.className = 'searchResultItem-content';
-                        
-                        const artwork = document.createElement('div');
-                        artwork.className = 'searchResultItem-artwork';
-                        
-                        const img = document.createElement('img');
-                        img.src = track.album_cover;
-                        img.alt = `${track.title} album cover`;
-                        artwork.appendChild(img);
-                        
-                        const info = document.createElement('div');
-                        info.className = 'searchResultItem-info';
-                        
-                        const title = document.createElement('p');
-                        title.className = 'searchResultItem-title';
-                        title.textContent = track.title;
-                        
-                        const artist = document.createElement('p');
-                        artist.className = 'searchResultItem-artist';
-                        artist.textContent = track.artist;
-                        
-                        info.appendChild(title);
-                        info.appendChild(artist);
-                        content.appendChild(artwork);
-                        content.appendChild(info);
-                        
-                        div.appendChild(bg);
-                        div.appendChild(content);
-                        searchResults.appendChild(div);
-                    });
-                } else {
-                    searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>No results found.</p></div></div>';
-                }
-            })
-            .catch(error => {
-                if (error.name !== 'AbortError') {
-                    console.error('Error searching:', error);
-                    searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Error searching. Try again.</p></div></div>';
-                }
-            });
-        }
-
         searchInput.addEventListener('input', function() {
             clearTimeout(typingTimer);
+            
             const query = searchInput.value.trim();
-            if (query.length >= 2) {
-                typingTimer = setTimeout(() => doSearch(query), typingDelay);
+            
+            if (query) {
+                // Show the loading message in search results
+                searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p class="searching-message">Searching...</p></div></div>';
+                searchResults.style.display = 'block';
+                
+                // Force high z-index and proper positioning
+                searchResults.style.position = 'absolute';
+                searchResults.style.zIndex = '9999';
+                searchResults.style.top = '100%';
+                searchResults.style.left = '0';
+                searchResults.style.right = '0';
+                
+                typingTimer = setTimeout(() => {
+                    // Make an actual API call
+                    fetch('/api/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ query: query })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        
+                        // Maintain z-index after clearing content
+                        searchResults.style.position = 'absolute';
+                        searchResults.style.zIndex = '9999';
+                        searchResults.style.top = '100%';
+                        searchResults.style.left = '0';
+                        searchResults.style.right = '0';
+                        
+                        // Check if the response contains results
+                        if (data.results && data.results.length > 0) {
+                            data.results.forEach(track => {
+                                const div = document.createElement('div');
+                                div.className = 'searchResultItem';
+                                div.setAttribute('data-title', track.title);
+                                div.setAttribute('data-artist', track.artist);
+                                div.setAttribute('data-album-cover', track.album_cover);
+                                
+                                // Create enhanced search result with background and styling
+                                const bg = document.createElement('div');
+                                bg.className = 'searchResultItem-bg';
+                                bg.style.backgroundImage = `url("${track.album_cover}")`;
+                                
+                                const content = document.createElement('div');
+                                content.className = 'searchResultItem-content';
+                                
+                                const artwork = document.createElement('div');
+                                artwork.className = 'searchResultItem-artwork';
+                                
+                                const img = document.createElement('img');
+                                img.src = track.album_cover;
+                                img.alt = `${track.title} album cover`;
+                                artwork.appendChild(img);
+                                
+                                const info = document.createElement('div');
+                                info.className = 'searchResultItem-info';
+                                
+                                const title = document.createElement('p');
+                                title.className = 'searchResultItem-title';
+                                title.textContent = track.title;
+                                
+                                const artist = document.createElement('p');
+                                artist.className = 'searchResultItem-artist';
+                                artist.textContent = track.artist;
+                                
+                                info.appendChild(title);
+                                info.appendChild(artist);
+                                content.appendChild(artwork);
+                                content.appendChild(info);
+                                
+                                div.appendChild(bg);
+                                div.appendChild(content);
+                                searchResults.appendChild(div);
+                            });
+                        } else {
+                            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>No results found.</p></div></div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching:', error);
+                        searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Error searching. Try again.</p></div></div>';
+                    });
+                }, typingDelay);
             } else {
                 searchResults.innerHTML = '';
                 searchResults.style.display = 'none';
             }
         });
-
-        // Search immediately on Enter
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                clearTimeout(typingTimer);
-                const query = searchInput.value.trim();
-                if (query.length >= 2) {
-                    doSearch(query);
-                }
+        
+        // Enhanced hide search results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                searchResults.style.display = 'none';
             }
         });
-    }
-    
-    // Hide search results when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
-            searchResults.style.display = 'none';
-        }
-    });
-    
-    // Enhanced search result click handler
-    searchResults.addEventListener('click', function(event) {
-        const clicked = event.target.closest('.searchResultItem');
-        if (!clicked) return;
         
-        const title = clicked.getAttribute('data-title');
-        const artist = clicked.getAttribute('data-artist');
-        const albumCoverUrl = clicked.getAttribute('data-album-cover');
-        
-        if (title && artist) {
-            // Update the record player with the selected song if elements exist
-            if (albumCover) {
-                albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
+        // Show search results when focusing on input (if there's content)
+        searchInput.addEventListener('focus', function() {
+            if (searchResults.innerHTML.trim() !== '') {
+                searchResults.style.display = 'block';
+                // Re-apply z-index styling
+                searchResults.style.position = 'absolute';
+                searchResults.style.zIndex = '9999';
+                searchResults.style.top = '100%';
+                searchResults.style.left = '0';
+                searchResults.style.right = '0';
             }
-            searchInput.value = `${title} - ${artist}`;
-            searchResults.style.display = 'none';
+        });
+        
+        // Enhanced search result click handler
+        searchResults.addEventListener('click', function(event) {
+            const clicked = event.target.closest('.searchResultItem');
+            if (!clicked) return;
+            
+            const title = clicked.getAttribute('data-title');
+            const artist = clicked.getAttribute('data-artist');
+            const albumCoverUrl = clicked.getAttribute('data-album-cover');
+            
+            if (title && artist) {
+                // Update the record player with the selected song if elements exist
+                if (albumCover) {
+                    albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
+                }
+                searchInput.value = `${title} - ${artist}`;
+                searchResults.style.display = 'none';
 
             // Start the record playing if record player exists
             if (record && !isPlaying) {
