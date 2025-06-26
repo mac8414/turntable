@@ -240,7 +240,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const sliderValue = document.getElementById('sliderValue');
     
     let typingTimer;
-    const typingDelay = 500;
+    const typingDelay = 200; // Even faster debounce
+
+    let lastSearchController = null; // For aborting previous fetches
     
     // Timeframe options
     const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
@@ -437,220 +439,236 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Enhanced search input event listener
     if (searchInput && searchResults) {
+        function doSearch(query) {
+            // Abort previous fetch if still running
+            if (lastSearchController) {
+                lastSearchController.abort();
+            }
+            lastSearchController = new AbortController();
+
+            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Searching...</p></div></div>';
+            searchResults.style.display = 'block';
+
+            fetch('/api/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query }),
+                signal: lastSearchController.signal
+            })
+            .then(response => response.json())
+            .then(data => {
+                searchResults.innerHTML = '';
+                
+                // Check if the response contains results
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(track => {
+                        const div = document.createElement('div');
+                        div.className = 'searchResultItem';
+                        div.setAttribute('data-title', track.title);
+                        div.setAttribute('data-artist', track.artist);
+                        div.setAttribute('data-album-cover', track.album_cover);
+                        
+                        // Create enhanced search result with background and styling
+                        const bg = document.createElement('div');
+                        bg.className = 'searchResultItem-bg';
+                        bg.style.backgroundImage = `url("${track.album_cover}")`;
+                        
+                        const content = document.createElement('div');
+                        content.className = 'searchResultItem-content';
+                        
+                        const artwork = document.createElement('div');
+                        artwork.className = 'searchResultItem-artwork';
+                        
+                        const img = document.createElement('img');
+                        img.src = track.album_cover;
+                        img.alt = `${track.title} album cover`;
+                        artwork.appendChild(img);
+                        
+                        const info = document.createElement('div');
+                        info.className = 'searchResultItem-info';
+                        
+                        const title = document.createElement('p');
+                        title.className = 'searchResultItem-title';
+                        title.textContent = track.title;
+                        
+                        const artist = document.createElement('p');
+                        artist.className = 'searchResultItem-artist';
+                        artist.textContent = track.artist;
+                        
+                        info.appendChild(title);
+                        info.appendChild(artist);
+                        content.appendChild(artwork);
+                        content.appendChild(info);
+                        
+                        div.appendChild(bg);
+                        div.appendChild(content);
+                        searchResults.appendChild(div);
+                    });
+                } else {
+                    searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>No results found.</p></div></div>';
+                }
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    console.error('Error searching:', error);
+                    searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Error searching. Try again.</p></div></div>';
+                }
+            });
+        }
+
         searchInput.addEventListener('input', function() {
             clearTimeout(typingTimer);
-            
             const query = searchInput.value.trim();
-            
-            if (query) {
-                // Show the loading message in search results
-                searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Searching...</p></div></div>';
-                searchResults.style.display = 'block';
-                
-                typingTimer = setTimeout(() => {
-                    // Make an actual API call
-                    fetch('/api/search', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ query: query })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        // Check if the response contains results
-                        if (data.results && data.results.length > 0) {
-                            data.results.forEach(track => {
-                                const div = document.createElement('div');
-                                div.className = 'searchResultItem';
-                                div.setAttribute('data-title', track.title);
-                                div.setAttribute('data-artist', track.artist);
-                                div.setAttribute('data-album-cover', track.album_cover);
-                                
-                                // Create enhanced search result with background and styling
-                                const bg = document.createElement('div');
-                                bg.className = 'searchResultItem-bg';
-                                bg.style.backgroundImage = `url("${track.album_cover}")`;
-                                
-                                const content = document.createElement('div');
-                                content.className = 'searchResultItem-content';
-                                
-                                const artwork = document.createElement('div');
-                                artwork.className = 'searchResultItem-artwork';
-                                
-                                const img = document.createElement('img');
-                                img.src = track.album_cover;
-                                img.alt = `${track.title} album cover`;
-                                artwork.appendChild(img);
-                                
-                                const info = document.createElement('div');
-                                info.className = 'searchResultItem-info';
-                                
-                                const title = document.createElement('p');
-                                title.className = 'searchResultItem-title';
-                                title.textContent = track.title;
-                                
-                                const artist = document.createElement('p');
-                                artist.className = 'searchResultItem-artist';
-                                artist.textContent = track.artist;
-                                
-                                info.appendChild(title);
-                                info.appendChild(artist);
-                                content.appendChild(artwork);
-                                content.appendChild(info);
-                                
-                                div.appendChild(bg);
-                                div.appendChild(content);
-                                searchResults.appendChild(div);
-                            });
-                        } else {
-                            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>No results found.</p></div></div>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error searching:', error);
-                        searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Error searching. Try again.</p></div></div>';
-                    });
-                }, typingDelay);
+            if (query.length >= 2) {
+                typingTimer = setTimeout(() => doSearch(query), typingDelay);
             } else {
                 searchResults.innerHTML = '';
                 searchResults.style.display = 'none';
             }
         });
-        
-        // Hide search results when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
-                searchResults.style.display = 'none';
-            }
-        });
-        
-        // Enhanced search result click handler
-        searchResults.addEventListener('click', function(event) {
-            const clicked = event.target.closest('.searchResultItem');
-            if (!clicked) return;
-            
-            const title = clicked.getAttribute('data-title');
-            const artist = clicked.getAttribute('data-artist');
-            const albumCoverUrl = clicked.getAttribute('data-album-cover');
-            
-            if (title && artist) {
-                // Update the record player with the selected song if elements exist
-                if (albumCover) {
-                    albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
-                }
-                searchInput.value = `${title} - ${artist}`;
-                searchResults.style.display = 'none';
 
-                // Start the record playing if record player exists
-                if (record && !isPlaying) {
-                    isPlaying = true;
-                    record.classList.add('playing');
-                    if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
-                }
-                
-                // Get current timeframe, genre and recommendations count
-                const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
-                const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
-                const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
-                
-                // Show loading in recommendation box
-                if (recommendationBox) {
-                    recommendationBox.innerHTML = `
-                        <div class="recommendations-show">
-                            <h3>Loading recommendations for ${title} by ${artist}...</h3>
-                            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
-                            <h5>Powered by <strong>CadenceAI</strong></h5>
-                        </div>
-                    `;
-                    
-                    // Make the API call for recommendations
-                    fetch('/api/recommend', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            track_name: title, 
-                            artist_name: artist,
-                            timeframe: timeframe === 'Any' ? '' : timeframe,
-                            genre: genre === 'Any' ? '' : genre,
-                            count: count
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Create enhanced recommendations HTML
-                        let recHTML = `
-                            <div class="recommendations-show">
-                                <h3>Recommended Songs for: ${title} by ${artist}</h3>
-                                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
-                                <h5>Powered by <strong>CadenceAI</strong></h5>
-                            </div>
-                            <div>
-                                <ul class="recommendation-list">
-                        `;
-                        
-                        if (data.recommendations && data.recommendations.length > 0) {
-                            console.log('Recommendation data:', data.recommendations[0]);
-                            data.recommendations.forEach(rec => {
-                                // Use the album_cover from the backend
-                                const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
-                                
-                                // Use the music links provided by the backend (preferred method)
-                                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                                
-                                recHTML += `
-                                    <li class="recommendation-item">
-                                        <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
-                                        <div class="recommendation-cover">
-                                            <img src="${albumCoverUrl}" alt="${rec.title} album cover">
-                                        </div>
-                                        <div class="recommendation-info">
-                                            <h4 class="recommendation-title">${rec.title}</h4>
-                                            <p class="recommendation-artist">${rec.artist}</p>
-                                        </div>
-                                        <div class="recommendation-right">
-                                            <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                                            <div class="musicLink">
-                                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
-                                                    Listen on Apple Music
-                                                </a>
-                                            </div>
-                                            <div class="musicLink">
-                                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
-                                                    Listen on Spotify
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                `;
-                            });
-                        } else {
-                            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
-                        }
-                        
-                        recHTML += `
-                                </ul>
-                            </div>
-                        `;
-                        
-                        recommendationBox.innerHTML = recHTML;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching recommendations:', error);
-                        recommendationBox.innerHTML = `
-                            <div class="recommendations show">
-                                <h3>Error loading recommendations</h3>
-                                <p>Please try again later.</p>
-                            </div>
-                        `;
-                    });
+        // Search immediately on Enter
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(typingTimer);
+                const query = searchInput.value.trim();
+                if (query.length >= 2) {
+                    doSearch(query);
                 }
             }
         });
     }
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+    
+    // Enhanced search result click handler
+    searchResults.addEventListener('click', function(event) {
+        const clicked = event.target.closest('.searchResultItem');
+        if (!clicked) return;
+        
+        const title = clicked.getAttribute('data-title');
+        const artist = clicked.getAttribute('data-artist');
+        const albumCoverUrl = clicked.getAttribute('data-album-cover');
+        
+        if (title && artist) {
+            // Update the record player with the selected song if elements exist
+            if (albumCover) {
+                albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
+            }
+            searchInput.value = `${title} - ${artist}`;
+            searchResults.style.display = 'none';
+
+            // Start the record playing if record player exists
+            if (record && !isPlaying) {
+                isPlaying = true;
+                record.classList.add('playing');
+                if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
+            }
+            
+            // Get current timeframe, genre and recommendations count
+            const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
+            const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
+            const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
+            
+            // Show loading in recommendation box
+            if (recommendationBox) {
+                recommendationBox.innerHTML = `
+                    <div class="recommendations-show">
+                        <h3>Loading recommendations for ${title} by ${artist}...</h3>
+                        <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
+                        <h5>Powered by <strong>CadenceAI</strong></h5>
+                    </div>
+                `;
+                
+                // Make the API call for recommendations
+                fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        track_name: title, 
+                        artist_name: artist,
+                        timeframe: timeframe === 'Any' ? '' : timeframe,
+                        genre: genre === 'Any' ? '' : genre,
+                        count: count
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Create enhanced recommendations HTML
+                    let recHTML = `
+                        <div class="recommendations-show">
+                            <h3>Recommended Songs for: ${title} by ${artist}</h3>
+                            <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                            <h5>Powered by <strong>CadenceAI</strong></h5>
+                        </div>
+                        <div>
+                            <ul class="recommendation-list">
+                    `;
+                    
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        console.log('Recommendation data:', data.recommendations[0]);
+                        data.recommendations.forEach(rec => {
+                            // Use the album_cover from the backend
+                            const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
+                            
+                            // Use the music links provided by the backend (preferred method)
+                            const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                            const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                            
+                            recHTML += `
+                                <li class="recommendation-item">
+                                    <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
+                                    <div class="recommendation-cover">
+                                        <img src="${albumCoverUrl}" alt="${rec.title} album cover">
+                                    </div>
+                                    <div class="recommendation-info">
+                                        <h4 class="recommendation-title">${rec.title}</h4>
+                                        <p class="recommendation-artist">${rec.artist}</p>
+                                    </div>
+                                    <div class="recommendation-right">
+                                        <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
+                                        <div class="musicLink">
+                                            <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
+                                                Listen on Apple Music
+                                            </a>
+                                        </div>
+                                        <div class="musicLink">
+                                            <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
+                                                Listen on Spotify
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            `;
+                        });
+                    } else {
+                        recHTML += `<li class="recommendation-item">No recommendations found</li>`;
+                    }
+                    
+                    recHTML += `
+                            </ul>
+                        </div>
+                    `;
+                    
+                    recommendationBox.innerHTML = recHTML;
+                })
+                .catch(error => {
+                    console.error('Error fetching recommendations:', error);
+                    recommendationBox.innerHTML = `
+                        <div class="recommendations show">
+                            <h3>Error loading recommendations</h3>
+                            <p>Please try again later.</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+    });
 });

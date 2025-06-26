@@ -1,5 +1,4 @@
 import os
-import tempfile
 import logging
 import urllib.parse
 import re
@@ -7,14 +6,11 @@ from cadence import EnhancedAudioProcessor
 from cadence import EnhancedAudioProcessor
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple
 
 import deezer
-import librosa
 import numpy as np
 import requests
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 
 # Load variables from .env into the environment
@@ -145,7 +141,6 @@ class DeezerClient:
         self.client = deezer.Client()
     
     def get_track_preview(self, track_id: int) -> Optional[str]:
-        """Fetches the preview URL of a song from Deezer."""
         try:
             track = self.client.get_track(track_id)
             return track.preview
@@ -154,7 +149,6 @@ class DeezerClient:
             return None
     
     def search_track(self, track_name: str, artist_name: str) -> Optional[int]:
-        """Searches for a track by name and artist, returns track ID if found."""
         try:
             results = self.client.search(f"{track_name} {artist_name}")
             for track in results:
@@ -167,7 +161,6 @@ class DeezerClient:
             return None
     
     def get_artist_id(self, track_name: str, artist_name: str) -> Optional[int]:
-        """Gets the artist ID using a track and artist name."""
         try:
             results = self.client.search(f"{track_name} {artist_name}")
             for track in results:
@@ -180,7 +173,6 @@ class DeezerClient:
             return None
 
     def get_track_id(self, track_name: str, artist_name: str) -> Optional[int]:
-        """Gets the track ID using a track and artist name."""
         try:
             results = self.client.search(f"{track_name} {artist_name}")
             for track in results:
@@ -190,48 +182,15 @@ class DeezerClient:
             return None
         except Exception as e:
             logger.error(f"Error getting track ID: {e}")
-            logger.error(f"Error getting track ID: {e}")
             return None
-        
-# Replace the AudioProcessor class and related methods in your crud.py with this updated version
-
-class Track:
-    def __init__(self, id: int, title: str, artist_name: str, preview_url: Optional[str] = None):
-        self.id = id
-        self.title = title
-        self.artist_name = artist_name
-        self.preview_url = preview_url
-        self.features = None  # Will store AudioFeatures object
-        self.feature_vector = None  # Will store numpy array for compatibility
-        self.similarity_score = 0.0
-
-    def __str__(self):
-        return f"{self.title} by {self.artist_name}"
-# Replace the AudioProcessor class and related methods in your crud.py with this updated version
-
-class Track:
-    def __init__(self, id: int, title: str, artist_name: str, preview_url: Optional[str] = None):
-        self.id = id
-        self.title = title
-        self.artist_name = artist_name
-        self.preview_url = preview_url
-        self.features = None  # Will store AudioFeatures object
-        self.feature_vector = None  # Will store numpy array for compatibility
-        self.similarity_score = 0.0
-
-    def __str__(self):
-        return f"{self.title} by {self.artist_name}"
 
 class MusicRecommender:
     def __init__(self):
         self.deezer_client = DeezerClient()
-        self.audio_processor = EnhancedAudioProcessor()  # Use enhanced processor
-        self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
-        self.audio_processor = EnhancedAudioProcessor()  # Use enhanced processor
+        self.audio_processor = EnhancedAudioProcessor()
         self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
     
     def process_track(self, track: Track) -> Track:
-        """Downloads and processes a single track to extract comprehensive features."""
         """Downloads and processes a single track to extract comprehensive features."""
         if not track.preview_url:
             track.preview_url = self.deezer_client.get_track_preview(track.id)
@@ -243,9 +202,7 @@ class MusicRecommender:
         temp_file = None
         try:
             logger.info(f"Processing: {track.title} by {track.artist_name}")
-            logger.info(f"Processing: {track.title} by {track.artist_name}")
             temp_file = self.audio_processor.download_audio(track.preview_url)
-
 
             if temp_file:
                 if not os.path.exists(temp_file) or os.path.getsize(temp_file) < 1024:
@@ -255,34 +212,15 @@ class MusicRecommender:
                 
                 # Extract comprehensive features
                 audio_features = self.audio_processor.extract_comprehensive_features(temp_file)
-                if not os.path.exists(temp_file) or os.path.getsize(temp_file) < 1024:
-                    logger.warning(f"Downloaded file is missing or too small: {temp_file}")
-                    return track
-                logger.info(f"Downloaded to: {temp_file} ({os.path.getsize(temp_file)} bytes)")
-                
-                # Extract comprehensive features
-                audio_features = self.audio_processor.extract_comprehensive_features(temp_file)
-                
                 if audio_features:
                     track.features = audio_features
                     track.feature_vector = audio_features.to_vector()
-                    
-                    logger.info(f"Extracted {len(track.feature_vector)} features for: {track.title}")
-                    logger.info(f"  - Tempo: {audio_features.tempo:.1f} BPM")
-                    logger.info(f"  - Key: {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][audio_features.key_signature]} {'Major' if audio_features.mode else 'Minor'}")
-                    logger.info(f"  - Spectral Centroid: {audio_features.spectral_centroid:.1f} Hz")
-                    logger.info(f"  - Energy: {audio_features.rms_energy:.3f}")
-                if audio_features:
-                    track.features = audio_features
-                    track.feature_vector = audio_features.to_vector()
-                    
                     logger.info(f"Extracted {len(track.feature_vector)} features for: {track.title}")
                     logger.info(f"  - Tempo: {audio_features.tempo:.1f} BPM")
                     logger.info(f"  - Key: {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][audio_features.key_signature]} {'Major' if audio_features.mode else 'Minor'}")
                     logger.info(f"  - Spectral Centroid: {audio_features.spectral_centroid:.1f} Hz")
                     logger.info(f"  - Energy: {audio_features.rms_energy:.3f}")
                 else:
-                    logger.warning(f"Failed to extract features for: {track.title}")
                     logger.warning(f"Failed to extract features for: {track.title}")
             else:
                 logger.warning(f"Failed to download preview for: {track.title}")
@@ -295,18 +233,9 @@ class MusicRecommender:
                     os.remove(temp_file)
                 except Exception as e:
                     logger.warning(f"Failed to remove temp file {temp_file}: {e}")
-                try:
-                    os.remove(temp_file)
-                except Exception as e:
-                    logger.warning(f"Failed to remove temp file {temp_file}: {e}")
         
         return track
     
-    def get_recommendations(self, track_name: str, artist_name: str, 
-                          recommendations_count: int = FINAL_RECOMMENDATIONS_COUNT) -> List[Track]:
-        """Gets and processes music recommendations based on enhanced audio feature similarity."""
-        
-        # Process the reference track
     def get_recommendations(self, track_name: str, artist_name: str, 
                           recommendations_count: int = FINAL_RECOMMENDATIONS_COUNT) -> List[Track]:
         """Gets and processes music recommendations based on enhanced audio feature similarity."""
@@ -321,19 +250,6 @@ class MusicRecommender:
         logger.info(f"Processing reference track: {reference_track.title} by {reference_track.artist_name}")
         reference_track = self.process_track(reference_track)
         
-        if not reference_track.features:
-            logger.error("Failed to extract features from reference track")
-            return []
-            
-        # Log reference track characteristics
-        ref_features = reference_track.features
-        logger.info(f"Reference track analysis:")
-        logger.info(f"  - Tempo: {ref_features.tempo:.1f} BPM")
-        logger.info(f"  - Key: {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][ref_features.key_signature]} {'Major' if ref_features.mode else 'Minor'}")
-        logger.info(f"  - Energy: {ref_features.rms_energy:.3f}")
-        logger.info(f"  - Brightness: {ref_features.spectral_centroid:.1f} Hz")
-        
-        # Fetch candidate tracks
         if not reference_track.features:
             logger.error("Failed to extract features from reference track")
             return []
