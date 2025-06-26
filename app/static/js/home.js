@@ -444,8 +444,15 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (query) {
                 // Show the loading message in search results
-                searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Searching...</p></div></div>';
+                searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p class="searching-message">Searching...</p></div></div>';
                 searchResults.style.display = 'block';
+                
+                // Force high z-index and proper positioning
+                searchResults.style.position = 'absolute';
+                searchResults.style.zIndex = '9999';
+                searchResults.style.top = '100%';
+                searchResults.style.left = '0';
+                searchResults.style.right = '0';
                 
                 typingTimer = setTimeout(() => {
                     // Make an actual API call
@@ -459,6 +466,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(response => response.json())
                     .then(data => {
                         searchResults.innerHTML = '';
+                        
+                        // Maintain z-index after clearing content
+                        searchResults.style.position = 'absolute';
+                        searchResults.style.zIndex = '9999';
+                        searchResults.style.top = '100%';
+                        searchResults.style.left = '0';
+                        searchResults.style.right = '0';
                         
                         // Check if the response contains results
                         if (data.results && data.results.length > 0) {
@@ -520,10 +534,23 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         
-        // Hide search results when clicking outside
+        // Enhanced hide search results when clicking outside
         document.addEventListener('click', function(event) {
             if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
                 searchResults.style.display = 'none';
+            }
+        });
+        
+        // Show search results when focusing on input (if there's content)
+        searchInput.addEventListener('focus', function() {
+            if (searchResults.innerHTML.trim() !== '') {
+                searchResults.style.display = 'block';
+                // Re-apply z-index styling
+                searchResults.style.position = 'absolute';
+                searchResults.style.zIndex = '9999';
+                searchResults.style.top = '100%';
+                searchResults.style.left = '0';
+                searchResults.style.right = '0';
             }
         });
         

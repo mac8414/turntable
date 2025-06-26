@@ -45,7 +45,7 @@
 
 body {
     font-family: "Arial", sans-serif;
-    background: #1a1a1a;
+    background: #000000;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -149,6 +149,8 @@ h1 {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     gap: 20px; 
+    position: relative;
+    z-index: 10;
 }
 
 .turntable-top-row {
@@ -204,6 +206,13 @@ h1 {
     width: 400px;
     height: 400px;
     position: relative;
+    border-radius: 100%;
+    box-shadow: 0 0 10px #000;
+}
+
+.record-player:hover {
+    box-shadow: 0 0 10px #000,  
+                0 0 10px #fff;        
 }
 
 .record-base {
@@ -212,7 +221,6 @@ h1 {
     background-color: rgba(10, 0, 0, 0.85);
     border-radius: 50%;
     position: absolute;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .record {
@@ -359,12 +367,24 @@ h1 {
     user-select: none;
     transition: transform 0.1s ease-out;
     margin: 10px 0;
-    box-shadow: 0 0 15px #000;
+    box-shadow: 0 0 10px #000;
+}
+
+.knob:hover{
+    transform: scale(1.1);
+    box-shadow:
+        0 0 10px #000,
+        0 0 5px #fff inset, /* inner glow */
+        inset 0 2px 5px rgba(255, 255, 255, 0.2); /* subtle lighting */
 }
 
 .knob-active {
     cursor: grabbing;
-    transform: scale(1.2);
+    transform: scale(1.1);
+    box-shadow:
+        0 0 10px #000,
+        0 0 5px #fff inset, /* inner glow */
+        inset 0 2px 5px rgba(255, 255, 255, 0.2); /* subtle lighting */
 }
 
 .knob::after {
@@ -415,12 +435,6 @@ h1 {
     position: relative;
     margin: auto;
     box-sizing: border-box;
-    /* background: rgba(0, 0, 0, 0.4);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); */
 }
 
 .slider-label {
@@ -444,7 +458,6 @@ h1 {
     outline: none;
     margin: 0;
     position: absolute;
-    border: 1px solid rgba(255, 255, 255, 0.3);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -454,16 +467,14 @@ h1 {
 .recommendation-slider-horizontal::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 40px;
-    height: 16px;
-    background: linear-gradient(90deg, #666 0%, #333 100%);
+    width: 16px;
+    height: 40px;
+    background: linear-gradient(135deg, #666 0%, #333 100%);
     border: 2px solid #888;
-    border-top: inset 2px #999;
     border-bottom: inset 2px #222;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.6);
     border-radius: 3px;
     cursor: grab;
-    transform: rotate(90deg);
 }
 
 .recommendation-slider-horizontal::-webkit-slider-thumb:hover {
@@ -474,7 +485,6 @@ h1 {
 .recommendation-slider-horizontal::-webkit-slider-thumb:active {
     cursor: grabbing;
     transform: scale(1.1);
-    transform: rotate(90deg);
 }
 
 .recommendation-slider-horizontal::-moz-range-thumb {
@@ -533,11 +543,12 @@ h1 {
     margin: auto;
     position: relative;
     box-sizing: border-box;
-    z-index: 10;
+    z-index: 1000;
 }
 
 .search-input-container {
     position: relative;
+    z-index: 1001;
 }
 
 .search-input {
@@ -549,27 +560,39 @@ h1 {
     font-size: 1rem;
     width: 100%;
     box-sizing: border-box;
+    position: relative;
+    z-index: 1002;
 }
 
 ::placeholder {
     color: rgba(255, 255, 255, 0.5);
 }
 
+.searching-message {
+    padding: 5px;
+    border-radius: 100px;
+}
+
+.searching-message:hover {
+    transform: scale(1);
+}
+
 #searchResults {
     overflow-x: hidden;
     position: absolute;
-    width: 100%;
+    width: 90%;
     max-height: 200px;
     overflow-y: auto;
+    margin: auto;
     background-color: rgba(20, 20, 20, 0.9);
-    z-index: 1000;
+    z-index: 9999;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     display: none;
     border-radius: 15px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     scrollbar-width: thin;
     scrollbar-color: #555 #333;
+    top: 100%;
+    left: 0;
 }
 
 .searchResultItem {
@@ -577,7 +600,8 @@ h1 {
     transition: background-color 0.2s, transform 0.1s;
     position: relative;
     overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: #000;
+    z-index: 10000;
 }
 
 .searchResultItem:hover {
@@ -595,7 +619,7 @@ h1 {
     background-position: center;
     opacity: 0.5;
     filter: blur(3px);
-    z-index: 0;
+    z-index: 2;
     transition: opacity 0.3s;
 }
 
@@ -664,6 +688,8 @@ h1 {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1;
+    position: relative;
 }
 
 .recommendations-show h3 {
