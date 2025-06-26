@@ -240,9 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sliderValue = document.getElementById('sliderValue');
     
     let typingTimer;
-    const typingDelay = 200; // Even faster debounce
-
-    let lastSearchController = null; // For aborting previous fetches
+    const typingDelay = 500;
     
     // Timeframe options
     const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
@@ -573,112 +571,113 @@ document.addEventListener('DOMContentLoaded', function () {
                 searchInput.value = `${title} - ${artist}`;
                 searchResults.style.display = 'none';
 
-            // Start the record playing if record player exists
-            if (record && !isPlaying) {
-                isPlaying = true;
-                record.classList.add('playing');
-                if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
-            }
-            
-            // Get current timeframe, genre and recommendations count
-            const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
-            const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
-            const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
-            
-            // Show loading in recommendation box
-            if (recommendationBox) {
-                recommendationBox.innerHTML = `
-                    <div class="recommendations-show">
-                        <h3>Loading recommendations for ${title} by ${artist}...</h3>
-                        <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
-                        <h5>Powered by <strong>CadenceAI</strong></h5>
-                    </div>
-                `;
+                // Start the record playing if record player exists
+                if (record && !isPlaying) {
+                    isPlaying = true;
+                    record.classList.add('playing');
+                    if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
+                }
                 
-                // Make the API call for recommendations
-                fetch('/api/recommend', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        track_name: title, 
-                        artist_name: artist,
-                        timeframe: timeframe === 'Any' ? '' : timeframe,
-                        genre: genre === 'Any' ? '' : genre,
-                        count: count
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Create enhanced recommendations HTML
-                    let recHTML = `
+                // Get current timeframe, genre and recommendations count
+                const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
+                const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
+                const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
+                
+                // Show loading in recommendation box
+                if (recommendationBox) {
+                    recommendationBox.innerHTML = `
                         <div class="recommendations-show">
-                            <h3>Recommended Songs for: ${title} by ${artist}</h3>
-                            <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                            <h3>Loading recommendations for ${title} by ${artist}...</h3>
+                            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
                             <h5>Powered by <strong>CadenceAI</strong></h5>
                         </div>
-                        <div>
-                            <ul class="recommendation-list">
                     `;
                     
-                    if (data.recommendations && data.recommendations.length > 0) {
-                        console.log('Recommendation data:', data.recommendations[0]);
-                        data.recommendations.forEach(rec => {
-                            // Use the album_cover from the backend
-                            const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
-                            
-                            // Use the music links provided by the backend (preferred method)
-                            const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                            const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                            
-                            recHTML += `
-                                <li class="recommendation-item">
-                                    <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
-                                    <div class="recommendation-cover">
-                                        <img src="${albumCoverUrl}" alt="${rec.title} album cover">
-                                    </div>
-                                    <div class="recommendation-info">
-                                        <h4 class="recommendation-title">${rec.title}</h4>
-                                        <p class="recommendation-artist">${rec.artist}</p>
-                                    </div>
-                                    <div class="recommendation-right">
-                                        <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                                        <div class="musicLink">
-                                            <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
-                                                Listen on Apple Music
-                                            </a>
+                    // Make the API call for recommendations
+                    fetch('/api/recommend', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            track_name: title, 
+                            artist_name: artist,
+                            timeframe: timeframe === 'Any' ? '' : timeframe,
+                            genre: genre === 'Any' ? '' : genre,
+                            count: count
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Create enhanced recommendations HTML
+                        let recHTML = `
+                            <div class="recommendations-show">
+                                <h3>Recommended Songs for: ${title} by ${artist}</h3>
+                                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                                <h5>Powered by <strong>CadenceAI</strong></h5>
+                            </div>
+                            <div>
+                                <ul class="recommendation-list">
+                        `;
+                        
+                        if (data.recommendations && data.recommendations.length > 0) {
+                            console.log('Recommendation data:', data.recommendations[0]);
+                            data.recommendations.forEach(rec => {
+                                // Use the album_cover from the backend
+                                const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
+                                
+                                // Use the music links provided by the backend (preferred method)
+                                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                                
+                                recHTML += `
+                                    <li class="recommendation-item">
+                                        <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
+                                        <div class="recommendation-cover">
+                                            <img src="${albumCoverUrl}" alt="${rec.title} album cover">
                                         </div>
-                                        <div class="musicLink">
-                                            <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
-                                                Listen on Spotify
-                                            </a>
+                                        <div class="recommendation-info">
+                                            <h4 class="recommendation-title">${rec.title}</h4>
+                                            <p class="recommendation-artist">${rec.artist}</p>
                                         </div>
-                                    </div>
-                                </li>
-                            `;
-                        });
-                    } else {
-                        recHTML += `<li class="recommendation-item">No recommendations found</li>`;
-                    }
-                    
-                    recHTML += `
-                            </ul>
-                        </div>
-                    `;
-                    
-                    recommendationBox.innerHTML = recHTML;
-                })
-                .catch(error => {
-                    console.error('Error fetching recommendations:', error);
-                    recommendationBox.innerHTML = `
-                        <div class="recommendations show">
-                            <h3>Error loading recommendations</h3>
-                            <p>Please try again later.</p>
-                        </div>
-                    `;
-                });
+                                        <div class="recommendation-right">
+                                            <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
+                                            <div class="musicLink">
+                                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
+                                                    Listen on Apple Music
+                                                </a>
+                                            </div>
+                                            <div class="musicLink">
+                                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
+                                                    Listen on Spotify
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                `;
+                            });
+                        } else {
+                            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
+                        }
+                        
+                        recHTML += `
+                                </ul>
+                            </div>
+                        `;
+                        
+                        recommendationBox.innerHTML = recHTML;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching recommendations:', error);
+                        recommendationBox.innerHTML = `
+                            <div class="recommendations show">
+                                <h3>Error loading recommendations</h3>
+                                <p>Please try again later.</p>
+                            </div>
+                        `;
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 });
