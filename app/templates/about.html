@@ -1,25 +1,66 @@
-<!-- about.html -->
 {% extends "base.html" %}
 
-{% block title %}About{% endblock %}
+{% block title %}About & Contact{% endblock %}
+
+{% block extra_head %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endblock %}
 
 {% block content %}
-<img src="{{ url_for('static', filename='images/aboutUs.png') }}" alt="AboutUs" class="aboutUs-image" style="height: 40px;">
-<p style="margin-top: 30px; color: white;">Welcome to Turntable! We are dedicated to helping you discover new music and expand your taste. Our platform connects users to a world of music data powered by Spotify, and we aim to create a community of music lovers.</p>
+<section class="title">
+    <h2>About Us</h2>
+</section>
 
-<section class="team-members">
-    <img src="{{ url_for('static', filename='images/mtt.png') }}" alt="MeetTheTeam" class="mtt-image" style="height: 24px;">
-    <div class="team">
-        <div class="team-member">
-            <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKayHunter" />
-            <h4>McKay Hunter</h4>
-            <p>Co-founder & Developer</p>
+<section class="about-section">
+    <p>Welcome to Turntable! We are dedicated to helping you discover new music and expand your taste. Our platform connects users to a world of music data powered by our very own <strong>Cadence Ai</strong>.</p>
+</section>
+
+<!-- About Section -->
+<section class="about-section">
+    
+    <section class="team-members">
+        <h2>Meet the Team</h2>
+        <div class="team">
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKayHunter" />
+                <h4>McKay Hunter</h4>
+                <p>Co-founder & Developer</p>
+            </div>
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='images/rasimImage.jpg') }}" alt="RasimCrnica" />
+                <h4>Rasim Crnica</h4>
+                <p>Co-founder & Developer</p>
+            </div>
+            <div class="team-member">
+                <img src="{{ url_for('static', filename='images/zachImage.jpg') }}" alt="ZachAinge" />
+                <h4>Zach Ainge</h4>
+                <p>Designer & Developer</p>
+            </div>
         </div>
-        <div class="team-member">
-            <img src="{{ url_for('static', filename='images/rasimImage.jpg') }}" alt="RasimCrnica" />
-            <h4>Rasim Crnica</h4>
-            <p>Co-founder & Developer</p>
-        </div>
+    </section>
+</section>
+
+<!-- Contact Section -->
+<section class="contact-section">
+    <div class="contact-form">
+        <form action="/contact-help" method="POST">
+            <h2>Contact</h2>
+            <p>If you have any questions? Feel free to get in touch with us through the form below. Or email us at <a href="mailto:turntablehelp@gmail.com">turntablehelp@gmail.com</a></p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-container">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+            <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+            <button type="submit">Send Message</button>
+        </form>
     </div>
 </section>
 {% endblock %}

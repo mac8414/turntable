@@ -7,47 +7,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Turntable{% endblock %}</title>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 
 <body>
-    <header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
-            <div>
-                <a href="/home">
-                    <img src="{{ url_for('static', filename='images/turntableLetters.png') }}" alt="Turntable" style="height: 32px;">
-                </a>
-                <div class="tagline">Listen Different. Explore new music.</div>
-            </div>
-            <div class="nav-menu" style="font-size: 25px;">
-                <a title="Home page" href="/home" style="text-decoration: {% if request.path == '/home' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">Home</a>
-                <a title="Randomize" href="/randomizer" style="text-decoration: {% if request.path == '/randomizer' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">Randomizer</a>
-                <a title="Our pick for album of the week" href="/our-pick" style="text-decoration: {% if request.path == '/our-pick' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">Our Pick</a>
-                <a title="About Turntable" href="/about" style="text-decoration: {% if request.path == '/about' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">About</a>
-                <a title="Get in touch with us" href="/contact" style="text-decoration: {% if request.path == '/contact' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">Contact</a>
-            </div>
-        </div>
-    </header>
-
     <main>
-        <aside class="sidebarL" style="border-radius: 10px;">
-            {% block sidebar_left %}{% endblock %}
-        </aside>
-        
         <section class="content">
             {% block content %}{% endblock %}
         </section>
-        
-        <aside class="sidebarR" style="border-radius: 10px;">
-            {% block sidebar_right %}{% endblock %}
-        </aside>
     </main>
 
-    <footer>
-        <p>&copy; 2025 Turntable. All rights reserved.</p>
-        <p>Music data provided by Spotify. This application is not affiliated with or endorsed by Spotify.</p>
-        <a href="https://www.spotify.com" target="_blank" style="color: white; text-decoration: underline;">Spotify®</a>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Turntable</h3>
+                <p>Revolutionizing music discovery through AI-powered recommendations and vintage-inspired design. We believe that finding your next favorite song should be as enjoyable as listening to it.</p>
+            </div>
+        </div>
+
+        <div class="footer-section">
+            <a title="Home page" href="/home" style="text-decoration: {% if request.path == '/home' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">Home</a>
+            <a title="About Turntable" href="/about" style="text-decoration: {% if request.path == '/about' %}underline{% else %}none{% endif %}; color: white; margin-right: 20px;">About</a>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 Turntable. All rights reserved. Made with ♪ for music lovers everywhere.</p>
+        </div>
     </footer>
     
     {% block scripts %}{% endblock %}

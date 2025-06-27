@@ -1,17 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Music Recommendation Turntable</title>
+<!-- home.html -->
+{% extends "base.html" %}
+
+{% block title %}AI Music Recommendation Turntable{% endblock %}
+
+{% block extra_head %}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Special+Gothic+Expanded+One&display=swap">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
-    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <!-- Hero section with lava lamp background -->
     <div class="hero-section">
         <!-- Lava lamp background -->
@@ -68,7 +67,7 @@
         <div class="container">
             <div class="header">
                 <h1>T u r n t a b l e</h1>
-                <p><em>We don't just find songs - we find favorites</em></p>
+                <p><em>Listen Different. Explore new music.</em></p>
             </div>
             
             <div class="turntable-deck">
@@ -139,20 +138,10 @@
         <section class="section">
             <h2>Pick of the Week</h2>
             <p>TO DO</p>
+        </section>
     </div>
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>Turntable</h3>
-                <p>Revolutionizing music discovery through AI-powered recommendations and vintage-inspired design. We believe that finding your next favorite song should be as enjoyable as listening to it.</p>
-            </div>
-        </div>
-        
-        <div class="footer-bottom">
-            <p>&copy; 2025 Turntable. All rights reserved. Made with ♪ for music lovers everywhere.</p>
-        </div>
-    </footer>
-</body>
-</html>
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
