@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 searchResults.appendChild(div);
                             });
                         } else {
-                            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>No results found.</p></div></div>';
+                            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p class="searching-message">No results found.</p></div></div>';
                         }
                     })
                     .catch(error => {

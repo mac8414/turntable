@@ -348,6 +348,7 @@ h1 {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
+    margin-top: 15px;
 }
 
 .knob-container {
@@ -549,6 +550,24 @@ h1 {
     z-index: 1000;
 }
 
+.randomize-button {
+    background: linear-gradient(45deg, rgba(255, 153, 0, 0.3) 0%, rgba(154, 38, 0, 0.3) 100%);
+    padding: 4px 8px;
+    border-radius: 15px;
+    margin: -30px auto 10px 5px;
+    display: flex;
+    background-color: rgba(255, 150, 0, 0.3);
+    border: outset 1px #ff8530;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.randomize-button:hover {
+    transform: scale(1.01);
+    border: outset 1px #fff;
+    cursor: pointer;
+}
+
 .search-input-container {
     position: relative;
     z-index: 1001;
@@ -565,6 +584,7 @@ h1 {
     box-sizing: border-box;
     position: relative;
     z-index: 1002;
+    box-shadow: inset 0 2px 15px rgba(0, 0, 0, 0.5);
 }
 
 ::placeholder {
@@ -799,7 +819,7 @@ h1 {
 .recommendation-match {
     background-color: #ff8530;
     padding: 6px 12px;
-    border-radius: 15px;
+    border-radius: 50px;
     font-size: 0.85rem;
     font-weight: bold;
     margin-bottom: 12px;
