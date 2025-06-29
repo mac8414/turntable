@@ -18,7 +18,7 @@
   --text-medium: #555555;
   
   /* Gradients */
-  --lava-gradient: linear-gradient(0deg, rgba(100, 20, 0, 1) 1%, rgba(0, 0, 0, 1) 99%);
+  --lava-gradient: linear-gradient(0deg, rgba(100, 20, 0, 1) 0%, rgba(200, 100, 0, 1) 100%);
   --turntable-gradient: linear-gradient(45deg, rgba(186, 47, 0, 0.5) 0%, rgba(255, 195, 0, 0.5) 100%);
   --turntable-deck-gradient: linear-gradient(0deg, rgba(186, 47, 0, 0.8) 0%, rgba(255, 195, 0, 0.8) 100%);
   --knob-gradient: radial-gradient(circle at 30% 30%, var(--light-gray) 0%, var(--medium-gray) 100%);
@@ -110,17 +110,21 @@ body {
   z-index: -1;
   overflow: hidden;
   background-color: var(--primary-black);
+  background: var(--lava-gradient);
 }
 
 .lava-lamp-container::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--lava-gradient);
-  opacity: 0.5;
+  background-image: url('../images/wallpaper.png');
+  background-repeat: repeat;
+  background-size: 400px;
+  opacity: 1;
   z-index: 0;
   pointer-events: none;
-  mix-blend-mode:difference;
+  mix-blend-mode: overlay;
+  filter: blur(1px);
 }
 
 .metaballs {
@@ -292,7 +296,12 @@ h1 {
 }
 
 .record-player:hover {
-  box-shadow: var(--shadow-glow), var(--shadow-glow-white);
+  box-shadow: none;
+  box-shadow: var(--shadow-glow-white);
+}
+
+.record-player:active {
+  transform: scale(0.99);
 }
 
 .record-base {
@@ -994,6 +1003,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: var(--primary-orange-dark);
 }
 
 /* Single pseudo-element approach */
@@ -1011,6 +1021,7 @@ h1 {
   background-size: 200px 200px; /* Adjust this to match your image dimensions */
   animation: moveDiagonalSeamless 20s linear infinite;
   z-index: -1;
+  mix-blend-mode: overlay;
 }
 
 /* Remove the ::after since we only need one layer */
@@ -1135,8 +1146,7 @@ h1 {
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: url('../images/wallpaper.png');
   background-repeat: repeat;
-  background-size: 500px;
-  filter: grayscale(100%);
+  background-size: 400px;
   z-index: 0; /* behind your content */
 }
 
@@ -1305,7 +1315,7 @@ h1 {
   background: var(--dark-gray);
   padding: var(--spacing-sm) 0 var(--spacing-xl);
   border-top: 1px solid var(--medium-gray);
-  width: 100%;
+  width: 100vw;
   text-align: center;
 }
 
