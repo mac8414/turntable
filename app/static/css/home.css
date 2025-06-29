@@ -19,8 +19,8 @@
   
   /* Gradients */
   --lava-gradient: linear-gradient(0deg, rgba(100, 20, 0, 1) 1%, rgba(0, 0, 0, 1) 99%);
-  --turntable-gradient: linear-gradient(0deg, rgba(186, 47, 0, 0.5) 1%, rgba(255, 195, 0, 0.5) 99%);
-  --turntable-deck-gradient: linear-gradient(0deg, rgba(186, 47, 0, 0.3) 1%, rgba(255, 195, 0, 0.3) 99%);
+  --turntable-gradient: linear-gradient(45deg, rgba(186, 47, 0, 0.5) 0%, rgba(255, 195, 0, 0.5) 100%);
+  --turntable-deck-gradient: linear-gradient(0deg, rgba(186, 47, 0, 0.8) 0%, rgba(255, 195, 0, 0.8) 100%);
   --knob-gradient: radial-gradient(circle at 30% 30%, var(--light-gray) 0%, var(--medium-gray) 100%);
   --button-gradient: linear-gradient(45deg, rgba(255, 153, 0, 0.3) 0%, rgba(154, 38, 0, 0.3) 100%);
   
@@ -110,7 +110,17 @@ body {
   z-index: -1;
   overflow: hidden;
   background-color: var(--primary-black);
+}
+
+.lava-lamp-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: var(--lava-gradient);
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode:difference;
 }
 
 .metaballs {
@@ -160,8 +170,8 @@ body {
   align-items: center;
   min-height: 100vh;
   position: relative;
-  background: var(--primary-black);
-  width: 100%;
+  background: none;
+  width: 100vw;
   padding: var(--spacing-xl);
 }
 
@@ -171,6 +181,23 @@ body {
   padding: var(--spacing-xxxl) 0;
   position: relative;
   z-index: 1;
+}
+
+button:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+a:hover {
+  transform: scale(1.05);
+}
+
+a:active {
+  transform: scale(0.98);
 }
 
 /* ===========================================
@@ -193,7 +220,7 @@ h1 {
 }
 
 .header p {
-  color: var(--text-light-gray);
+  color: var(--primary-white);
   font-style: italic;
   margin: var(--spacing-xs) 0;
 }
@@ -228,7 +255,6 @@ h1 {
   margin: 0 auto var(--spacing-xxl) auto;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   gap: var(--spacing-xl);
   position: relative;
   z-index: 10;
@@ -1093,19 +1119,36 @@ h1 {
    =========================================== */
 
 .contact-section {
+  position: relative; /* Needed for absolute positioning of the overlay */
   width: 100vw;
   background-color: var(--primary-white);
   padding: 0;
   margin: 0;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
+  overflow: hidden; /* Make sure the overlay doesn’t spill out */
+}
+
+.contact-section::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('../images/wallpaper.png');
+  background-repeat: repeat;
+  background-size: 500px;
+  filter: grayscale(100%);
+  z-index: 0; /* behind your content */
+}
+
+.contact-section > * {
+  position: relative;
+  z-index: 1; /* keep actual section content above the overlay */
 }
 
 .contact-form {
   font-family: var(--font-contact);
   display: flex;
   justify-content: center;
-  background-color: var(--primary-white);
   width: 100%;
   padding: var(--spacing-xl) var(--spacing-sm);
   box-sizing: border-box;
