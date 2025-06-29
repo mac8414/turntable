@@ -605,7 +605,7 @@ h1 {
 }
 
 .randomize-button:hover {
-  transform: scale(1.01);
+  transform: scale(1.05);
   cursor: pointer;
 }
 
@@ -632,7 +632,7 @@ h1 {
 }
 
 .search-input::placeholder {
-  color: var(--text-gray);
+  color: var(--text-light-gray);
 }
 
 .searching-message {
@@ -958,16 +958,48 @@ h1 {
    =========================================== */
 
 .title {
+  position: relative;
   text-align: center;
-  padding: var(--spacing-xxxl);
-  background-color: var(--primary-orange-dark);
+  padding: none;
   width: 100vw;
+  height: 30vh;
+  overflow: hidden;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Single pseudo-element approach */
+.title::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background-image: url('../images/wallpaper.png');
+  background-repeat: repeat;
+  background-color: var(--primary-orange-dark);
+  /* Key: Make sure background-size creates seamless tiles */
+  background-size: 200px 200px; /* Adjust this to match your image dimensions */
+  animation: moveDiagonalSeamless 20s linear infinite;
+  z-index: -1;
+}
+
+/* Remove the ::after since we only need one layer */
+.title::after {
+  display: none;
 }
 
 .title h2 {
-    font-size: clamp(28px, 4vw, 48px);
-    color: var(--primary-white);
-    margin: auto;
+  font-family: var(--font-special);
+  font-size: clamp(28px, 4vw, 48px);
+  color: var(--primary-white);
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  text-align: center;
 }
 
 .about-section {
@@ -980,9 +1012,9 @@ h1 {
 }
 
 .about-section h2 {
-    text-align: center;
-    margin: var(--spacing-xxxl) auto;
-    color: var(--primary-orange);
+  text-align: center;
+  margin: var(--spacing-xxxl) auto;
+  color: var(--primary-orange);
 }
 
 .about-section > p {
@@ -1019,7 +1051,12 @@ h1 {
 }
 
 .team-member:hover {
-    transform: scale(1.05);
+  transform: scale(1.05);
+  cursor:pointer;
+}
+
+.team-member:active {
+  transform: scale(0.98);
 }
 
 .team-member img {
@@ -1027,7 +1064,6 @@ h1 {
   height: 150px;
   border-radius: var(--radius-circle);
   object-fit: cover;
-  box-shadow: var(--shadow-lg);
 }
 
 .team-member h4 {
@@ -1039,6 +1075,17 @@ h1 {
 .team-member p {
   font-size: clamp(14px, 1.5vw, 16px);
   color: var(--text-gray);
+}
+
+/* Updated animation for seamless movement */
+@keyframes moveDiagonalSeamless {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    /* Move by the exact background-size dimensions for perfect loop */
+    transform: translate(200px, 200px);
+  }
 }
 
 /* ===========================================
@@ -1098,7 +1145,7 @@ h1 {
   border: 1px solid #ddd;
   border-radius: var(--radius-md);
   font-size: clamp(14px, 2.5vw, 16px);
-  color: var(--text-light-gray);
+  color: var(--text-medium);
   resize: vertical;
   box-sizing: border-box;
   font-size: var(--font-size-md);
