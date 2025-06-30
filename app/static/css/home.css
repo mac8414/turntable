@@ -97,6 +97,10 @@ body {
   line-height: 1.6;
 }
 
+html {
+  overflow-x: hidden
+}
+
 /* ===========================================
    LAVA LAMP BACKGROUND STYLES
    =========================================== */
@@ -1403,77 +1407,803 @@ footer {
 }
 
 /* ===========================================
-   RESPONSIVE DESIGN
+   ENHANCED RESPONSIVE DESIGN
    =========================================== */
 
-@media (max-width: 768px) {
-  .turntable-top-row {
-    flex-direction: column;
-  }
+/* Base styles are for desktop (1024px and up) */
 
-  .controls-section {
-    flex-direction: column;
-    gap: var(--spacing-xl);
+/* Large Desktop (1200px and up) */
+@media (min-width: 1200px) {
+  .container {
+    max-width: var(--container-max-width-lg);
   }
-
-  .control-panel {
-    flex-direction: column;
-    gap: var(--spacing-xl);
+  
+  .turntable {
+    max-width: 1000px;
   }
   
   .record-player {
-    width: 250px;
-    height: 250px;
+    width: 450px;
+    height: 450px;
   }
   
-  .slider-vertical-container {
-    height: 200px;
-    margin-top: var(--spacing-xl);
+  .slider-horizontal-container {
+    width: 400px;
+  }
+}
+
+/* Standard Desktop (1024px - 1199px) */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .record-player {
+    width: 400px;
+    height: 400px;
   }
   
-  .recommendation-slider-vertical {
-    width: 200px;
+  .slider-horizontal-container {
+    width: 400px;
+  }
+}
+
+/* Tablet Landscape (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .turntable {
+    max-width: 100%;
+    padding: var(--spacing-lg);
+  }
+  
+  .turntable-deck {
+    padding: var(--spacing-md);
+    gap: var(--spacing-lg);
+  }
+  
+  .turntable-top-row {
+    flex-direction: row;
+    align-items: start;
+    gap: var(--spacing-lg);
+  }
+  
+  .record-player {
+    width: 400px;
+    height: 400px;
+  }
+  
+  .slider-horizontal-container {
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .controls-section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-lg);
+  }
+  
+  .control-panel {
+    gap: var(--spacing-lg);
+  }
+  
+  .knob-container {
+    margin: var(--spacing-md);
+    width: 100px;
+  }
+  
+  .knob {
+    width: 75px;
+    height: 75px;
+  }
+  
+  /* Content sections */
+  .section {
+    padding: var(--spacing-xxl) var(--spacing-lg);
+  }
+  
+  .section h2 {
+    font-size: 2.2rem;
+  }
+  
+  .section p {
+    font-size: var(--font-size-lg);
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
+  }
+  
+  .team {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-xl);
+  }
+  
+  /* Search results */
+  .searchResultItem-content {
+    gap: var(--spacing-lg);
+  }
+  
+  .searchResultItem-artwork {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .recommendation-cover {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* Tablet Portrait (600px - 767px) */
+@media (min-width: 600px) and (max-width: 767px) {
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .turntable {
+    padding: var(--spacing-md);
+  }
+  
+  .turntable-deck {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-md);
+  }
+  
+  .turntable-top-row {
+    flex-direction: row;
+    align-items: start;
+    gap: var(--spacing-md);
+  }
+  
+  .record-player {
+    width: 300px;
+    height: 300px;
   }
 
+  .record-arm {
+    width: 150px;
+    height: 9px;
+    top: 35px;
+    right: -20px;
+  }
+  
+  .slider-horizontal-container {
+    width: 100%;
+    max-width: 350px;
+    height: 100px;
+  }
+  
+  .controls-section {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+  
+  .control-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    justify-content: center;
+  }
+  
+  .knob-container {
+    margin: var(--spacing-sm);
+    width: 90px;
+  }
+  
+  .knob {
+    width: 70px;
+    height: 70px;
+    margin: var(--spacing-md) 0;
+  }
+  
+  .knob-label {
+    font-size: 0.8rem;
+  }
+  
+  /* Header */
+  h1 {
+    font-size: 2rem;
+  }
+  
+  /* Content sections */
+  .section {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+  
   .section h2 {
     font-size: 2rem;
   }
   
-  .slider-labels-vertical {
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .team {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+  
+  .team-member img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  /* Contact form */
+  .contact-form {
+    padding: var(--spacing-md) var(--spacing-xs);
+  }
+  
+  .contact-form form {
+    padding: var(--spacing-md);
+  }
+  
+  /* Footer */
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-md);
+  }
+}
+
+/* Mobile Landscape (480px - 599px) */
+@media (min-width: 480px) and (max-width: 599px) {
+  .hero-section {
+    padding: var(--spacing-md);
+    min-height: auto;
+  }
+  
+  .container {
+    margin: var(--spacing-lg) auto 0 auto;
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .turntable {
+    padding: var(--spacing-sm);
+  }
+  
+  .turntable-deck {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-sm);
+  }
+  
+  .turntable-top-row {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+  
+  .record-player {
+    width: 200px;
     height: 200px;
   }
 
+  .record-arm {
+    width: 50px;
+    height: 3px;
+    top: 35px;
+    right: -20px;
+  }
+  
+  .record-arm {
+    width: 120px;
+    height: 8px;
+    top: 40px;
+    right: -25px;
+  }
+  
+  .slider-horizontal-container {
+    width: 100%;
+    max-width: 300px;
+    height: 90px;
+  }
+
+  .recommendation-slider-horizontal::-webkit-slider-thumb {
+    width: 14px;
+    height: 24px;
+  }
+  
+  .controls-section {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+  
+  .control-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+  }
+  
+  .knob-container {
+    margin: var(--spacing-xs);
+    width: 80px;
+  }
+  
+  .knob {
+    width: 65px;
+    height: 65px;
+    margin: var(--spacing-sm) 0;
+  }
+  
+  .knob::after {
+    top: 8%;
+    height: 18%;
+  }
+  
+  .knob-label {
+    font-size: 0.75rem;
+  }
+  
+  .knob-value {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+  
+  /* Header */
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  .header {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  /* Search */
+  .search-input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+  }
+  
+  .searchResultItem-artwork {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .searchResultItem-title {
+    font-size: 0.9rem;
+  }
+  
+  .searchResultItem-artist {
+    font-size: 0.8rem;
+  }
+  
+  /* Recommendations */
+  .recommendation-cover {
+    width: 60px;
+    height: 60px;
+    margin: var(--spacing-xs);
+  }
+  
+  .recommendation-info {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .recommendation-title {
+    font-size: var(--font-size-md);
+  }
+  
+  .recommendation-right {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    min-width: 100px;
+  }
+  
+  .recommendation-match {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+  
+  /* Content sections */
+  .section {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+  
+  .section h2 {
+    font-size: 1.8rem;
+  }
+  
   .section p {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-md);
   }
-
-  .features-grid {
+  
+  .team {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
-
-  .stats-container {
-    grid-template-columns: repeat(2, 1fr);
+  
+  .team-member img {
+    width: 100px;
+    height: 100px;
   }
+  
+  /* About page */
+  .title {
+    height: 25vh;
+  }
+  
+  .title h2 {
+    font-size: clamp(24px, 5vw, 36px);
+  }
+  
+  /* Footer */
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-sm);
+  }
+}
 
+/* Mobile Portrait (320px - 479px) */
+@media (max-width: 479px) {
+  .hero-section {
+    padding: var(--spacing-sm);
+    min-height: auto;
+  }
+  
+  .container {
+    margin: var(--spacing-md) auto 0 auto;
+    padding: 0 var(--spacing-xs);
+  }
+  
+  .turntable {
+    padding: var(--spacing-xs);
+  }
+  
+  .turntable-deck {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+    justify-content: center;
+  }
+  
+  .turntable-top-row {
+    flex-direction: row;
+    justify-content: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .record-player {
+    width: 200px;
+    height: 200px;
+
+  }
+  
+  .record-arm {
+    width: 100px;
+    height: 6px;
+    top: 35px;
+    right: -20px;
+  }
+  
+  .record-arm::after {
+    width: 15px;
+    height: 15px;
+  }
+  
+  .slider-horizontal-container {
+    width: 100%;
+    max-width: 250px;
+    height: 80px;
+  }
+  
+  .recommendation-slider-horizontal {
+    height: 8px;
+  }
+  
+  .recommendation-slider-horizontal::-webkit-slider-thumb {
+    width: 14px;
+    height: 24px;
+  }
+  
+  .slider-ticks {
+    bottom: var(--spacing-md);
+  }
+  
+  .slider-tick {
+    width: 2px;
+    height: 8px;
+  }
+  
+  .controls-section {
+    flex-direction: row;
+    gap: var(--spacing-xs);
+  }
+  
+  .control-panel {
+    flex-direction: row;
+    gap: var(--spacing-xs);
+  }
+  
+  .knob-container {
+    margin: var(--spacing-xs);
+    width: 70px;
+  }
+  
+  .knob {
+    width: 60px;
+    height: 60px;
+    margin: var(--spacing-xs) 0;
+  }
+  
+  .knob::after {
+    width: 1.5px;
+    top: 6%;
+    height: 16%;
+  }
+  
+  .knob-label {
+    font-size: 0.7rem;
+  }
+  
+  .knob-value {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    min-width: 25px;
+  }
+  
+  /* Header */
+  h1 {
+    font-size: 1.5rem;
+    margin: 2px;
+  }
+  
+  .header {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .header p {
+    font-size: 0.9rem;
+  }
+  
+  /* Search */
+  .search-input {
+    padding: 10px var(--spacing-sm);
+    font-size: 0.85rem;
+  }
+  
+  .searchResultItem {
+    padding: var(--spacing-xs);
+  }
+  
+  .searchResultItem-content {
+    gap: var(--spacing-sm);
+  }
+  
+  .searchResultItem-artwork {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .searchResultItem-title {
+    font-size: 0.85rem;
+  }
+  
+  .searchResultItem-artist {
+    font-size: 0.75rem;
+  }
+  
+  /* Recommendations */
+  .recommendationBox {
+    padding: 0 var(--spacing-xs);
+  }
+  
+  .recommendations-show {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-md) 0;
+  }
+  
+  .recommendations-show h3 {
+    font-size: 1.1rem;
+  }
+  
+  .recommendation-item {
+    margin-top: var(--spacing-md);
+  }
+  
+  .recommendation-cover {
+    width: 50px;
+    height: 50px;
+    margin: var(--spacing-xs);
+  }
+  
+  .recommendation-info {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .recommendation-title {
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+  }
+  
+  .recommendation-artist {
+    font-size: 0.8rem;
+  }
+  
+  .recommendation-right {
+    padding: var(--spacing-xs);
+    min-width: 80px;
+  }
+  
+  .recommendation-match {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .musicLink a {
+    font-size: 0.7rem;
+  }
+  
+  /* Content sections */
+  .section {
+    padding: var(--spacing-md) var(--spacing-xs);
+  }
+  
+  .section h2 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .section p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .features-grid {
+    gap: var(--spacing-md);
+  }
+  
+  .feature-card {
+    padding: var(--spacing-lg);
+  }
+  
+  .feature-card h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .feature-card p {
+    font-size: 0.85rem;
+  }
+  
+  /* Team */
+  .team {
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
+  }
+  
+  .team-member {
+    padding: var(--spacing-xs);
+  }
+  
+  .team-member img {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .team-member h4 {
+    font-size: 0.9rem;
+  }
+  
+  .team-member p {
+    font-size: 0.8rem;
+  }
+  
+  /* About page */
+  .title {
+    height: 20vh;
+  }
+  
+  .title h2 {
+    font-size: clamp(20px, 6vw, 32px);
+  }
+  
+  .about-section {
+    padding: var(--spacing-md) var(--spacing-xs);
+  }
+  
+  .about-section h2 {
+    margin: var(--spacing-lg) auto;
+    font-size: 1.5rem;
+  }
+  
+  .about-section > p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  /* Contact */
   .contact-form {
     padding: var(--spacing-xs);
   }
-
+  
   .contact-form form {
-    padding: var(--spacing-lg);
-    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-sm);
+    margin: var(--spacing-sm) auto;
   }
-
+  
+  .contact-form h2 {
+    font-size: 1.3rem;
+  }
+  
+  .contact-form input,
+  .contact-form textarea {
+    padding: var(--spacing-sm);
+    font-size: 0.9rem;
+  }
+  
+  .contact-form textarea {
+    min-height: 100px;
+  }
+  
+  .contact-form button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+  
+  /* Footer */
   .footer-content {
-    padding: 0 var(--spacing-lg);
-    gap: var(--spacing-xl);
+    padding: 0 var(--spacing-xs);
   }
-
-  .team {
-    padding: 0 var(--spacing-lg);
+  
+  .footer-section h3 {
+    font-size: var(--font-size-lg);
   }
+  
+  .footer-section p {
+    font-size: 0.85rem;
+  }
+  
+  /* Our Pick page */
+  .Week1Pick-image {
+    height: auto;
+    max-height: 400px;
+    margin: var(--spacing-md) auto;
+  }
+  
+  .content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .content h2 {
+    font-size: 1.3rem;
+  }
+}
 
-  .about-section {
-    padding: 0 var(--spacing-lg);
+/* Landscape orientation adjustments for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-section {
+    min-height: auto;
+    padding: var(--spacing-sm);
+  }
+  
+  .container {
+    margin: var(--spacing-sm) auto 0 auto;
+  }
+  
+  .header {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .turntable-deck {
+    gap: var(--spacing-sm);
+  }
+  
+  .turntable-top-row {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+  
+  .controls-section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+  
+  .control-panel {
+    flex-direction: row;
+    gap: var(--spacing-md);
   }
 }
