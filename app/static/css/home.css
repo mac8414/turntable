@@ -224,7 +224,7 @@ h1 {
   font-size: var(--font-size-xxxl);
   color: var(--primary-white);
   margin: var(--spacing-xs);
-  text-shadow: var(--primary-white) 0 0 10px;
+  text-shadow: var(--primary-white) 0 0 3px;
 }
 
 .header p {
