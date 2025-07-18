@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    window.isPlaying = false;
+
     // Use Vue if available
     const { createApp } = Vue;
     
@@ -129,80 +131,200 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- RANDOMIZER LOGIC (PRESERVED FROM ORIGINAL) ---
 function randomizeSelection() {
-    const button = document.querySelector('.randomizeButton');
-    button.disabled = true;
-    button.textContent = "Loading...";
-    const selectedOption = document.querySelector('.optionButton.selected');
-    if (!selectedOption) {
-        alert("Please select an option (Song, Album, or Artist) first!");
-        button.disabled = false;
-        button.textContent = "Randomize";
-        console.log("No option selected. Prompting user to select an option.");
+    console.log('Randomize button clicked!');
+    
+    const button = document.querySelector('.randomize-button') || document.querySelector('.randomizeButton');
+    const searchInput = document.getElementById('songSearch');
+    
+    if (!button || !searchInput) {
+        console.error('Button or search input not found!');
         return;
     }
-
-    const genre = document.querySelector('.dropDownGenre').value;
-    const year = document.querySelector('.dropDownTimePeriod').value;
-    let endpoint = "";
-
-    if (selectedOption.textContent === "Song") {
-        endpoint = `/random_song?year=${year}&genre=${genre}`;
-    } else if (selectedOption.textContent === "Album") {
-        endpoint = `/random_album?year=${year}&genre=${genre}`;
-    } else if (selectedOption.textContent === "Artist") {
-        endpoint = `/random_artist?genre=${genre}`;
-    }
-
-    console.log(`Fetching data from endpoint: ${endpoint}`);
-
-    fetch(endpoint)
-        .then(response => response.json())
-        .then(data => {
-            const contentBox = document.querySelector('.contentBox');
-
-            if (data.name) {
-                console.log(`Data received: ${JSON.stringify(data)}`);
-                contentBox.innerHTML = `
-                    <div>
-                        <h2 style="color: white;">${data.name}</h2>
-                        <p style="color: white;">${data.artist ? "By " + data.artist : ""}</p>
-                        ${data.image ? `<a href="${data.url}" target="_blank"><img id="albumImage" src="${data.image}" alt="${data.name}" style="width:300px; border-radius: 5px;"></a>` : ''}
-                        ${data.type === "song" && data.preview_url ? `<audio controls><source src="${data.preview_url}" type="audio/mpeg"></audio>` : ''}
+    
+    button.disabled = true;
+    button.textContent = "Loading...";
+    
+    // Array of random search terms to get different results
+    const randomSearchTerms = [
+        'love', 'heart', 'night', 'dream', 'fire', 'rock', 'dance', 'soul', 'blue', 'gold',
+        'time', 'life', 'free', 'high', 'run', 'fly', 'star', 'sun', 'moon', 'home',
+        'world', 'way', 'light', 'dark', 'wind', 'rain', 'day', 'gone', 'stay', 'move'
+    ];
+    
+    // Pick a random search term
+    const randomTerm = randomSearchTerms[Math.floor(Math.random() * randomSearchTerms.length)];
+    
+    console.log(`Searching for random term: ${randomTerm}`);
+    
+    // Use your existing search API
+    fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: randomTerm })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Search results:', data);
+        
+        if (data.results && data.results.length > 0) {
+            // Pick a random song from the results
+            const randomSong = data.results[Math.floor(Math.random() * data.results.length)];
+            
+            // Update the search input
+            searchInput.value = `${randomSong.title} - ${randomSong.artist}`;
+            console.log(`Selected random song: ${randomSong.title} - ${randomSong.artist}`);
+            
+            // Trigger the search result selection logic
+            const albumCover = document.getElementById('albumCover');
+            const record = document.getElementById('record');
+            const recordArm = document.getElementById('recordArm');
+            const recommendationBox = document.querySelector('.recommendationBox');
+            
+            // Update record player
+            if (albumCover && randomSong.album_cover) {
+                albumCover.innerHTML = `<img src="${randomSong.album_cover}" alt="${randomSong.title} by ${randomSong.artist}">`;
+            }
+            
+            // Start record playing
+            if (record && !window.isPlaying) {
+                window.isPlaying = true;
+                record.classList.add('playing');
+                if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
+            }
+            
+            // Get recommendation settings
+            const timeframeKnob = document.getElementById('timeframeKnob');
+            const genreKnob = document.getElementById('genreKnob');
+            const recommendationSlider = document.getElementById('recommendationSlider');
+            
+            const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
+            const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
+            
+            const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
+            const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
+            const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
+            
+            // Load recommendations
+            if (recommendationBox) {
+                recommendationBox.innerHTML = `
+                    <div class="recommendations-show">
+                        <h3>Loading recommendations for ${randomSong.title} by ${randomSong.artist}...</h3>
+                        <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
+                        <h5>Powered by <strong>CadenceAI</strong></h5>
                     </div>
                 `;
                 
-                if (data.image) {
-                    const albumImage = document.getElementById('albumImage');
-                    albumImage.onload = function() {
-                        button.disabled = false;
-                        button.textContent = "Randomize";
-                        console.log("Album image loaded successfully.");
-                    };
-                    albumImage.onerror = function() {
-                        button.disabled = false;
-                        button.textContent = "Randomize";
-                        console.error('Failed to load the album image.');
-                    };
-                    if (data.dominant_color) {
-                        document.querySelector('.contentBox').style.background = `linear-gradient(to bottom, ${data.dominant_color}, black)`;
+                // Get recommendations
+                fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        track_name: randomSong.title, 
+                        artist_name: randomSong.artist,
+                        timeframe: timeframe === 'Any' ? '' : timeframe,
+                        genre: genre === 'Any' ? '' : genre,
+                        count: count
+                    })
+                })
+                .then(response => response.json())
+                .then(recData => {
+                    let recHTML = `
+                        <div class="recommendations-show">
+                            <h3>Recommended Songs for: ${randomSong.title} by ${randomSong.artist}</h3>
+                            <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                            <h5>Powered by <strong>CadenceAI</strong></h5>
+                        </div>
+                        <div>
+                            <ul class="recommendation-list">
+                    `;
+                    
+                    if (recData.recommendations && recData.recommendations.length > 0) {
+                        recData.recommendations.forEach(rec => {
+                            const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
+                            const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                            const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                            
+                            recHTML += `
+                                <li class="recommendation-item">
+                                    <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
+                                    <div class="recommendation-cover">
+                                        <img src="${albumCoverUrl}" alt="${rec.title} album cover">
+                                    </div>
+                                    <div class="recommendation-info">
+                                        <h4 class="recommendation-title">${rec.title}</h4>
+                                        <p class="recommendation-artist">${rec.artist}</p>
+                                    </div>
+                                    <div class="recommendation-right">
+                                        <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
+                                        <div class="musicLink">
+                                            <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
+                                                Listen on Apple Music
+                                            </a>
+                                        </div>
+                                        <div class="musicLink">
+                                            <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
+                                                Listen on Spotify
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            `;
+                        });
+                    } else {
+                        recHTML += `<li class="recommendation-item">No recommendations found</li>`;
                     }
-                } else {
-                    button.disabled = false;
-                    button.textContent = "Randomize";
-                }
-            } else {
-                console.log("No results found.");
-                contentBox.innerHTML = `<p>No results found. Try refreshing!</p>`;
-                button.disabled = false;
-                button.textContent = "Randomize";
+                    
+                    recHTML += `</ul></div>`;
+                    recommendationBox.innerHTML = recHTML;
+                })
+                .catch(error => {
+                    console.error('Error fetching recommendations:', error);
+                    recommendationBox.innerHTML = `
+                        <div class="recommendations-show">
+                            <h3>Error loading recommendations</h3>
+                            <p>Please try again later.</p>
+                        </div>
+                    `;
+                });
             }
-        })
-        .catch(error => {
-            console.error('Error fetching data:', error);
-            button.disabled = false;
-            button.textContent = "Randomize";
-        });
+            
+        } else {
+            console.log("No search results found");
+            searchInput.value = '';
+        }
+        
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = "Randomize";
+    })
+    .catch(error => {
+        console.error('Error searching for random song:', error);
+        button.disabled = false;
+        button.textContent = "Randomize";
+    });
 }
+
+// Make sure the button click event is properly attached
+document.addEventListener('DOMContentLoaded', function() {
+    const randomizeBtn = document.querySelector('.randomize-button') || document.querySelector('.randomizeButton');
+    if (randomizeBtn) {
+        randomizeBtn.addEventListener('click', randomizeSelection);
+        console.log('Randomize button event listener attached');
+    } else {
+        console.error('Could not find randomize button to attach event listener');
+    }
+    
+    // Initialize the global playing state
+    if (typeof window.isPlaying === 'undefined') {
+        window.isPlaying = false;
+    }
+});
+
+
 
 function toggleSelection(button) {
     document.querySelectorAll('.optionButton').forEach(btn => btn.classList.remove('selected'));
