@@ -844,13 +844,6 @@ const PICK_HISTORY = [
         description: ""
     },
     {
-        id: "2025-07-21",
-        searchQuery: "A Night at the Opera Queen",
-        weekOf: "July 21, 2025",
-        description: "",
-        isCurrent: true
-    },
-    {
         id: "2025-06-16",
         searchQuery: "Hotel California Eagles",
         weekOf: "July 14, 2025",
@@ -879,6 +872,12 @@ const PICK_HISTORY = [
         searchQuery: "The Dark Side of the Moon Pink Floyd",
         weekOf: "June 23, 2025",
         description: ""
+    },
+    {
+        id: "2025-05-12",
+        searchQuery: "A Night at the Opera Queen",
+        weekOf: "July 21, 2025",
+        description: "",
     },
 ];
 
