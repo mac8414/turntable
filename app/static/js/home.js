@@ -803,3 +803,341 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// --- PICK OF THE WEEK FUNCTIONALITY ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Pick of the Week
+    initializePickOfTheWeek();
+});
+
+// Configuration: Add new weeks here as they come
+const PICK_HISTORY = [
+    {
+        id: "2025-07-21",
+        searchQuery: "The Freewheelin' Bob Dylan Bob Dylan",
+        weekOf: "July 21, 2025",
+        description: "",
+        isCurrent: true
+    },
+    {
+        id: "2025-07-14",
+        searchQuery: "Tapestry Carol King",
+        weekOf: "July 14, 2025",
+        description: ""
+    },
+    {
+        id: "2025-07-07",
+        searchQuery: "Igor Tyler, the Creator",
+        weekOf: "July 7, 2025",
+        description: ""
+    },
+    {
+        id: "2025-06-30",
+        searchQuery: "Pink Moon Nick Drake",
+        weekOf: "June 30, 2025",
+        description: ""
+    },
+    {
+        id: "2025-06-23",
+        searchQuery: "Led Zeppelin IV Led Zeppelin",
+        weekOf: "June 23, 2025",
+        description: ""
+    },
+    {
+        id: "2025-07-21",
+        searchQuery: "A Night at the Opera Queen",
+        weekOf: "July 21, 2025",
+        description: "",
+        isCurrent: true
+    },
+    {
+        id: "2025-06-16",
+        searchQuery: "Hotel California Eagles",
+        weekOf: "July 14, 2025",
+        description: ""
+    },
+    {
+        id: "2025-06-09",
+        searchQuery: "Thriller Michael Jackson",
+        weekOf: "July 7, 2025",
+        description: ""
+    },
+    {
+        id: "2025-06-02",
+        searchQuery: "Appetite for Destruction Guns N Roses",
+        weekOf: "June 30, 2025",
+        description: ""
+    },
+    {
+        id: "2025-05-26",
+        searchQuery: "Led Zeppelin IV Led Zeppelin",
+        weekOf: "June 23, 2025",
+        description: ""
+    },
+    {
+        id: "2025-05-19",
+        searchQuery: "The Dark Side of the Moon Pink Floyd",
+        weekOf: "June 23, 2025",
+        description: ""
+    },
+];
+
+// Store loaded song data to avoid re-fetching
+let songCache = {};
+let displayedPickId = null; // Track which pick is currently displayed at the top
+
+function initializePickOfTheWeek() {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    if (!pickSection) {
+        console.error('Pick of the Week section not found');
+        return;
+    }
+    
+    // Show loading state
+    pickSection.innerHTML = `
+        <div class="pick-loading">
+            <h2>Pick of the Week</h2>
+            <p>Loading this week's pick...</p>
+        </div>
+    `;
+    
+    // Load the current pick (first item in history or the one marked as current)
+    const currentPick = PICK_HISTORY.find(pick => pick.isCurrent) || PICK_HISTORY[0];
+    displayedPickId = currentPick.id;
+    
+    // Load all picks
+    loadAllPicks();
+}
+
+function loadAllPicks() {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    
+    // Create the main structure
+    pickSection.innerHTML = `
+        <div class="pick-of-week-container">
+            <h2>Pick of the Week</h2>
+            
+            <!-- Main featured pick -->
+            <div class="featured-pick-container">
+                <div class="pick-loading-inline">
+                    <p>Loading this week's pick...</p>
+                </div>
+            </div>
+            
+            <!-- Horizontal scroll list of past picks -->
+            <div class="past-picks-section">
+                <h3>Past Picks</h3>
+                <div class="past-picks-scroll">
+                    <div class="past-picks-loading">
+                        <p>Loading past picks...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Load songs for all picks
+    const loadPromises = PICK_HISTORY.map(pick => loadSongData(pick));
+    
+    Promise.all(loadPromises).then(() => {
+        renderFeaturedPick();
+        renderPastPicks();
+    }).catch(error => {
+        console.error('Error loading picks:', error);
+        showPickError('Failed to load picks');
+    });
+}
+
+function loadSongData(pickConfig) {
+    // Return cached data if available
+    if (songCache[pickConfig.id]) {
+        return Promise.resolve(songCache[pickConfig.id]);
+    }
+    
+    return fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: pickConfig.searchQuery })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.results && data.results.length > 0) {
+            const songData = {
+                song: data.results[0],
+                config: pickConfig
+            };
+            songCache[pickConfig.id] = songData;
+            return songData;
+        } else {
+            throw new Error(`Album not found for ${pickConfig.weekOf}`);
+        }
+    });
+}
+
+function renderFeaturedPick() {
+    const featuredContainer = document.querySelector('.featured-pick-container');
+    const pickData = songCache[displayedPickId];
+    
+    if (!pickData) {
+        featuredContainer.innerHTML = '<p class="pick-error">Failed to load featured album</p>';
+        return;
+    }
+    
+    const { song, config } = pickData;
+    const isCurrentWeek = config.isCurrent;
+    
+    featuredContainer.innerHTML = `
+        <div class="featured-pick-card">
+            <div class="featured-pick-image">
+                <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="featured-cover-image">
+                ${isCurrentWeek ? '<div class="current-pick-badge">This Week</div>' : '<div class="past-pick-badge">Past Pick</div>'}
+            </div>
+            
+            <div class="featured-pick-info">
+                <div class="featured-pick-details">
+                    <p class="featured-pick-week">Week of ${config.weekOf}</p>
+                    <h3 class="featured-pick-title">${song.title}</h3>
+                    <p class="featured-pick-artist">by ${song.artist}</p>
+                    ${config.description ? `<p class="featured-pick-description">${config.description}</p>` : ''}
+                </div>
+                
+                <div class="featured-music-links">
+                    <a href="https://open.spotify.com/search/${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                       target="_blank" rel="noopener noreferrer" class="music-link spotify">
+                        <span class="link-icon">♪</span> Listen on Spotify
+                    </a>
+                    <a href="https://music.apple.com/us/search?term=${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                       target="_blank" rel="noopener noreferrer" class="music-link apple">
+                        <span class="link-icon">♪</span> Listen on Apple Music
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderPastPicks() {
+    const pastPicksScroll = document.querySelector('.past-picks-scroll');
+    
+    // Get all picks except the currently displayed one
+    const pastPicks = PICK_HISTORY.filter(pick => pick.id !== displayedPickId);
+    
+    if (pastPicks.length === 0) {
+        pastPicksScroll.innerHTML = '<p class="no-past-picks">No past albums to show</p>';
+        return;
+    }
+    
+    let pastPicksHTML = '';
+    
+    pastPicks.forEach(pick => {
+        const pickData = songCache[pick.id];
+        if (pickData) {
+            const { song, config } = pickData;
+            pastPicksHTML += `
+                <div class="past-pick-card" data-pick-id="${pick.id}">
+                    <div class="past-pick-content">
+                        <div class="past-pick-image">
+                            <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="past-cover-image">
+                            ${config.isCurrent ? '<div class="current-indicator">Current</div>' : ''}
+                        </div>
+                        <div class="past-pick-info">
+                            <p class="past-pick-week">${config.weekOf}</p>
+                            <h4 class="past-pick-title">${song.title}</h4>
+                            <p class="past-pick-artist">${song.artist}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    pastPicksScroll.innerHTML = pastPicksHTML;
+    
+    // Add click event listeners to past pick cards
+    const pastPickCards = pastPicksScroll.querySelectorAll('.past-pick-card');
+    pastPickCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const pickId = this.dataset.pickId;
+            if (pickId && pickId !== displayedPickId) {
+                switchToPickWithAnimation(pickId);
+            }
+        });
+        
+        // Add hover effect
+        card.style.cursor = 'pointer';
+    });
+}
+
+function switchToPickWithAnimation(newPickId) {
+    const featuredContainer = document.querySelector('.featured-pick-container');
+    
+    // Add fade-out animation
+    featuredContainer.style.opacity = '0.5';
+    featuredContainer.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        // Update the displayed pick
+        displayedPickId = newPickId;
+        
+        // Re-render both sections
+        renderFeaturedPick();
+        renderPastPicks();
+        
+        // Add fade-in animation
+        featuredContainer.style.opacity = '1';
+        featuredContainer.style.transform = 'scale(1)';
+    }, 200);
+}
+
+function showPickError(message) {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    
+    pickSection.innerHTML = `
+        <div class="pick-error-container">
+            <h2>Album of the Week</h2>
+            <p class="error-message">${message}</p>
+            <button onclick="initializePickOfTheWeek()" class="pick-retry-btn">Try Again</button>
+        </div>
+    `;
+}
+
+// Helper function to add a new album pick (for future weeks)
+function addNewPick(searchQuery, weekOf, description, makeCurrent = true) {
+    // Remove current flag from all picks if making this one current
+    if (makeCurrent) {
+        PICK_HISTORY.forEach(pick => pick.isCurrent = false);
+    }
+    
+    // Create new pick object
+    const newPick = {
+        id: new Date(weekOf).toISOString().split('T')[0], // Convert date to YYYY-MM-DD format
+        searchQuery: searchQuery,
+        weekOf: weekOf,
+        description: description,
+        isCurrent: makeCurrent
+    };
+    
+    // Add to beginning of array (most recent first)
+    PICK_HISTORY.unshift(newPick);
+    
+    // Clear cache for the new pick
+    delete songCache[newPick.id];
+    
+    // Reload the pick section if it exists
+    const pickSection = document.querySelector('.pick-of-week-section');
+    if (pickSection) {
+        initializePickOfTheWeek();
+    }
+}
+
+// Helper function to manually switch to a specific pick (useful for testing)
+function switchToPick(pickId) {
+    const pick = PICK_HISTORY.find(p => p.id === pickId);
+    if (pick && songCache[pickId]) {
+        switchToPickWithAnimation(pickId);
+    } else {
+        console.error(`Pick with ID ${pickId} not found or not loaded`);
+    }
+}
