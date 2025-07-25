@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.decomposition import PCA
 import warnings
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.stats import pearsonr
 
 # Suppress librosa warnings for cleaner output
 warnings.filterwarnings('ignore', category=UserWarning, module='librosa')
@@ -389,72 +391,67 @@ class EnhancedAudioProcessor:
             return None
 
     def calculate_advanced_similarity(self, reference_features: AudioFeatures, 
-                                    comparison_features: list[AudioFeatures]) -> list[float]:
+                                  comparison_features: list[AudioFeatures]) -> list[float]:
         """Calculate similarity using weighted feature importance and multiple metrics"""
         if not comparison_features:
             return []
-        
+
         try:
-            # Convert to feature vectors
-            ref_vector = reference_features.to_vector()
-            comp_vectors = np.array([f.to_vector() for f in comparison_features])
+            # Convert to vectors and clean
+            ref_vector = np.nan_to_num(reference_features.to_vector(), nan=0.0, posinf=1.0, neginf=-1.0)
+            comp_vectors = np.array([
+                np.nan_to_num(f.to_vector(), nan=0.0, posinf=1.0, neginf=-1.0)
+                for f in comparison_features
+            ])
             
-            # Clean any invalid values
-            ref_vector = np.nan_to_num(ref_vector, nan=0.0, posinf=1.0, neginf=-1.0)
-            comp_vectors = np.nan_to_num(comp_vectors, nan=0.0, posinf=1.0, neginf=-1.0)
-            
-            # Apply robust scaling
+            # Scale features
             all_vectors = np.vstack([ref_vector.reshape(1, -1), comp_vectors])
             scaled_vectors = self.scaler.fit_transform(all_vectors)
-            
             ref_scaled = scaled_vectors[0]
             comp_scaled = scaled_vectors[1:]
             
-            # Calculate multiple similarity metrics
+            # Set weights
+            weights = {
+                'cosine': 0.4,
+                'correlation': 0.3,
+                'euclidean': 0.3
+            }
+
+            if reference_features.tempo > 150:
+                weights['euclidean'] += 0.1
+                total = sum(weights.values())
+                weights = {k: v / total for k, v in weights.items()}
+
             similarities = []
-            
+
             for comp_vector in comp_scaled:
-                # 1. Cosine similarity (primary metric)
-                from sklearn.metrics.pairwise import cosine_similarity
+                # 1. Cosine similarity
                 cosine_sim = cosine_similarity([ref_scaled], [comp_vector])[0, 0]
                 
-                # 2. Euclidean distance (converted to similarity)
+                # 2. Euclidean similarity
                 euclidean_dist = np.linalg.norm(ref_scaled - comp_vector)
                 euclidean_sim = 1 / (1 + euclidean_dist)
                 
-                # 3. Correlation coefficient
-                correlation = np.corrcoef(ref_scaled, comp_vector)[0, 1]
-                if np.isnan(correlation):
+                # 3. Correlation
+                try:
+                    correlation, _ = pearsonr(ref_scaled, comp_vector)
+                except Exception:
                     correlation = 0.0
-                
-                # 4. Feature-specific similarities (weighted)
-                # Give more weight to perceptually important features
-                weights = {
-                    'mfcc': 0.3,      # Very important for timbre
-                    'chroma': 0.2,    # Important for harmony
-                    'tempo': 0.15,    # Important for rhythm
-                    'spectral': 0.2,  # Important for texture
-                    'other': 0.15     # Other features
-                }
-                
-                # Calculate weighted similarity
+
+                # Weighted similarity
                 weighted_sim = (
-                    weights['mfcc'] * cosine_sim +
-                    weights['chroma'] * correlation +
-                    weights['tempo'] * euclidean_sim +
-                    weights['spectral'] * cosine_sim +
-                    weights['other'] * (cosine_sim + correlation) / 2
+                    weights['cosine'] * cosine_sim +
+                    weights['correlation'] * correlation +
+                    weights['euclidean'] * euclidean_sim
                 )
-                
-                # Ensure similarity is in [0, 1] range
-                final_similarity = max(0.0, min(1.0, weighted_sim))
-                similarities.append(float(final_similarity))
-            
+
+                final_similarity = float(np.clip(weighted_sim, 0.0, 1.0))
+                similarities.append(final_similarity)
+
             return similarities
-            
+
         except Exception as e:
             logger.error(f"Error calculating advanced similarity: {e}")
-            # Fallback to simple similarities
             return [0.5] * len(comparison_features)
 
 # Legacy compatibility function

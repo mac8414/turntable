@@ -156,6 +156,33 @@ html {
   filter: url(#glowing);
 }
 
+.artist-fact-container {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.artist-fact {
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0;
+    font-style: italic;
+}
+
+.artist-fact-loading {
+    color: #cccccc;
+    font-size: 14px;
+    margin: 0;
+    font-style: italic;
+}
+
+.artist-fact strong {
+    color: #fe9900;
+    font-weight: bold;
+}
+
 /* ===========================================
    LAYOUT COMPONENTS
    =========================================== */
