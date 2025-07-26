@@ -9,6 +9,9 @@ from crud import MusicRecommender
 from flask_compress import Compress
 import urllib.parse
 import re
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
