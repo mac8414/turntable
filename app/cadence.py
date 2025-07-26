@@ -6,8 +6,8 @@ import numpy as np
 import librosa
 from typing import Optional, Dict, Any, Tuple
 from dataclasses import dataclass
-from sklearn.preprocessing import StandardScaler, RobustScaler
-from sklearn.decomposition import PCA
+from sklearn.preprocessing import RobustScaler
+from sklearn.metrics.pairwise import cosine_similarity
 import warnings
 
 # Suppress librosa warnings for cleaner output
@@ -29,11 +29,11 @@ class AudioFeatures:
     
     # Harmonic features
     chroma: np.ndarray
-    tonnetz: np.ndarray
+    #tonnetz: np.ndarray
     
     # Rhythmic features
     tempo: float
-    beat_strength: float
+    #beat_strength: float
     onset_strength: float
     
     # Dynamic features
@@ -52,7 +52,7 @@ class AudioFeatures:
         features.extend(np.mean(self.mfccs, axis=1))  # 13 features
         features.extend(np.mean(self.spectral_contrast, axis=1))  # 7 features
         features.extend(np.mean(self.chroma, axis=1))  # 12 features
-        features.extend(np.mean(self.tonnetz, axis=1))  # 6 features
+        #features.extend(np.mean(self.tonnetz, axis=1))  # 6 features
         
         # Add scalar features
         scalar_features = [
@@ -62,7 +62,7 @@ class AudioFeatures:
             self.spectral_flatness,
             self.zero_crossing_rate,
             self.tempo,
-            self.beat_strength,
+            #self.beat_strength,
             self.onset_strength,
             self.rms_energy,
             self.dynamic_range,
@@ -187,9 +187,10 @@ class EnhancedAudioProcessor:
                 # Load with specific parameters for better feature extraction
                 y, sr = librosa.load(
                     audio_path, 
-                    sr=22050,  # Standard sample rate for music analysis
+                    sr=16000,  # Standard sample rate for music analysis
                     mono=True,  # Convert to mono
-                    res_type='kaiser_fast'  # Fast resampling
+                    res_type='kaiser_fast',  # Fast resampling
+                    duration=15.0
                 )
                 
                 # Normalize audio to prevent clipping artifacts
@@ -225,37 +226,42 @@ class EnhancedAudioProcessor:
 
             logger.info(f"Processing audio: {len(y)/sr:.2f}s at {sr}Hz")
 
+            # Precompute STFT to share across features
+            hop_length = 1024
+            n_fft = 2048
+            stft = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length))
+
             # Extract features with error handling for each feature type
             features = {}
             
             # 1. Spectral Features
             try:
                 # MFCCs (Mel-frequency cepstral coefficients) - most important
-                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=12, hop_length=hop_length)
                 features['mfccs'] = mfccs
                 
                 # Spectral centroid (brightness)
-                spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
+                spectral_centroid = np.mean(librosa.feature.spectral_centroid(S=stft, sr=sr))
                 features['spectral_centroid'] = float(spectral_centroid)
                 
                 # Spectral bandwidth
-                spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr))
+                spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(S=stft, sr=sr))
                 features['spectral_bandwidth'] = float(spectral_bandwidth)
                 
                 # Spectral contrast
-                spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+                spectral_contrast = librosa.feature.spectral_contrast(S=stft, sr=sr, n_bands=6)
                 features['spectral_contrast'] = spectral_contrast
                 
                 # Spectral rolloff (frequency below which 85% of energy is contained)
-                spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
+                spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(S=stft, sr=sr))
                 features['spectral_rolloff'] = float(spectral_rolloff)
                 
                 # Spectral flatness (measure of how noise-like vs. tonal)
-                spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=y))
+                spectral_flatness = np.mean(librosa.feature.spectral_flatness(S=stft))
                 features['spectral_flatness'] = float(spectral_flatness)
                 
                 # Zero crossing rate (measure of percussive content)
-                zcr = np.mean(librosa.feature.zero_crossing_rate(y))
+                zcr = np.mean(librosa.feature.zero_crossing_rate(y, hop_length=hop_length))
                 features['zero_crossing_rate'] = float(zcr)
                 
             except Exception as e:
@@ -265,48 +271,39 @@ class EnhancedAudioProcessor:
             # 2. Harmonic Features
             try:
                 # Chroma features (harmonic content)
-                chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+                chroma = librosa.feature.chroma_stft(S=stft, sr=sr)
                 features['chroma'] = chroma
-                
+                """
                 # Tonnetz (tonal centroid features)
                 tonnetz = librosa.feature.tonnetz(y=librosa.effects.harmonic(y), sr=sr)
                 features['tonnetz'] = tonnetz
-                
+                """
             except Exception as e:
                 logger.warning(f"Error extracting harmonic features: {e}")
                 # Provide fallback values
                 features['chroma'] = np.zeros((12, 1))
-                features['tonnetz'] = np.zeros((6, 1))
+                #features['tonnetz'] = np.zeros((6, 1))
 
             # 3. Rhythmic Features
             try:
-                # Tempo and beat tracking
-                tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+                # Approximate tempo using onset strength and Librosa's tempo estimation
+                onset_envelope = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
+                tempo = librosa.beat.tempo(onset_envelope=onset_envelope, sr=sr, hop_length=hop_length)[0]
                 features['tempo'] = float(tempo)
-                
-                # Beat strength (how strong the beat is)
-                if len(beats) > 1:
-                    beat_times = librosa.frames_to_time(beats, sr=sr)
-                    beat_strength = np.std(np.diff(beat_times))  # Consistency of beats
-                else:
-                    beat_strength = 0.0
-                features['beat_strength'] = float(beat_strength)
-                
-                # Onset strength (how prominent note onsets are)
-                onset_envelope = librosa.onset.onset_strength(y=y, sr=sr)
+
                 onset_strength = np.mean(onset_envelope)
                 features['onset_strength'] = float(onset_strength)
                 
             except Exception as e:
                 logger.warning(f"Error extracting rhythmic features: {e}")
                 features['tempo'] = 120.0  # Default tempo
-                features['beat_strength'] = 0.0
+                #features['beat_strength'] = 0.0
                 features['onset_strength'] = 0.0
 
             # 4. Dynamic Features
             try:
                 # RMS energy (overall loudness)
-                rms = librosa.feature.rms(y=y)
+                rms = librosa.feature.rms(S=stft)
                 rms_energy = np.mean(rms)
                 features['rms_energy'] = float(rms_energy)
                 
@@ -333,12 +330,13 @@ class EnhancedAudioProcessor:
                 
                 correlations = []
                 for key in range(12):
-                    # Rotate chroma to test each key
                     rotated_chroma = np.roll(chroma_mean, key)
-                    major_corr = np.corrcoef(rotated_chroma, key_profiles[0])[0, 1]
-                    minor_corr = np.corrcoef(rotated_chroma, key_profiles[1])[0, 1]
-                    correlations.append((key, 1, major_corr))  # major
-                    correlations.append((key, 0, minor_corr))  # minor
+                    major_corr = np.dot(rotated_chroma, key_profiles[0]) / (
+                                np.linalg.norm(rotated_chroma) * np.linalg.norm(key_profiles[0]))
+                    minor_corr = np.dot(rotated_chroma, key_profiles[1]) / (
+                                np.linalg.norm(rotated_chroma) * np.linalg.norm(key_profiles[1]))
+                    correlations.append((key, 1, major_corr))
+                    correlations.append((key, 0, minor_corr))
                 
                 # Find best key and mode
                 best_key, best_mode, _ = max(correlations, key=lambda x: x[2])
@@ -361,9 +359,9 @@ class EnhancedAudioProcessor:
                     spectral_flatness=features['spectral_flatness'],
                     zero_crossing_rate=features['zero_crossing_rate'],
                     chroma=features['chroma'],
-                    tonnetz=features['tonnetz'],
+                    #tonnetz=features['tonnetz'],
                     tempo=features['tempo'],
-                    beat_strength=features['beat_strength'],
+                    #beat_strength=features['beat_strength'],
                     onset_strength=features['onset_strength'],
                     rms_energy=features['rms_energy'],
                     dynamic_range=features['dynamic_range'],
@@ -388,73 +386,86 @@ class EnhancedAudioProcessor:
             logger.error(f"Unexpected error in feature extraction: {e}")
             return None
 
-    def calculate_advanced_similarity(self, reference_features: AudioFeatures, 
-                                    comparison_features: list[AudioFeatures]) -> list[float]:
-        """Calculate similarity using weighted feature importance and multiple metrics"""
+    def calculate_advanced_similarity(self, reference_features: AudioFeatures,
+                                      comparison_features: list[AudioFeatures]) -> list[float]:
+        """Calculate similarity using feature-specific metrics and weighted combination"""
         if not comparison_features:
             return []
-        
+
         try:
-            # Convert to feature vectors
-            ref_vector = reference_features.to_vector()
-            comp_vectors = np.array([f.to_vector() for f in comparison_features])
-            
-            # Clean any invalid values
-            ref_vector = np.nan_to_num(ref_vector, nan=0.0, posinf=1.0, neginf=-1.0)
-            comp_vectors = np.nan_to_num(comp_vectors, nan=0.0, posinf=1.0, neginf=-1.0)
-            
-            # Apply robust scaling
-            all_vectors = np.vstack([ref_vector.reshape(1, -1), comp_vectors])
-            scaled_vectors = self.scaler.fit_transform(all_vectors)
-            
-            ref_scaled = scaled_vectors[0]
-            comp_scaled = scaled_vectors[1:]
-            
-            # Calculate multiple similarity metrics
             similarities = []
-            
-            for comp_vector in comp_scaled:
-                # 1. Cosine similarity (primary metric)
-                from sklearn.metrics.pairwise import cosine_similarity
-                cosine_sim = cosine_similarity([ref_scaled], [comp_vector])[0, 0]
-                
-                # 2. Euclidean distance (converted to similarity)
-                euclidean_dist = np.linalg.norm(ref_scaled - comp_vector)
-                euclidean_sim = 1 / (1 + euclidean_dist)
-                
-                # 3. Correlation coefficient
-                correlation = np.corrcoef(ref_scaled, comp_vector)[0, 1]
-                if np.isnan(correlation):
-                    correlation = 0.0
-                
-                # 4. Feature-specific similarities (weighted)
-                # Give more weight to perceptually important features
+            # Precompute reference means
+            ref_mfcc_mean = np.mean(reference_features.mfccs, axis=1)
+            ref_chroma_mean = np.mean(reference_features.chroma, axis=1)
+
+            for comp_features in comparison_features:
+                # 1. MFCC Similarity (Timbre)
+                comp_mfcc_mean = np.mean(comp_features.mfccs, axis=1)
+                mfcc_sim = cosine_similarity([ref_mfcc_mean], [comp_mfcc_mean])[0, 0]
+                mfcc_sim = (mfcc_sim + 1) / 2  # Normalize from [-1,1] to [0,1]
+
+                # 2. Chroma Similarity (Harmony)
+                comp_chroma_mean = np.mean(comp_features.chroma, axis=1)
+                chroma_sim = cosine_similarity([ref_chroma_mean], [comp_chroma_mean])[0, 0]
+                chroma_sim = (chroma_sim + 1) / 2
+
+                # 3. Tempo Similarity (Rhythm)
+                tempo_diff = abs(reference_features.tempo - comp_features.tempo
+                                 if reference_features.tempo is not None and comp_features.tempo is not None
+                                 else 0.0)
+                tempo_sim = np.exp(-tempo_diff / 30)
+
+                # 4. Spectral Features Similarity (Texture)
+                spectral_ref = np.array([
+                    reference_features.spectral_centroid,
+                    reference_features.spectral_bandwidth,
+                    reference_features.spectral_rolloff,
+                    reference_features.spectral_flatness,
+                    reference_features.zero_crossing_rate
+                ])
+                spectral_comp = np.array([
+                    comp_features.spectral_centroid,
+                    comp_features.spectral_bandwidth,
+                    comp_features.spectral_rolloff,
+                    comp_features.spectral_flatness,
+                    comp_features.zero_crossing_rate
+                ])
+                spectral_sim = cosine_similarity([spectral_ref], [spectral_comp])[0, 0]
+                spectral_sim = (spectral_sim + 1) / 2
+
+                # 5. Dynamic Features Similarity (Loudness)
+                dynamic_ref = np.array([reference_features.rms_energy, reference_features.dynamic_range])
+                dynamic_comp = np.array([comp_features.rms_energy, comp_features.dynamic_range])
+                dynamic_sim = cosine_similarity([dynamic_ref], [dynamic_comp])[0, 0]
+                dynamic_sim = (dynamic_sim + 1) / 2
+
+                # 6. Key and Mode Similarity (Tonality)
+                key_sim = 1 if reference_features.key_signature == comp_features.key_signature else 0
+                mode_sim = 1 if reference_features.mode == comp_features.mode else 0
+
+                # Combine with weights
                 weights = {
-                    'mfcc': 0.3,      # Very important for timbre
-                    'chroma': 0.2,    # Important for harmony
-                    'tempo': 0.15,    # Important for rhythm
-                    'spectral': 0.2,  # Important for texture
-                    'other': 0.15     # Other features
+                    'mfcc': 0.3,  # Timbre
+                    'chroma': 0.2,  # Harmony
+                    'tempo': 0.15,  # Rhythm
+                    'spectral': 0.2,  # Texture
+                    'dynamic': 0.1,  # Dynamics
+                    'key_mode': 0.05  # Tonality
                 }
-                
-                # Calculate weighted similarity
-                weighted_sim = (
-                    weights['mfcc'] * cosine_sim +
-                    weights['chroma'] * correlation +
-                    weights['tempo'] * euclidean_sim +
-                    weights['spectral'] * cosine_sim +
-                    weights['other'] * (cosine_sim + correlation) / 2
+                total_similarity = (
+                        weights['mfcc'] * mfcc_sim +
+                        weights['chroma'] * chroma_sim +
+                        weights['tempo'] * tempo_sim +
+                        weights['spectral'] * spectral_sim +
+                        weights['dynamic'] * dynamic_sim +
+                        weights['key_mode'] * (key_sim + mode_sim) / 2
                 )
-                
-                # Ensure similarity is in [0, 1] range
-                final_similarity = max(0.0, min(1.0, weighted_sim))
-                similarities.append(float(final_similarity))
-            
+                similarities.append(float(total_similarity))
+
             return similarities
-            
+
         except Exception as e:
             logger.error(f"Error calculating advanced similarity: {e}")
-            # Fallback to simple similarities
             return [0.5] * len(comparison_features)
 
 # Legacy compatibility function

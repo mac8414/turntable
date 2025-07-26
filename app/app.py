@@ -7,6 +7,7 @@ import deezer
 import crud
 from crud import MusicRecommender
 from flask_compress import Compress
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -151,7 +152,11 @@ def recommend():
 
     try:
         recommender = MusicRecommender()
+        # Measure time for get_recommendations
+        start_time = time.time()
         recommendations = recommender.get_recommendations(track_name, artist_name, recommendations_count)
+        elapsed_time = time.time() - start_time
+        logger.info(f"get_recommendations for '{track_name}' by '{artist_name}' took {elapsed_time:.2f} seconds")
 
         recommendations.sort(key=lambda x: x.similarity_score, reverse=True)
 

@@ -7,6 +7,10 @@ from cadence import EnhancedAudioProcessor
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Callable
+from collections import OrderedDict
+import tempfile
+import aiohttp
+import asyncio
 
 import deezer
 import numpy as np
@@ -60,6 +64,7 @@ class LastFMClient:
     def __init__(self, api_key: str, api_secret: str):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.similar_artist_cache = {}
         
     def get_similar_tracks(self, artist: str, track: str, limit: int = 100) -> List[Track]:
         params = {
@@ -95,23 +100,27 @@ class LastFMClient:
     
     def get_top_tracks_by_similar_artist(self, artist, limit=40):
         try:
-            # Step 1: Get similar artist
-            similar_params = {
-                'method': 'artist.getsimilar',
-                'artist': artist,
-                'api_key': self.api_key,
-                'format': 'json',
-                'limit': 1
-            }
-            response = requests.get(API_URL, params=similar_params, timeout=15)
-            response.raise_for_status()
-            similar_data = response.json()
-            
-            artist_list = similar_data.get('similarartists', {}).get('artist', [])
-            if not artist_list:
-                logger.warning(f"No similar artists found for '{artist}'")
-                return []
-            similar_artist = artist_list[0].get('name')
+            if artist in self.similar_artist_cache:
+                similar_artist = self.similar_artist_cache[artist]
+            else:
+                # Step 1: Get similar artist
+                similar_params = {
+                    'method': 'artist.getsimilar',
+                    'artist': artist,
+                    'api_key': self.api_key,
+                    'format': 'json',
+                    'limit': 1
+                }
+                response = requests.get(API_URL, params=similar_params, timeout=15)
+                response.raise_for_status()
+                similar_data = response.json()
+
+                artist_list = similar_data.get('similarartists', {}).get('artist', [])
+                if not artist_list:
+                    logger.warning(f"No similar artists found for '{artist}'")
+                    return []
+                similar_artist = artist_list[0].get('name')
+                self.similar_artist_cache[artist] = similar_artist
 
             # Step 2: Get top tracks by similar artist
             if similar_artist:
@@ -152,7 +161,8 @@ class LastFMClient:
 class DeezerClient:
     def __init__(self):
         self.client = deezer.Client()
-        self._search_cache = {}
+        self._search_cache = OrderedDict()
+        self.max_cache_size = 1000
     
     def get_track_preview(self, track_id: int) -> Optional[str]:
         try:
@@ -175,6 +185,8 @@ class DeezerClient:
                     return track.id
             logger.debug(f"Track '{track_name}' by '{artist_name}' not found.")
             self._search_cache[cache_key] = None
+            if len(self._search_cache) > self.max_cache_size:
+                self._search_cache.popitem(last=False)
             return None
         except Exception as e:
             logger.error(f"Error searching for track: {e}")
@@ -194,6 +206,8 @@ class DeezerClient:
                     return track.id
             logger.debug(f"Exact track '{track_name}' by '{artist_name}' not found.")
             self._search_cache[cache_key] = None
+            if len(self._search_cache) > self.max_cache_size:
+                self._search_cache.popitem(last=False)
             return None
         except Exception as e:
             logger.error(f"Error getting track ID: {e}")
@@ -204,20 +218,21 @@ class MusicRecommender:
         self.deezer_client = DeezerClient()
         self.audio_processor = EnhancedAudioProcessor()
         self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
+
+    async def download_audio_async(self, url: str) -> str:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                    temp_file.write(await response.read())
+                    return temp_file.name
     
     def process_track(self, track: Track, progress_callback: Optional[ProgressCallback] = None) -> Track:
-        """Downloads and processes a single track to extract comprehensive features."""
-        if progress_callback:
-            progress_callback.update(f"Processing: {track.title}")
-            
         if not track.preview_url:
             track.preview_url = self.deezer_client.get_track_preview(track.id)
-            
         if not track.preview_url:
-            logger.warning(f"No preview URL available for track: {track}")
             return track
-            
-        temp_file = None
+
+        temp_file = asyncio.run(self.download_audio_async(track.preview_url))
         try:
             logger.info(f"Processing: {track.title} by {track.artist_name}")
             temp_file = self.audio_processor.download_audio(track.preview_url)
