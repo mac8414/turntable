@@ -234,11 +234,12 @@ def recommend():
     # Convert to int and provide a default if needed
     try:
         recommendations_count = int(recommendations_count)
-        # Limit the number of recommendations to prevent timeouts
-        recommendations_count = min(recommendations_count, 8)  # Further reduced
+        # Keep the limit to prevent excessive resource usage
+        recommendations_count = min(recommendations_count, 10)
     except (TypeError, ValueError):
         recommendations_count = 5
 
+    # Remove the timeout tracking
     start_time = time.time()
     
     try:
@@ -273,11 +274,9 @@ def recommend():
         processing_time = time.time() - start_time
         logger.error(f"Recommendation error after {processing_time:.2f}s: %s", traceback.format_exc())
         
-        if processing_time > 25:
-            return jsonify({"error": "Request timed out. Try with fewer recommendations or a different song."}), 504
-        else:
-            return jsonify({"error": "Recommendation failed. Please try again."}), 500
-        
+        # Remove the timeout-based error handling - let it run as long as needed
+        return jsonify({"error": "Recommendation failed. Please try again."}), 500
+    
 def get_album_cover_from_deezer(title, artist):
     try:
         import requests

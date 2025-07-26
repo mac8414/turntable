@@ -162,7 +162,6 @@ async function fetchArtistInfo(artistName) {
 }
 
 // Function to update recommendation display with artist fact
-// Function to update recommendation display with artist fact
 function updateRecommendationWithArtistFact(recommendationBox, title, artist, timeframe, genre, count) {
     // Initial loading UI with a placeholder for the artist fact
     recommendationBox.innerHTML = `
@@ -193,11 +192,7 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
             console.error('Error fetching artist fact:', error);
         });
 
-    // Create AbortController for timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
-
-    // Fetch recommendations with timeout
+    // Fetch recommendations WITHOUT timeout - let it run as long as needed
     fetch('/api/recommend', {
         method: 'POST',
         headers: {
@@ -209,12 +204,10 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
             timeframe: timeframe === 'Any' ? '' : timeframe,
             genre: genre === 'Any' ? '' : genre,
             count: count
-        }),
-        signal: controller.signal
+        })
+        // Removed the signal parameter - no more timeout!
     })
     .then(response => {
-        clearTimeout(timeoutId);
-        
         // Check if the response is HTML (error page) instead of JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
@@ -276,13 +269,11 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
         recommendationBox.innerHTML = recHTML;
     })
     .catch(error => {
-        clearTimeout(timeoutId);
-        
         let errorMessage = 'Error loading recommendations';
-        if (error.name === 'AbortError') {
-            errorMessage = 'Request timed out - try with fewer recommendations';
-        } else if (error.message.includes('504')) {
+        if (error.message.includes('504')) {
             errorMessage = 'Server timeout - the recommendation system is taking too long';
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Internal server error - please try again';
         }
         
         recommendationBox.innerHTML = `
@@ -295,7 +286,6 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
         console.error('Error fetching recommendations:', error);
     });
 }
-
 
 // --- RANDOMIZER LOGIC (UPDATED TO USE ARTIST FACTS) ---
 function randomizeSelection() {
