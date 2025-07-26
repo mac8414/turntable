@@ -10,6 +10,7 @@ from flask_compress import Compress
 import urllib.parse
 import re
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -255,7 +256,7 @@ def recommend():
         return jsonify({"recommendations": results})
 
     except Exception as e:
-        logger.error(f"Recommendation error: {e}")
+        logger.error("Recommendation error: %s", traceback.format_exc())
         return jsonify({"error": "Recommendation failed"}), 500
 
 def get_album_cover_from_deezer(title, artist):
