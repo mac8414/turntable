@@ -11,6 +11,7 @@ import urllib.parse
 import re
 from dotenv import load_dotenv
 import traceback
+import time
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -233,17 +234,30 @@ def recommend():
     # Convert to int and provide a default if needed
     try:
         recommendations_count = int(recommendations_count)
+        # Limit the number of recommendations to prevent timeouts
+        recommendations_count = min(recommendations_count, 8)  # Further reduced
     except (TypeError, ValueError):
-        recommendations_count = 5  # or whatever default you want
+        recommendations_count = 5
 
+    start_time = time.time()
+    
     try:
+        logger.info(f"Starting recommendation for: {track_name} by {artist_name}")
+        
         recommender = MusicRecommender()
         recommendations = recommender.get_recommendations(track_name, artist_name, recommendations_count)
+        
+        processing_time = time.time() - start_time
+        logger.info(f"Recommendation completed in {processing_time:.2f} seconds")
+
+        if not recommendations:
+            return jsonify({"recommendations": [], "message": "No recommendations found"}), 200
 
         recommendations.sort(key=lambda x: x.similarity_score, reverse=True)
 
         results = []
         for track in recommendations:
+            # Quick album cover fetch with short timeout
             album_cover = get_album_cover_from_deezer(track.title, track.artist_name)
             
             results.append({
@@ -256,9 +270,14 @@ def recommend():
         return jsonify({"recommendations": results})
 
     except Exception as e:
-        logger.error("Recommendation error: %s", traceback.format_exc())
-        return jsonify({"error": "Recommendation failed"}), 500
-
+        processing_time = time.time() - start_time
+        logger.error(f"Recommendation error after {processing_time:.2f}s: %s", traceback.format_exc())
+        
+        if processing_time > 25:
+            return jsonify({"error": "Request timed out. Try with fewer recommendations or a different song."}), 504
+        else:
+            return jsonify({"error": "Recommendation failed. Please try again."}), 500
+        
 def get_album_cover_from_deezer(title, artist):
     try:
         import requests
@@ -268,7 +287,14 @@ def get_album_cover_from_deezer(title, artist):
         query = urllib.parse.quote(f"{artist} {title}")
         url = f"https://api.deezer.com/search?q={query}&limit=1"
         
-        response = requests.get(url, timeout=5)
+        # Add shorter timeout and session reuse
+        response = requests.get(url, timeout=3)  # Reduced from 5 to 3 seconds
+        
+        # Check if request was successful
+        if response.status_code != 200:
+            logger.warning(f"Deezer API returned status {response.status_code} for {title} by {artist}")
+            return None
+            
         data = response.json()
         
         if data.get('data') and len(data['data']) > 0:
@@ -280,6 +306,12 @@ def get_album_cover_from_deezer(title, artist):
         
         return None
         
+    except requests.exceptions.Timeout:
+        logger.warning(f"Timeout fetching album cover for {title} by {artist}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Request error fetching album cover for {title} by {artist}: {e}")
+        return None
     except Exception as e:
         logger.error(f"Error fetching album cover for {title} by {artist}: {e}")
         return None
