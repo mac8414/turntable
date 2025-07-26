@@ -3,9 +3,8 @@ import logging
 import urllib.parse
 import re
 import time
-import signal
 from cadence import EnhancedAudioProcessor
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Callable
 
@@ -24,20 +23,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configuration - REDUCED FOR SPEED
+# Configuration
 DEFAULT_PREVIEW_FILENAME = "preview.mp3"
-TOP_RECOMMENDATIONS_COUNT = 15  # Reduced from 25
-SIMILAR_RECOMMENDATIONS_COUNT = 15  # Reduced from 25
+TOP_RECOMMENDATIONS_COUNT = 25
+SIMILAR_RECOMMENDATIONS_COUNT = 25
 FINAL_RECOMMENDATIONS_COUNT = 5
 
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")
 LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET")
 API_URL = "http://ws.audioscrobbler.com/2.0/"
-
-# Timeout settings
-API_TIMEOUT = 8  # Reduced from 15
-AUDIO_PROCESSING_TIMEOUT = 10  # New timeout for audio processing
-TOTAL_PROCESS_TIMEOUT = 25  # Total timeout for the entire process
 
 @dataclass
 class Track:
@@ -50,10 +44,6 @@ class Track:
 
     def __str__(self):
         return f"{self.title} by {self.artist_name}"
-
-class TimeoutError(Exception):
-    """Custom timeout error"""
-    pass
 
 class ProgressCallback:
     """Callback interface for progress updates"""
@@ -70,21 +60,19 @@ class LastFMClient:
     def __init__(self, api_key: str, api_secret: str):
         self.api_key = api_key
         self.api_secret = api_secret
-        # Create a session for connection reuse
-        self.session = requests.Session()
         
-    def get_similar_tracks(self, artist: str, track: str, limit: int = 50) -> List[Track]:
+    def get_similar_tracks(self, artist: str, track: str, limit: int = 100) -> List[Track]:
         params = {
             'method': 'track.getSimilar',
             'artist': artist,
             'track': track,
             'api_key': self.api_key,
             'format': 'json',
-            'limit': min(limit, 30)  # Limit to prevent timeouts
+            'limit': limit
         }
         
         try:
-            response = self.session.get(API_URL, params=params, timeout=API_TIMEOUT)
+            response = requests.get(API_URL, params=params, timeout=15)
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException as e:
@@ -105,7 +93,7 @@ class LastFMClient:
 
         return recommendations
     
-    def get_top_tracks_by_similar_artist(self, artist, limit=20):  # Reduced limit
+    def get_top_tracks_by_similar_artist(self, artist, limit=40):
         try:
             # Step 1: Get similar artist
             similar_params = {
@@ -115,7 +103,7 @@ class LastFMClient:
                 'format': 'json',
                 'limit': 1
             }
-            response = self.session.get(API_URL, params=similar_params, timeout=API_TIMEOUT)
+            response = requests.get(API_URL, params=similar_params, timeout=15)
             response.raise_for_status()
             similar_data = response.json()
             
@@ -134,7 +122,7 @@ class LastFMClient:
                     'format': 'json',
                     'limit': limit
                 }
-                response = self.session.get(API_URL, params=top_tracks_params, timeout=API_TIMEOUT)
+                response = requests.get(API_URL, params=top_tracks_params, timeout=15)
                 response.raise_for_status()
                 top_tracks_data = response.json()
                 top_tracks = top_tracks_data.get('toptracks', {}).get('track', [])
@@ -152,7 +140,7 @@ class LastFMClient:
                 'format': 'json',
                 'limit': limit
             }
-            response = self.session.get(API_URL, params=params, timeout=API_TIMEOUT)
+            response = requests.get(API_URL, params=params, timeout=15)
             response.raise_for_status()
             data = response.json()
             tracks = data.get('toptracks', {}).get('track', [])
@@ -165,8 +153,6 @@ class DeezerClient:
     def __init__(self):
         self.client = deezer.Client()
         self._search_cache = {}
-        # Create session for better connection management
-        self.session = requests.Session()
     
     def get_track_preview(self, track_id: int) -> Optional[str]:
         try:
@@ -219,23 +205,6 @@ class MusicRecommender:
         self.audio_processor = EnhancedAudioProcessor()
         self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
     
-    def process_track_with_timeout(self, track: Track, timeout: int = AUDIO_PROCESSING_TIMEOUT) -> Track:
-        """Process track with timeout to prevent hanging"""
-        def timeout_handler(signum, frame):
-            raise TimeoutError(f"Audio processing timeout for {track.title}")
-        
-        # Set timeout signal
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout)
-        
-        try:
-            return self.process_track(track)
-        except TimeoutError as e:
-            logger.warning(f"Timeout processing track: {e}")
-            return track
-        finally:
-            signal.alarm(0)  # Clear alarm
-    
     def process_track(self, track: Track, progress_callback: Optional[ProgressCallback] = None) -> Track:
         """Downloads and processes a single track to extract comprehensive features."""
         if progress_callback:
@@ -284,19 +253,11 @@ class MusicRecommender:
     def get_recommendations(self, track_name: str, artist_name: str, 
                           recommendations_count: int = FINAL_RECOMMENDATIONS_COUNT,
                           progress_callback: Optional[ProgressCallback] = None) -> List[Track]:
-        """Gets and processes music recommendations with timeout protection."""
-        
-        start_time = time.time()
-        
-        def check_timeout():
-            if time.time() - start_time > TOTAL_PROCESS_TIMEOUT:
-                raise TimeoutError("Total process timeout exceeded")
+        """Gets and processes music recommendations with progress updates."""
         
         try:
             if progress_callback:
                 progress_callback.update("Starting recommendation process...", 5)
-            
-            check_timeout()
             
             # Process the reference track
             if progress_callback:
@@ -313,12 +274,10 @@ class MusicRecommender:
             reference_track = Track(id=track_id, title=track_name, artist_name=artist_name)
             logger.info(f"Processing reference track: {reference_track.title} by {reference_track.artist_name}")
             
-            check_timeout()
-            
             if progress_callback:
                 progress_callback.update("Analyzing reference track...", 20)
                 
-            reference_track = self.process_track_with_timeout(reference_track, 8)  # Shorter timeout for reference
+            reference_track = self.process_track(reference_track, progress_callback)
             
             if not reference_track.features:
                 error_msg = "Failed to extract features from reference track"
@@ -327,39 +286,26 @@ class MusicRecommender:
                     progress_callback.update(f"Error: {error_msg}", 0)
                 return []
             
-            check_timeout()
-            
-            # Fetch candidate tracks with reduced limits and timeouts
+            # Fetch candidate tracks
             if progress_callback:
                 progress_callback.update("Fetching similar tracks...", 30)
                 
             logger.info(f"Fetching recommendations for {track_name} by {artist_name}")
 
-            # Use shorter timeouts for API calls
             with ThreadPoolExecutor(max_workers=3) as executor:
-                try:
-                    future_similar = executor.submit(
-                        self.lastfm_client.get_similar_tracks, artist_name, track_name, 20  # Reduced
-                    )
-                    future_top = executor.submit(
-                        self.lastfm_client.get_top_tracks_by_similar_artist, artist_name, 15  # Reduced
-                    )
-                    future_artist_top = executor.submit(
-                        self.lastfm_client.get_artist_top_tracks, artist_name, 15  # Reduced
-                    )
+                future_similar = executor.submit(
+                    self.lastfm_client.get_similar_tracks, artist_name, track_name, 50
+                )
+                future_top = executor.submit(
+                    self.lastfm_client.get_top_tracks_by_similar_artist, artist_name, 25
+                )
+                future_artist_top = executor.submit(
+                    self.lastfm_client.get_artist_top_tracks, artist_name, 25
+                )
 
-                    # Get results with timeout
-                    similar_tracks = future_similar.result(timeout=10)
-                    top_tracks_tuples = future_top.result(timeout=10)
-                    artist_top_tracks = future_artist_top.result(timeout=10)
-                    
-                except FutureTimeoutError:
-                    logger.warning("API calls timed out, using partial results")
-                    similar_tracks = []
-                    top_tracks_tuples = []
-                    artist_top_tracks = []
-
-            check_timeout()
+                similar_tracks = future_similar.result()
+                top_tracks_tuples = future_top.result()
+                artist_top_tracks = future_artist_top.result()
 
             # Convert tuples to Track objects
             top_tracks = [Track(id=1000 + i, title=title, artist_name=artist) 
@@ -385,13 +331,11 @@ class MusicRecommender:
                     progress_callback.update(error_msg, 0)
                 return []
             
-            check_timeout()
-            
             if progress_callback:
                 progress_callback.update("Finding tracks on Deezer...", 50)
             
-            # Update Deezer IDs - limit to prevent timeout
-            valid_tracks = self._update_deezer_ids(filtered_tracks[:30])  # Limit to 30 tracks
+            # Update Deezer IDs
+            valid_tracks = self._update_deezer_ids(filtered_tracks)
             logger.info(f"Found Deezer IDs for {len(valid_tracks)} tracks")
             
             if not valid_tracks:
@@ -401,57 +345,33 @@ class MusicRecommender:
                     progress_callback.update(error_msg, 0)
                 return []
             
-            check_timeout()
-            
             if progress_callback:
                 progress_callback.update("Analyzing audio features...", 60)
             
-            # Process fewer tracks to prevent timeout
-            process_count = min(len(valid_tracks), 15)  # Process max 15 tracks
-            tracks_to_process = valid_tracks[:process_count]
-            
+            # Process tracks in parallel with progress updates
             processed_tracks = []
+            total_tracks = len(valid_tracks)
             
-            def process_with_timeout_wrapper(track_idx_pair):
+            def process_with_progress(track_idx_pair):
                 track, idx = track_idx_pair
                 if progress_callback:
                     base_progress = 60
-                    track_progress = int(30 * (idx + 1) / len(tracks_to_process))
-                    progress_callback.update(f"Processing track {idx + 1}/{len(tracks_to_process)}: {track.title}", 
+                    track_progress = int(30 * (idx + 1) / total_tracks)
+                    progress_callback.update(f"Processing track {idx + 1}/{total_tracks}: {track.title}", 
                                            base_progress + track_progress)
-                return self.process_track_with_timeout(track, 5)  # Very short timeout per track
+                return self.process_track(track)
             
-            track_idx_pairs = [(track, idx) for idx, track in enumerate(tracks_to_process)]
+            track_idx_pairs = [(track, idx) for idx, track in enumerate(valid_tracks)]
             
-            # Process with timeout protection
-            with ThreadPoolExecutor(max_workers=2) as executor:  # Reduced workers
-                try:
-                    future_to_track = {
-                        executor.submit(process_with_timeout_wrapper, pair): pair 
-                        for pair in track_idx_pairs
-                    }
-                    
-                    for future in future_to_track:
-                        try:
-                            result = future.result(timeout=6)  # 6 second timeout per track
-                            processed_tracks.append(result)
-                        except FutureTimeoutError:
-                            track, idx = future_to_track[future]
-                            logger.warning(f"Timeout processing track: {track.title}")
-                            processed_tracks.append(track)  # Add unprocessed track
-                            
-                except Exception as e:
-                    logger.error(f"Error in parallel processing: {e}")
-                    processed_tracks = tracks_to_process  # Fallback to unprocessed tracks
-            
-            check_timeout()
+            with ThreadPoolExecutor(max_workers=min(4, len(valid_tracks))) as executor:
+                processed_tracks = list(executor.map(process_with_progress, track_idx_pairs))
             
             # Filter tracks with valid features
             tracks_with_features = [t for t in processed_tracks if t.features is not None]
             logger.info(f"Successfully processed {len(tracks_with_features)} tracks with features")
             
             if not tracks_with_features:
-                logger.warning("No tracks with valid features found, returning basic results")
+                logger.warning("No tracks with valid features found")
                 if progress_callback:
                     progress_callback.update("Warning: No audio features extracted, returning basic results", 95)
                 return processed_tracks[:recommendations_count]
@@ -490,17 +410,8 @@ class MusicRecommender:
             for i, rec in enumerate(final_recommendations, 1):
                 logger.info(f"  {i}. {rec} (Score: {rec.similarity_score:.3f})")
             
-            total_time = time.time() - start_time
-            logger.info(f"Total recommendation time: {total_time:.2f} seconds")
-            
             return final_recommendations
             
-        except TimeoutError as e:
-            error_msg = f"Process timed out: {str(e)}"
-            logger.error(error_msg)
-            if progress_callback:
-                progress_callback.update(error_msg, 0)
-            return []
         except Exception as e:
             error_msg = f"Error in recommendation process: {str(e)}"
             logger.error(error_msg)
@@ -562,3 +473,63 @@ class MusicRecommender:
                 logger.debug(f"Could not resolve Deezer ID for: {track.title} by {track.artist_name}")
         
         return valid_tracks
+
+# Utility functions remain the same
+def clean_track_name(track_name: str) -> str:
+    """Cleans the track name by removing unwanted text and normalizing whitespace."""
+    cleaned_name = re.sub(r"\(.*?\)", "", track_name)
+    cleaned_name = re.sub(r"\s+", " ", cleaned_name).strip()
+    return cleaned_name
+
+def clean_artist_name(artist_name: str) -> str:
+    """Cleans the artist name by normalizing whitespace."""
+    return re.sub(r"\s+", " ", artist_name).strip()
+
+def get_spotify_search_link(track_name: str, artist_name: str) -> str:
+    """Generates a Spotify search link for the given track and artist."""
+    cleaned_track_name = clean_track_name(track_name)
+    cleaned_artist_name = clean_artist_name(artist_name)
+    query = f"{cleaned_track_name} {cleaned_artist_name}"
+    encoded_query = urllib.parse.quote(query)
+    return f"https://open.spotify.com/search/{encoded_query}"
+
+def get_apple_music_search_link(track_name: str, artist_name: str) -> str:
+    """Generates an Apple Music search link for the given track and artist."""
+    cleaned_track_name = clean_track_name(track_name)
+    cleaned_artist_name = clean_artist_name(artist_name)
+    query = f"{cleaned_track_name} {cleaned_artist_name}"
+    encoded_query = urllib.parse.quote(query)
+    return f"https://music.apple.com/us/search?term={encoded_query}"
+
+def main():
+    def progress_handler(message: str, progress: int):
+        """Simple progress handler for console output"""
+        print(f"[{progress:3d}%] {message}")
+    
+    try:
+        track_name = input("Enter the track name: ")
+        artist_name = input("Enter the artist name: ")
+        
+        recommender = MusicRecommender()
+        progress_callback = ProgressCallback(progress_handler)
+        
+        recommendations = recommender.get_recommendations(
+            track_name, artist_name, 
+            progress_callback=progress_callback
+        )
+        
+        if recommendations:
+            print(f"\nTop {len(recommendations)} Recommendations for '{track_name}' by '{artist_name}':")
+            for i, rec in enumerate(recommendations, start=1):
+                print(f"{i}. {rec} (Similarity Score: {rec.similarity_score * 100:.2f}%)")
+                print(f"   Spotify: {get_spotify_search_link(rec.title, rec.artist_name)}")
+                print(f"   Apple Music: {get_apple_music_search_link(rec.title, rec.artist_name)}")
+                print()
+        else:
+            print("No recommendations found. Please try a different track or artist.")
+            
+    except Exception as e:
+        logger.error(f"An error occurred in the main function: {e}")
+
+if __name__ == "__main__":
+    main()
