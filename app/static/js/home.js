@@ -129,7 +129,165 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// --- RANDOMIZER LOGIC (PRESERVED FROM ORIGINAL) ---
+// --- LAST.FM API INTEGRATION ---
+const LASTFM_API_KEY = 'YOUR_LASTFM_API_KEY'; // You'll need to get this from Last.fm
+const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
+
+// Function to fetch artist info from your Flask backend
+async function fetchArtistInfo(artistName) {
+    try {
+        const response = await fetch('/api/artist-info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ artist_name: artistName })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.artist_info && data.artist_info.bio) {
+            return data.artist_info.bio;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error fetching artist info:', error);
+        return null;
+    }
+}
+
+// Function to update recommendation display with artist fact
+function updateRecommendationWithArtistFact(recommendationBox, title, artist, timeframe, genre, count) {
+    // Initial loading UI with a placeholder for the artist fact
+    recommendationBox.innerHTML = `
+        <div class="recommendations-show">
+            <h3>Loading recommendations for ${title} by ${artist}...</h3>
+            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
+            <h5>Powered by <strong>CadenceAI</strong></h5>
+            <div class="artist-fact-container">
+                <p class="artist-fact-loading" id="artistFactLoading">Loading artist fact...</p>
+            </div>
+        </div>
+    `;
+
+    // Fetch artist fact and update only the artist fact section
+    fetchArtistInfo(artist)
+        .then(artistFact => {
+            const factElem = document.getElementById('artistFactLoading');
+            if (factElem && artistFact) {
+                factElem.className = 'artist-fact';
+                factElem.innerHTML = `<strong>About ${artist}:</strong> ${artistFact}`;
+            } else if (factElem) {
+                factElem.textContent = "No artist fact found.";
+            }
+        })
+        .catch(error => {
+            const factElem = document.getElementById('artistFactLoading');
+            if (factElem) factElem.textContent = "Error loading artist fact.";
+            console.error('Error fetching artist fact:', error);
+        });
+
+    // Fetch recommendations WITHOUT timeout - let it run as long as needed
+    fetch('/api/recommend', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            track_name: title, 
+            artist_name: artist,
+            timeframe: timeframe === 'Any' ? '' : timeframe,
+            genre: genre === 'Any' ? '' : genre,
+            count: count
+        })
+        // Removed the signal parameter - no more timeout!
+    })
+    .then(response => {
+        // Check if the response is HTML (error page) instead of JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}. Expected JSON but got ${contentType}`);
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
+    .then(recData => {
+        let recHTML = `
+            <div class="recommendations-show">
+                <h3>Top results for ${title} by ${artist}</h3>
+                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
+                <h5>Powered by <strong>CadenceAI</strong></h5>
+            </div>
+            <ul class="recommendation-list">
+        `;
+        if (recData.recommendations && recData.recommendations.length > 0) {
+            recData.recommendations.forEach(rec => {
+                const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
+                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
+                recHTML += `
+                    <li class="recommendation-item">
+                        <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
+                        <div class="recommendation-cover">
+                            <img src="${albumCoverUrl}" alt="${rec.title} album cover">
+                        </div>
+                        <div class="recommendation-info">
+                            <h4 class="recommendation-title">${rec.title}</h4>
+                            <p class="recommendation-artist">${rec.artist}</p>
+                        </div>
+                        <div class="recommendation-right">
+                            <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
+                            <div class="musicLink">
+                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
+                                    Listen on Apple Music
+                                </a>
+                            </div>
+                            <div class="musicLink">
+                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
+                                    Listen on Spotify
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+        } else {
+            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
+        }
+        recHTML += `</ul>`;
+
+        // Replace the entire recommendationBox content (removes the artist fact)
+        recommendationBox.innerHTML = recHTML;
+    })
+    .catch(error => {
+        let errorMessage = 'Error loading recommendations';
+        if (error.message.includes('504')) {
+            errorMessage = 'Server timeout - the recommendation system is taking too long';
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Internal server error - please try again';
+        }
+        
+        recommendationBox.innerHTML = `
+            <div class="recommendations-show">
+                <h3>${errorMessage}</h3>
+                <p>Please try again with a different song or fewer recommendations.</p>
+                <h5>Powered by <strong>CadenceAI</strong></h5>
+            </div>
+        `;
+        console.error('Error fetching recommendations:', error);
+    });
+}
+
+// --- RANDOMIZER LOGIC (UPDATED TO USE ARTIST FACTS) ---
 function randomizeSelection() {
     console.log('Randomize button clicked!');
     
@@ -206,90 +364,9 @@ function randomizeSelection() {
             const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
             const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
             
-            // Load recommendations
+            // Load recommendations with artist fact
             if (recommendationBox) {
-                recommendationBox.innerHTML = `
-                    <div class="recommendations-show">
-                        <h3>Loading recommendations for ${randomSong.title} by ${randomSong.artist}...</h3>
-                        <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
-                        <h5>Powered by <strong>CadenceAI</strong></h5>
-                    </div>
-                `;
-                
-                // Get recommendations
-                fetch('/api/recommend', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        track_name: randomSong.title, 
-                        artist_name: randomSong.artist,
-                        timeframe: timeframe === 'Any' ? '' : timeframe,
-                        genre: genre === 'Any' ? '' : genre,
-                        count: count
-                    })
-                })
-                .then(response => response.json())
-                .then(recData => {
-                    let recHTML = `
-                        <div class="recommendations-show">
-                            <h3>Recommended Songs for: ${randomSong.title} by ${randomSong.artist}</h3>
-                            <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
-                            <h5>Powered by <strong>CadenceAI</strong></h5>
-                        </div>
-                        <div>
-                            <ul class="recommendation-list">
-                    `;
-                    
-                    if (recData.recommendations && recData.recommendations.length > 0) {
-                        recData.recommendations.forEach(rec => {
-                            const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
-                            const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                            const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                            
-                            recHTML += `
-                                <li class="recommendation-item">
-                                    <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
-                                    <div class="recommendation-cover">
-                                        <img src="${albumCoverUrl}" alt="${rec.title} album cover">
-                                    </div>
-                                    <div class="recommendation-info">
-                                        <h4 class="recommendation-title">${rec.title}</h4>
-                                        <p class="recommendation-artist">${rec.artist}</p>
-                                    </div>
-                                    <div class="recommendation-right">
-                                        <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                                        <div class="musicLink">
-                                            <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
-                                                Listen on Apple Music
-                                            </a>
-                                        </div>
-                                        <div class="musicLink">
-                                            <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
-                                                Listen on Spotify
-                                            </a>
-                                        </div>
-                                    </div>
-                                </li>
-                            `;
-                        });
-                    } else {
-                        recHTML += `<li class="recommendation-item">No recommendations found</li>`;
-                    }
-                    
-                    recHTML += `</ul></div>`;
-                    recommendationBox.innerHTML = recHTML;
-                })
-                .catch(error => {
-                    console.error('Error fetching recommendations:', error);
-                    recommendationBox.innerHTML = `
-                        <div class="recommendations-show">
-                            <h3>Error loading recommendations</h3>
-                            <p>Please try again later.</p>
-                        </div>
-                    `;
-                });
+                updateRecommendationWithArtistFact(recommendationBox, randomSong.title, randomSong.artist, timeframe, genre, count);
             }
             
         } else {
@@ -323,8 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.isPlaying = false;
     }
 });
-
-
 
 function toggleSelection(button) {
     document.querySelectorAll('.optionButton').forEach(btn => btn.classList.remove('selected'));
@@ -705,101 +780,336 @@ document.addEventListener('DOMContentLoaded', function () {
                 const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
                 const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
                 
-                // Show loading in recommendation box
+                // Show loading in recommendation box and fetch both artist fact and recommendations
                 if (recommendationBox) {
-                    recommendationBox.innerHTML = `
-                        <div class="recommendations-show">
-                            <h3>Loading recommendations for ${title} by ${artist}...</h3>
-                            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
-                            <h5>Powered by <strong>CadenceAI</strong></h5>
-                        </div>
-                    `;
-                    
-                    // Make the API call for recommendations
-                    fetch('/api/recommend', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            track_name: title, 
-                            artist_name: artist,
-                            timeframe: timeframe === 'Any' ? '' : timeframe,
-                            genre: genre === 'Any' ? '' : genre,
-                            count: count
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Create enhanced recommendations HTML
-                        let recHTML = `
-                            <div class="recommendations-show">
-                                <h3>Recommended Songs for: ${title} by ${artist}</h3>
-                                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
-                                <h5>Powered by <strong>CadenceAI</strong></h5>
-                            </div>
-                            <div>
-                                <ul class="recommendation-list">
-                        `;
-                        
-                        if (data.recommendations && data.recommendations.length > 0) {
-                            console.log('Recommendation data:', data.recommendations[0]);
-                            data.recommendations.forEach(rec => {
-                                // Use the album_cover from the backend
-                                const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
-                                
-                                // Use the music links provided by the backend (preferred method)
-                                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                                
-                                recHTML += `
-                                    <li class="recommendation-item">
-                                        <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
-                                        <div class="recommendation-cover">
-                                            <img src="${albumCoverUrl}" alt="${rec.title} album cover">
-                                        </div>
-                                        <div class="recommendation-info">
-                                            <h4 class="recommendation-title">${rec.title}</h4>
-                                            <p class="recommendation-artist">${rec.artist}</p>
-                                        </div>
-                                        <div class="recommendation-right">
-                                            <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                                            <div class="musicLink">
-                                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
-                                                    Listen on Apple Music
-                                                </a>
-                                            </div>
-                                            <div class="musicLink">
-                                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
-                                                    Listen on Spotify
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                `;
-                            });
-                        } else {
-                            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
-                        }
-                        
-                        recHTML += `
-                                </ul>
-                            </div>
-                        `;
-                        
-                        recommendationBox.innerHTML = recHTML;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching recommendations:', error);
-                        recommendationBox.innerHTML = `
-                            <div class="recommendations show">
-                                <h3>Error loading recommendations</h3>
-                                <p>Please try again later.</p>
-                            </div>
-                        `;
-                    });
+                    updateRecommendationWithArtistFact(recommendationBox, title, artist, timeframe, genre, count);
                 }
             }
         });
     }
 });
+
+// --- PICK OF THE WEEK FUNCTIONALITY ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Pick of the Week
+    initializePickOfTheWeek();
+});
+
+// Configuration: Add new weeks here as they come
+const PICK_HISTORY = [
+    {
+        id: "2025-07-21",
+        searchQuery: "The Freewheelin' Bob Dylan Bob Dylan",
+        weekOf: "July 21, 2025",
+        description: "An essential folk‑rock collection from Bob Dylan’s early years, packed with timeless originals like “Blowin’ in the Wind,” “Masters of War,” and “Girl from the North Country.” Filled with poetic lyrics about social change, protest, love and loss, this album became a defining voice of the 1960s civil rights and anti‑war movement, cementing Dylan’s role as a cultural icon.",
+        isCurrent: true
+    },
+    {
+        id: "2025-07-14",
+        searchQuery: "Tapestry Carol King",
+        weekOf: "July 14, 2025",
+        description: "A soulful, piano‑driven masterwork of singer‑songwriter intimacy, Tapestry delivers hit highlights like “It’s Too Late,” “You’ve Got a Friend,” and “Natural Woman.” Carole King’s deeply personal, emotionally honest songwriting blends folk, soul, pop, and blues into a warm musical experience. Tapestry sold over 30 million copies worldwide, won multiple Grammys, and is celebrated as a cornerstone of modern pop music."
+    },
+    {
+        id: "2025-07-07",
+        searchQuery: "Igor Tyler, the Creator",
+        weekOf: "July 7, 2025",
+        description: "A bold, genre‑blending drama exploring jealousy, identity, and love through the lens of Tyler’s alter‑ego “Igor.” Driven by lush synth textures, hip‑hop beats, and emotional vocals, this album crafts a cinematic narrative soundscape with standout tracks—or individual songs—that embody modern experimental pop, emotional complexity, and boundary‑pushing production."
+    },
+    {
+        id: "2025-06-30",
+        searchQuery: "Pink Moon Nick Drake",
+        weekOf: "June 30, 2025",
+        description: "A minimalist folk gem defined by Nick Drake’s intimate acoustic guitar and piano arrangements. With introspective, melancholic lyrics and understated beauty, this album creates an emotional soundscape full of solitude and subtle reflection. It's ideal for listeners seeking lyrical depth and tranquil melodies—whether they found a specific song or discovered the album."
+    },
+    {
+        id: "2025-06-23",
+        searchQuery: "Led Zeppelin IV Led Zeppelin",
+        weekOf: "June 23, 2025",
+        description: "Known for epoch‑defining tracks like “Stairway to Heaven,” “Black Dog,” and “Rock and Roll,” this powerful fusion of hard rock, blues, folk, and classic riffs made Led Zeppelin into legends. The album delivers sweeping dynamics, timeless melodies, guitar masterpieces, and themes of mythology and Americana—an essential entry point for new fans exploring the songs."
+    },
+    {
+        id: "2025-06-16",
+        searchQuery: "Hotel California Eagles",
+        weekOf: "July 14, 2025",
+        description: "A cinematic blend of West Coast rock, storytelling, and harmony-rich production capturing California’s myth, fame, and disillusionment. Featuring the evergreen title track plus “Life in the Fast Lane” and “New Kid in Town,” this album pairs smooth guitar work with introspective lyrics about excess and the American dream."
+    },
+    {
+        id: "2025-06-09",
+        searchQuery: "Thriller Michael Jackson",
+        weekOf: "July 7, 2025",
+        description: "The watershed moment in pop music history: an album that defined global pop culture with blockbuster hits like “Thriller,” “Billie Jean,” and “Beat It.” Blending pop, R&B, funk, and rock, it showcases cinematic production, groundbreaking dance tracks, and a universal appeal that continues to influence music today."
+    },
+    {
+        id: "2025-06-02",
+        searchQuery: "Appetite for Destruction Guns N Roses",
+        weekOf: "June 30, 2025",
+        description: "Raw, rebellious, and electrifying, this debut album ignited late‑’80s hard rock with fiery songs such as “Welcome to the Jungle,” “Sweet Child o’ Mine,” and “Paradise City.” Featuring gritty lyrics, searing guitar solos, and an authentic street‑wise attitude, it transformed rock with uncompromised energy and swagger."
+    },
+    {
+        id: "2025-05-26",
+        searchQuery: "The Dark Side of the Moon Pink Floyd",
+        weekOf: "June 23, 2025",
+        description: "A genre‑defining progressive/psychedelic rock concept album from March 1973 that explores time, money, mental health, death, consumerism, and societal alienation. It interweaves ambient soundscapes, tape loops, synthesizers, and interview snippets into a seamless emotional journey from “Speak to Me” to “Eclipse,” all bookended by a heartbeat motif. With iconic tracks like “Time,” “Money,” “Us and Them,” and “Brain Damage,” it became one of the best-selling and most influential albums ever, certified multi-platinum and sustaining legendary status for decades"
+    },
+];
+
+// Store loaded song data to avoid re-fetching
+let songCache = {};
+let displayedPickId = null; // Track which pick is currently displayed at the top
+
+function initializePickOfTheWeek() {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    if (!pickSection) {
+        console.error('Pick of the Week section not found');
+        return;
+    }
+    
+    // Show loading state
+    pickSection.innerHTML = `
+        <div class="pick-loading">
+            <h2>Pick of the Week</h2>
+            <p>Loading this week's pick...</p>
+        </div>
+    `;
+    
+    // Load the current pick (first item in history or the one marked as current)
+    const currentPick = PICK_HISTORY.find(pick => pick.isCurrent) || PICK_HISTORY[0];
+    displayedPickId = currentPick.id;
+    
+    // Load all picks
+    loadAllPicks();
+}
+
+function loadAllPicks() {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    
+    // Create the main structure
+    pickSection.innerHTML = `
+        <div class="pick-of-week-container">
+            <h2>Pick of the Week</h2>
+            
+            <!-- Main featured pick -->
+            <div class="featured-pick-container">
+                <div class="pick-loading-inline">
+                    <p>Loading this week's pick...</p>
+                </div>
+            </div>
+            
+            <!-- Horizontal scroll list of past picks -->
+            <div class="past-picks-section">
+                <h3>Past Picks</h3>
+                <div class="past-picks-scroll">
+                    <div class="past-picks-loading">
+                        <p>Loading past picks...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Load songs for all picks
+    const loadPromises = PICK_HISTORY.map(pick => loadSongData(pick));
+    
+    Promise.all(loadPromises).then(() => {
+        renderFeaturedPick();
+        renderPastPicks();
+    }).catch(error => {
+        console.error('Error loading picks:', error);
+        showPickError('Failed to load picks');
+    });
+}
+
+function loadSongData(pickConfig) {
+    // Return cached data if available
+    if (songCache[pickConfig.id]) {
+        return Promise.resolve(songCache[pickConfig.id]);
+    }
+    
+    return fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: pickConfig.searchQuery })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.results && data.results.length > 0) {
+            const songData = {
+                song: data.results[0],
+                config: pickConfig
+            };
+            songCache[pickConfig.id] = songData;
+            return songData;
+        } else {
+            throw new Error(`Album not found for ${pickConfig.weekOf}`);
+        }
+    });
+}
+
+function renderFeaturedPick() {
+    const featuredContainer = document.querySelector('.featured-pick-container');
+    const pickData = songCache[displayedPickId];
+    
+    if (!pickData) {
+        featuredContainer.innerHTML = '<p class="pick-error">Failed to load featured album</p>';
+        return;
+    }
+    
+    const { song, config } = pickData;
+    const isCurrentWeek = config.isCurrent;
+    
+    featuredContainer.innerHTML = `
+        <div class="featured-pick-card">
+            <div class="featured-pick-image">
+                <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="featured-cover-image">
+                ${isCurrentWeek ? '<div class="current-pick-badge">This Week</div>' : '<div class="past-pick-badge">Past Pick</div>'}
+            </div>
+            
+            <div class="featured-pick-info">
+                <div class="featured-pick-details">
+                    <p class="featured-pick-week">Week of ${config.weekOf}</p>
+                    <h3 class="featured-pick-title">${song.title}</h3>
+                    <p class="featured-pick-artist">by ${song.artist}</p>
+                    ${config.description ? `<p class="featured-pick-description">${config.description}</p>` : ''}
+                </div>
+                
+                <div class="featured-music-links">
+                    <a href="https://open.spotify.com/search/${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                       target="_blank" rel="noopener noreferrer" class="music-link spotify">
+                        <span class="link-icon">♪</span> Listen on Spotify
+                    </a>
+                    <a href="https://music.apple.com/us/search?term=${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                       target="_blank" rel="noopener noreferrer" class="music-link apple">
+                        <span class="link-icon">♪</span> Listen on Apple Music
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderPastPicks() {
+    const pastPicksScroll = document.querySelector('.past-picks-scroll');
+    
+    // Get all picks except the currently displayed one
+    const pastPicks = PICK_HISTORY.filter(pick => pick.id !== displayedPickId);
+    
+    if (pastPicks.length === 0) {
+        pastPicksScroll.innerHTML = '<p class="no-past-picks">No past albums to show</p>';
+        return;
+    }
+    
+    let pastPicksHTML = '';
+    
+    pastPicks.forEach(pick => {
+        const pickData = songCache[pick.id];
+        if (pickData) {
+            const { song, config } = pickData;
+            pastPicksHTML += `
+                <div class="past-pick-card" data-pick-id="${pick.id}">
+                    <div class="past-pick-content">
+                        <div class="past-pick-image">
+                            <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="past-cover-image">
+                            ${config.isCurrent ? '<div class="current-indicator">Current</div>' : ''}
+                        </div>
+                        <div class="past-pick-info">
+                            <p class="past-pick-week">${config.weekOf}</p>
+                            <h4 class="past-pick-title">${song.title}</h4>
+                            <p class="past-pick-artist">${song.artist}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    pastPicksScroll.innerHTML = pastPicksHTML;
+    
+    // Add click event listeners to past pick cards
+    const pastPickCards = pastPicksScroll.querySelectorAll('.past-pick-card');
+    pastPickCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const pickId = this.dataset.pickId;
+            if (pickId && pickId !== displayedPickId) {
+                switchToPickWithAnimation(pickId);
+            }
+        });
+        
+        // Add hover effect
+        card.style.cursor = 'pointer';
+    });
+}
+
+function switchToPickWithAnimation(newPickId) {
+    const featuredContainer = document.querySelector('.featured-pick-container');
+    
+    // Add fade-out animation
+    featuredContainer.style.opacity = '0.5';
+    featuredContainer.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        // Update the displayed pick
+        displayedPickId = newPickId;
+        
+        // Re-render both sections
+        renderFeaturedPick();
+        renderPastPicks();
+        
+        // Add fade-in animation
+        featuredContainer.style.opacity = '1';
+        featuredContainer.style.transform = 'scale(1)';
+    }, 200);
+}
+
+function showPickError(message) {
+    const pickSection = document.querySelector('.pick-of-week-section');
+    
+    pickSection.innerHTML = `
+        <div class="pick-error-container">
+            <h2>Album of the Week</h2>
+            <p class="error-message">${message}</p>
+            <button onclick="initializePickOfTheWeek()" class="pick-retry-btn">Try Again</button>
+        </div>
+    `;
+}
+
+// Helper function to add a new album pick (for future weeks)
+function addNewPick(searchQuery, weekOf, description, makeCurrent = true) {
+    // Remove current flag from all picks if making this one current
+    if (makeCurrent) {
+        PICK_HISTORY.forEach(pick => pick.isCurrent = false);
+    }
+    
+    // Create new pick object
+    const newPick = {
+        id: new Date(weekOf).toISOString().split('T')[0], // Convert date to YYYY-MM-DD format
+        searchQuery: searchQuery,
+        weekOf: weekOf,
+        description: description,
+        isCurrent: makeCurrent
+    };
+    
+    // Add to beginning of array (most recent first)
+    PICK_HISTORY.unshift(newPick);
+    
+    // Clear cache for the new pick
+    delete songCache[newPick.id];
+    
+    // Reload the pick section if it exists
+    const pickSection = document.querySelector('.pick-of-week-section');
+    if (pickSection) {
+        initializePickOfTheWeek();
+    }
+}
+
+// Helper function to manually switch to a specific pick (useful for testing)
+function switchToPick(pickId) {
+    const pick = PICK_HISTORY.find(p => p.id === pickId);
+    if (pick && songCache[pickId]) {
+        switchToPickWithAnimation(pickId);
+    } else {
+        console.error(`Pick with ID ${pickId} not found or not loaded`);
+    }
+}

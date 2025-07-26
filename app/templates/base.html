@@ -11,6 +11,16 @@
     {% block extra_head %}{% endblock %}
 </head>
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-924YLLEGRQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-924YLLEGRQ');
+</script>
+
 <body>
     <main>
         <section class="content">
@@ -28,7 +38,6 @@
 
         <div class="footer-section">
             <a title="Home page" href="/home" style="text-decoration: {% if request.path == '/home' %}underline{% else %}none{% endif %}; color: white; margin: 20px;">Home</a>
-            <a title="Pick of the Week" href="/our-pick" style="text-decoration: {% if request.path == '/our-pick' %}underline{% else %}none{% endif %}; color: white; margin: 20px;">Our Pick</a>
             <a title="About Turntable" href="/about" style="text-decoration: {% if request.path == '/about' %}underline{% else %}none{% endif %}; color: white; margin: 20px;">About</a>
         </div>
         

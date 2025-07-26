@@ -7,7 +7,13 @@ import deezer
 import crud
 from crud import MusicRecommender
 from flask_compress import Compress
+import urllib.parse
+import re
+from dotenv import load_dotenv
+import traceback
 import time
+
+load_dotenv()  # Load environment variables from .env file
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +36,10 @@ mail = Mail(app)
 
 RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
+
+# Last.fm API configuration
+LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")  # You'll need to set this environment variable
+LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
 
 @app.route('/')
 def index():
@@ -56,13 +66,6 @@ def home():
 def success():
     logger.info("Rendering success page")
     return render_template('success.html')  
-
-@app.route('/our-pick')
-def our_pick():
-    logger.info("Rendering our pick page")
-    album = get_album("Songs in the Key of Life")
-    artist = get_artist("Stevie Wonder")
-    return render_template('our-pick.html', album=album, artist=artist)
 
 @app.route("/contact-help", methods=["POST"])
 def contact_help():
@@ -134,6 +137,90 @@ def api_search():
         logger.error(f"API search failed: {e}")
         return jsonify({"error": "Search failed"}), 500
 
+@app.route('/api/artist-info', methods=['POST'])
+def get_artist_info():
+    """
+    Fetch artist information from Last.fm API
+    """
+    data = request.get_json()
+    artist_name = data.get('artist_name')
+
+    if not artist_name:
+        return jsonify({"error": "No artist name provided"}), 400
+
+    if not LASTFM_API_KEY:
+        logger.warning("Last.fm API key not configured")
+        return jsonify({"error": "Last.fm API not configured"}), 500
+
+    try:
+        # Make request to Last.fm API
+        params = {
+            'method': 'artist.getinfo',
+            'artist': artist_name,
+            'api_key': LASTFM_API_KEY,
+            'format': 'json'
+        }
+        
+        response = requests.get(LASTFM_BASE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'error' in data:
+            logger.error(f"Last.fm API error: {data.get('message', 'Unknown error')}")
+            return jsonify({"error": "Artist not found"}), 404
+        
+        if 'artist' in data and data['artist'].get('bio') and data['artist']['bio'].get('summary'):
+            bio = data['artist']['bio']['summary']
+            
+            # Clean up the bio text
+            # Remove HTML tags
+            bio = re.sub(r'<[^>]*>', '', bio)
+            
+            # Remove "Read more on Last.fm" and similar text
+            bio = re.sub(r'Read more on Last\.fm.*$', '', bio, flags=re.IGNORECASE)
+            bio = re.sub(r'User-contributed text is available under.*$', '', bio, flags=re.IGNORECASE)
+            
+            # Clean up extra whitespace
+            bio = bio.strip()
+            
+            # Limit to first 2-3 sentences for brevity
+            sentences = re.split(r'[.!?]+', bio)
+            short_bio = '. '.join(sentences[:2]).strip()
+            
+            if short_bio and not short_bio.endswith('.'):
+                short_bio += '.'
+            
+            # Get additional info if available
+            artist_info = {
+                'bio': short_bio if short_bio else None,
+                'listeners': data['artist'].get('stats', {}).get('listeners'),
+                'playcount': data['artist'].get('stats', {}).get('playcount'),
+                'url': data['artist'].get('url'),
+                'image': None
+            }
+            
+            # Get artist image if available
+            if 'image' in data['artist'] and data['artist']['image']:
+                for img in data['artist']['image']:
+                    if img.get('size') == 'large' and img.get('#text'):
+                        artist_info['image'] = img['#text']
+                        break
+            
+            return jsonify({"artist_info": artist_info})
+        else:
+            return jsonify({"error": "No artist information available"}), 404
+            
+    except requests.exceptions.Timeout:
+        logger.error(f"Last.fm API timeout for artist: {artist_name}")
+        return jsonify({"error": "Request timeout"}), 504
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Last.fm API request failed for artist {artist_name}: {e}")
+        return jsonify({"error": "External API error"}), 503
+    except Exception as e:
+        logger.error(f"Unexpected error fetching artist info for {artist_name}: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
 @app.route('/api/recommend', methods=['POST'])
 def recommend():
     data = request.get_json()
@@ -147,21 +234,31 @@ def recommend():
     # Convert to int and provide a default if needed
     try:
         recommendations_count = int(recommendations_count)
+        # Keep the limit to prevent excessive resource usage
+        recommendations_count = min(recommendations_count, 10)
     except (TypeError, ValueError):
-        recommendations_count = 5  # or whatever default you want
+        recommendations_count = 5
 
+    # Remove the timeout tracking
+    start_time = time.time()
+    
     try:
+        logger.info(f"Starting recommendation for: {track_name} by {artist_name}")
+        
         recommender = MusicRecommender()
-        # Measure time for get_recommendations
-        start_time = time.time()
         recommendations = recommender.get_recommendations(track_name, artist_name, recommendations_count)
-        elapsed_time = time.time() - start_time
-        logger.info(f"get_recommendations for '{track_name}' by '{artist_name}' took {elapsed_time:.2f} seconds")
+        
+        processing_time = time.time() - start_time
+        logger.info(f"Recommendation completed in {processing_time:.2f} seconds")
+
+        if not recommendations:
+            return jsonify({"recommendations": [], "message": "No recommendations found"}), 200
 
         recommendations.sort(key=lambda x: x.similarity_score, reverse=True)
 
         results = []
         for track in recommendations:
+            # Quick album cover fetch with short timeout
             album_cover = get_album_cover_from_deezer(track.title, track.artist_name)
             
             results.append({
@@ -174,9 +271,12 @@ def recommend():
         return jsonify({"recommendations": results})
 
     except Exception as e:
-        logger.error(f"Recommendation error: {e}")
-        return jsonify({"error": "Recommendation failed"}), 500
-
+        processing_time = time.time() - start_time
+        logger.error(f"Recommendation error after {processing_time:.2f}s: %s", traceback.format_exc())
+        
+        # Remove the timeout-based error handling - let it run as long as needed
+        return jsonify({"error": "Recommendation failed. Please try again."}), 500
+    
 def get_album_cover_from_deezer(title, artist):
     try:
         import requests
@@ -186,7 +286,14 @@ def get_album_cover_from_deezer(title, artist):
         query = urllib.parse.quote(f"{artist} {title}")
         url = f"https://api.deezer.com/search?q={query}&limit=1"
         
-        response = requests.get(url, timeout=5)
+        # Add shorter timeout and session reuse
+        response = requests.get(url, timeout=3)  # Reduced from 5 to 3 seconds
+        
+        # Check if request was successful
+        if response.status_code != 200:
+            logger.warning(f"Deezer API returned status {response.status_code} for {title} by {artist}")
+            return None
+            
         data = response.json()
         
         if data.get('data') and len(data['data']) > 0:
@@ -198,9 +305,58 @@ def get_album_cover_from_deezer(title, artist):
         
         return None
         
+    except requests.exceptions.Timeout:
+        logger.warning(f"Timeout fetching album cover for {title} by {artist}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Request error fetching album cover for {title} by {artist}: {e}")
+        return None
     except Exception as e:
         logger.error(f"Error fetching album cover for {title} by {artist}: {e}")
         return None
+
+# Helper function to get artist information (can be used by other parts of your app)
+def get_artist_info_helper(artist_name):
+    """
+    Helper function to get artist info that can be used elsewhere in the app
+    """
+    if not LASTFM_API_KEY or not artist_name:
+        return None
+    
+    try:
+        params = {
+            'method': 'artist.getinfo',
+            'artist': artist_name,
+            'api_key': LASTFM_API_KEY,
+            'format': 'json'
+        }
+        
+        response = requests.get(LASTFM_BASE_URL, params=params, timeout=5)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'artist' in data and data['artist'].get('bio') and data['artist']['bio'].get('summary'):
+            bio = data['artist']['bio']['summary']
+            
+            # Clean up the bio text
+            bio = re.sub(r'<[^>]*>', '', bio)
+            bio = re.sub(r'Read more on Last\.fm.*$', '', bio, flags=re.IGNORECASE)
+            bio = bio.strip()
+            
+            # Limit to first 2 sentences
+            sentences = re.split(r'[.!?]+', bio)
+            short_bio = '. '.join(sentences[:2]).strip()
+            
+            if short_bio and not short_bio.endswith('.'):
+                short_bio += '.'
+                
+            return short_bio
+            
+    except Exception as e:
+        logger.error(f"Error fetching artist info for {artist_name}: {e}")
+        
+    return None
 
 # # Run the test    
 if __name__ == "__main__":
