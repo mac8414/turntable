@@ -31,11 +31,11 @@ class AudioFeatures:
     
     # Harmonic features
     chroma: np.ndarray
-    tonnetz: np.ndarray
+    #tonnetz: np.ndarray
     
     # Rhythmic features
     tempo: float
-    beat_strength: float
+    #beat_strength: float
     onset_strength: float
     
     # Dynamic features
@@ -54,7 +54,7 @@ class AudioFeatures:
         features.extend(np.mean(self.mfccs, axis=1))  # 13 features
         features.extend(np.mean(self.spectral_contrast, axis=1))  # 7 features
         features.extend(np.mean(self.chroma, axis=1))  # 12 features
-        features.extend(np.mean(self.tonnetz, axis=1))  # 6 features
+        #features.extend(np.mean(self.tonnetz, axis=1))  # 6 features
         
         # Add scalar features
         scalar_features = [
@@ -64,7 +64,7 @@ class AudioFeatures:
             self.spectral_flatness,
             self.zero_crossing_rate,
             self.tempo,
-            self.beat_strength,
+            #self.beat_strength,
             self.onset_strength,
             self.rms_energy,
             self.dynamic_range,
