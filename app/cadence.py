@@ -415,7 +415,7 @@ class EnhancedAudioProcessor:
                 tempo_diff = abs(reference_features.tempo - comp_features.tempo
                                  if reference_features.tempo is not None and comp_features.tempo is not None
                                  else 0.0)
-                tempo_sim = np.exp(-tempo_diff / 30)
+                tempo_sim = np.exp(-tempo_diff / 15)
 
                 # 4. Spectral Features Similarity (Texture)
                 spectral_ref = np.array([
@@ -447,12 +447,12 @@ class EnhancedAudioProcessor:
 
                 # Combine with weights
                 weights = {
-                    'mfcc': 0.3,  # Timbre
-                    'chroma': 0.2,  # Harmony
-                    'tempo': 0.15,  # Rhythm
+                    'mfcc': 0.25,  # Timbre
+                    'chroma': 0.15,  # Harmony
+                    'tempo': 0.2,  # Rhythm
                     'spectral': 0.2,  # Texture
                     'dynamic': 0.1,  # Dynamics
-                    'key_mode': 0.05  # Tonality
+                    'key_mode': 0.1  # Tonality
                 }
                 total_similarity = (
                         weights['mfcc'] * mfcc_sim +
