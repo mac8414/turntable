@@ -117,6 +117,7 @@ def contact_help():
 def api_search():
     data = request.get_json()
     query = data.get('query')
+    limit = data.get('limit', 20)  # Default to 20
 
     if not query:
         return jsonify({"error": "No query provided"}), 400
@@ -124,13 +125,14 @@ def api_search():
     client = deezer.Client()
     try:
         results = client.search(query)
+        # Limit the number of tracks returned
         tracks = [
             {
                 "title": track.title,
                 "artist": track.artist.name,
                 "album_cover": track.album.cover_medium 
             }
-            for track in results
+            for track in results[:limit]
         ]
         return jsonify({"results": tracks})
     except Exception as e:

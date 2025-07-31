@@ -1,3 +1,59 @@
+// --- IMAGE COMPRESSION UTILITY ---
+function compressImageUrl(originalUrl, width = 300, height = 300, quality = 0.8) {
+    // If it's a Spotify image, we can use their built-in resizing
+    if (originalUrl && originalUrl.includes('i.scdn.co')) {
+        // Spotify images can be resized by changing the URL
+        return originalUrl.replace(/\/\d+x\d+\//, `/${width}x${height}/`);
+    }
+    
+    // For other images, we'll create a compressed version using canvas
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to desired dimensions
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to compressed data URL
+            const compressedUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedUrl);
+        };
+        
+        img.onerror = function() {
+            // If compression fails, return original URL
+            resolve(originalUrl);
+        };
+        
+        img.src = originalUrl;
+    });
+}
+
+// Synchronous version for Spotify URLs (most common case)
+function getCompressedImageUrl(originalUrl, size = 'medium') {
+    if (!originalUrl) return originalUrl;
+    
+    // For Spotify images, use their resizing
+    if (originalUrl.includes('i.scdn.co')) {
+        const sizeMap = {
+            'small': '150x150',
+            'medium': '300x300', 
+            'large': '640x640'
+        };
+        return originalUrl.replace(/\/\d+x\d+\//, `/${sizeMap[size] || sizeMap.medium}/`);
+    }
+    
+    // For other images, return original (you could implement server-side compression)
+    return originalUrl;
+}
+
 // --- LAVA LAMP ANIMATION ---
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Vue is available
@@ -320,7 +376,7 @@ function randomizeSelection() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ query: randomTerm })
+        body: JSON.stringify({ query: randomTerm, limit: 20 }) // <-- Add limit here
     })
     .then(response => response.json())
     .then(data => {
@@ -658,7 +714,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ query: query })
+                        body: JSON.stringify({ query: query, limit: 20 }) // <-- Add limit here
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -800,61 +856,81 @@ const PICK_HISTORY = [
     {
         id: "2025-07-28",
         searchQuery: "The Bends Radiohead",
+        albumTitle: "The Bends",
+        artistName: "Radiohead",
         weekOf: "July 28, 2025",
-        description: "The Bends (1995) is Radiohead's second studio album, marking a major evolution from their grunge-influenced debut. It blends alternative rock with atmospheric textures, introspective lyrics, and soaring guitar work. The album explores themes of alienation, identity, and emotional vulnerability, with standout tracks like “Fake Plastic Trees,” “High and Dry,” and “Street Spirit (Fade Out).” Critically acclaimed, The Bends set the stage for the band’s experimental future while solidifying their place in '90s rock.",
+        description: "...",
         isCurrent: true
     },
     {
         id: "2025-07-21",
         searchQuery: "The Freewheelin' Bob Dylan Bob Dylan",
+        albumTitle: "The Freewheelin' Bob Dylan",
+        artistName: "Bob Dylan",
         weekOf: "July 21, 2025",
         description: "An essential folk‑rock collection from Bob Dylan’s early years, packed with timeless originals like “Blowin’ in the Wind,” “Masters of War,” and “Girl from the North Country.” Filled with poetic lyrics about social change, protest, love and loss, this album became a defining voice of the 1960s civil rights and anti‑war movement, cementing Dylan’s role as a cultural icon.",
     },
     {
         id: "2025-07-14",
         searchQuery: "Tapestry Carol King",
+        albumTitle: "Tapestry",
+        artistName: "Carole King",
         weekOf: "July 14, 2025",
         description: "A soulful, piano‑driven masterwork of singer‑songwriter intimacy, Tapestry delivers hit highlights like “It’s Too Late,” “You’ve Got a Friend,” and “Natural Woman.” Carole King’s deeply personal, emotionally honest songwriting blends folk, soul, pop, and blues into a warm musical experience. Tapestry sold over 30 million copies worldwide, won multiple Grammys, and is celebrated as a cornerstone of modern pop music."
     },
     {
         id: "2025-07-07",
         searchQuery: "Igor Tyler, the Creator",
+        albumTitle: "Igor",
+        artistName: "Tyler, the Creator",
         weekOf: "July 7, 2025",
         description: "A bold, genre‑blending drama exploring jealousy, identity, and love through the lens of Tyler’s alter‑ego “Igor.” Driven by lush synth textures, hip‑hop beats, and emotional vocals, this album crafts a cinematic narrative soundscape with standout tracks—or individual songs—that embody modern experimental pop, emotional complexity, and boundary‑pushing production."
     },
     {
         id: "2025-06-30",
         searchQuery: "Pink Moon Nick Drake",
+        albumTitle: "Pink Moon",
+        artistName: "Nick Drake",
         weekOf: "June 30, 2025",
         description: "A minimalist folk gem defined by Nick Drake’s intimate acoustic guitar and piano arrangements. With introspective, melancholic lyrics and understated beauty, this album creates an emotional soundscape full of solitude and subtle reflection. It's ideal for listeners seeking lyrical depth and tranquil melodies—whether they found a specific song or discovered the album."
     },
     {
         id: "2025-06-23",
         searchQuery: "Led Zeppelin IV Led Zeppelin",
+        albumTitle: "Led Zeppelin IV",
+        artistName: "Led Zeppelin",
         weekOf: "June 23, 2025",
         description: "Known for epoch‑defining tracks like “Stairway to Heaven,” “Black Dog,” and “Rock and Roll,” this powerful fusion of hard rock, blues, folk, and classic riffs made Led Zeppelin into legends. The album delivers sweeping dynamics, timeless melodies, guitar masterpieces, and themes of mythology and Americana—an essential entry point for new fans exploring the songs."
     },
     {
         id: "2025-06-16",
         searchQuery: "Hotel California Eagles",
+        albumTitle: "Hotel California",
+        artistName: "Eagles",
         weekOf: "June 16, 2025",
         description: "A cinematic blend of West Coast rock, storytelling, and harmony-rich production capturing California’s myth, fame, and disillusionment. Featuring the evergreen title track plus “Life in the Fast Lane” and “New Kid in Town,” this album pairs smooth guitar work with introspective lyrics about excess and the American dream."
     },
     {
         id: "2025-06-09",
         searchQuery: "Thriller Michael Jackson",
+        albumTitle: "Thriller",
+        artistName: "Michael Jackson",
         weekOf: "June 9, 2025",
         description: "The watershed moment in pop music history: an album that defined global pop culture with blockbuster hits like “Thriller,” “Billie Jean,” and “Beat It.” Blending pop, R&B, funk, and rock, it showcases cinematic production, groundbreaking dance tracks, and a universal appeal that continues to influence music today."
     },
     {
         id: "2025-06-02",
         searchQuery: "Appetite for Destruction Guns N Roses",
+        albumTitle: "Appetite for Destruction",
+        artistName: "Guns N Roses",
         weekOf: "June 2, 2025",
         description: "Raw, rebellious, and electrifying, this debut album ignited late‑’80s hard rock with fiery songs such as “Welcome to the Jungle,” “Sweet Child o’ Mine,” and “Paradise City.” Featuring gritty lyrics, searing guitar solos, and an authentic street‑wise attitude, it transformed rock with uncompromised energy and swagger."
     },
     {
         id: "2025-05-26",
         searchQuery: "The Dark Side of the Moon Pink Floyd",
+        albumTitle: "The Dark Side of the Moon",
+        artistName: "Pink Floyd",
         weekOf: "May 26, 2025",
         description: "A genre‑defining progressive/psychedelic rock concept album from March 1973 that explores time, money, mental health, death, consumerism, and societal alienation. It interweaves ambient soundscapes, tape loops, synthesizers, and interview snippets into a seamless emotional journey from “Speak to Me” to “Eclipse,” all bookended by a heartbeat motif. With iconic tracks like “Time,” “Money,” “Us and Them,” and “Brain Damage,” it became one of the best-selling and most influential albums ever, certified multi-platinum and sustaining legendary status for decades"
     },
@@ -942,12 +1018,25 @@ function loadSongData(pickConfig) {
     .then(response => response.json())
     .then(data => {
         if (data.results && data.results.length > 0) {
-            const songData = {
-                song: data.results[0],
+            // Try to find the best match for the album
+            let bestMatch = data.results[0];
+            if (pickConfig.albumTitle && pickConfig.artistName) {
+                const exactMatch = data.results.find(result =>
+                    result.title.toLowerCase().includes(pickConfig.albumTitle.toLowerCase()) &&
+                    result.artist.toLowerCase().includes(pickConfig.artistName.toLowerCase())
+                );
+                if (exactMatch) bestMatch = exactMatch;
+            }
+            const albumData = {
+                song: {
+                    title: pickConfig.albumTitle || bestMatch.title,
+                    artist: pickConfig.artistName || bestMatch.artist,
+                    album_cover: bestMatch.album_cover
+                },
                 config: pickConfig
             };
-            songCache[pickConfig.id] = songData;
-            return songData;
+            songCache[pickConfig.id] = albumData;
+            return albumData;
         } else {
             throw new Error(`Album not found for ${pickConfig.weekOf}`);
         }
@@ -965,7 +1054,11 @@ function renderFeaturedPick() {
     
     const { song, config } = pickData;
     const isCurrentWeek = config.isCurrent;
-    
+
+    // Use album search links instead of song search
+    const spotifyAlbumSearch = `https://open.spotify.com/search/${encodeURIComponent('album:"' + song.title + '" artist:"' + song.artist + '"')}`;
+    const appleAlbumSearch = `https://music.apple.com/us/search?term=${encodeURIComponent(song.title + ' ' + song.artist)}&entity=album`;
+
     featuredContainer.innerHTML = `
         <div class="featured-pick-card">
             <div class="featured-pick-image">
@@ -982,11 +1075,11 @@ function renderFeaturedPick() {
                 </div>
                 
                 <div class="featured-music-links">
-                    <a href="https://open.spotify.com/search/${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                    <a href="${spotifyAlbumSearch}" 
                        target="_blank" rel="noopener noreferrer" class="music-link spotify">
                         <span class="link-icon">♪</span> Listen on Spotify
                     </a>
-                    <a href="https://music.apple.com/us/search?term=${encodeURIComponent(song.title + ' ' + song.artist)}" 
+                    <a href="${appleAlbumSearch}" 
                        target="_blank" rel="noopener noreferrer" class="music-link apple">
                         <span class="link-icon">♪</span> Listen on Apple Music
                     </a>
@@ -1119,3 +1212,31 @@ function switchToPick(pickId) {
         console.error(`Pick with ID ${pickId} not found or not loaded`);
     }
 }
+
+// --- SEARCH FUNCTIONALITY ENHANCEMENTS ---
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('songSearch');
+    const clearBtn = document.getElementById('clearSearch');
+    const searchResults = document.getElementById('searchResults');
+    if (searchInput && clearBtn) {
+        // Show/hide the clear button based on input value
+        searchInput.addEventListener('input', function() {
+            clearBtn.style.display = this.value ? 'block' : 'none';
+        });
+
+        // Clear the input and hide results when the button is clicked
+        clearBtn.addEventListener('mousedown', function(e) {
+            // Use mousedown instead of click to prevent input blur
+            e.preventDefault();
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            searchInput.focus();
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
+            // Optionally, trigger input event if you have logic tied to it
+            searchInput.dispatchEvent(new Event('input'));
+        });
+    }
+});

@@ -694,6 +694,7 @@ h1 {
   position: relative;
   z-index: 1002;
   box-shadow: inset 0 2px 15px rgba(0, 0, 0, 0.5);
+  padding-right: 2.5em; /* or more if needed */
 }
 
 .search-input::placeholder {
@@ -1095,6 +1096,23 @@ h1 {
   color: var(--text-gray);
 }
 
+/* Add to your CSS */
+  .clear-search {
+      position: absolute;
+      right: 18px; /* or whatever looks best */
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.3em;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      display: none;
+      z-index: 10;
+      background: transparent;
+      border: none;
+      padding: 0;
+      line-height: 1;
+  }
 /* Updated animation for seamless movement */
 @keyframes moveDiagonalSeamless {
   from {
@@ -2076,7 +2094,9 @@ footer {
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: 0.9rem;
   }
+
   
+
   .searchResultItem-artwork {
     width: 45px;
     height: 45px;
@@ -2265,7 +2285,6 @@ footer {
   /* Header */
   h1 {
     font-size: 1.5rem;
-    margin: 2px;
   }
   
   .header {
@@ -2413,10 +2432,6 @@ footer {
   
   /* About page */
   .title {
-    height: 20vh;
-  }
-  
-  .title h2 {
     font-size: clamp(20px, 6vw, 32px);
   }
   
@@ -2528,3 +2543,6 @@ footer {
     gap: var(--spacing-md);
   }
 }
+
+
+
