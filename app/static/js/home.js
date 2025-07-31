@@ -798,11 +798,17 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-07-28",
+        searchQuery: "The Bends Radiohead",
+        weekOf: "July 28, 2025",
+        description: "The Bends (1995) is Radiohead's second studio album, marking a major evolution from their grunge-influenced debut. It blends alternative rock with atmospheric textures, introspective lyrics, and soaring guitar work. The album explores themes of alienation, identity, and emotional vulnerability, with standout tracks like “Fake Plastic Trees,” “High and Dry,” and “Street Spirit (Fade Out).” Critically acclaimed, The Bends set the stage for the band’s experimental future while solidifying their place in '90s rock.",
+        isCurrent: true
+    },
+    {
         id: "2025-07-21",
         searchQuery: "The Freewheelin' Bob Dylan Bob Dylan",
         weekOf: "July 21, 2025",
         description: "An essential folk‑rock collection from Bob Dylan’s early years, packed with timeless originals like “Blowin’ in the Wind,” “Masters of War,” and “Girl from the North Country.” Filled with poetic lyrics about social change, protest, love and loss, this album became a defining voice of the 1960s civil rights and anti‑war movement, cementing Dylan’s role as a cultural icon.",
-        isCurrent: true
     },
     {
         id: "2025-07-14",
@@ -831,25 +837,25 @@ const PICK_HISTORY = [
     {
         id: "2025-06-16",
         searchQuery: "Hotel California Eagles",
-        weekOf: "July 14, 2025",
+        weekOf: "June 16, 2025",
         description: "A cinematic blend of West Coast rock, storytelling, and harmony-rich production capturing California’s myth, fame, and disillusionment. Featuring the evergreen title track plus “Life in the Fast Lane” and “New Kid in Town,” this album pairs smooth guitar work with introspective lyrics about excess and the American dream."
     },
     {
         id: "2025-06-09",
         searchQuery: "Thriller Michael Jackson",
-        weekOf: "July 7, 2025",
+        weekOf: "June 9, 2025",
         description: "The watershed moment in pop music history: an album that defined global pop culture with blockbuster hits like “Thriller,” “Billie Jean,” and “Beat It.” Blending pop, R&B, funk, and rock, it showcases cinematic production, groundbreaking dance tracks, and a universal appeal that continues to influence music today."
     },
     {
         id: "2025-06-02",
         searchQuery: "Appetite for Destruction Guns N Roses",
-        weekOf: "June 30, 2025",
+        weekOf: "June 2, 2025",
         description: "Raw, rebellious, and electrifying, this debut album ignited late‑’80s hard rock with fiery songs such as “Welcome to the Jungle,” “Sweet Child o’ Mine,” and “Paradise City.” Featuring gritty lyrics, searing guitar solos, and an authentic street‑wise attitude, it transformed rock with uncompromised energy and swagger."
     },
     {
         id: "2025-05-26",
         searchQuery: "The Dark Side of the Moon Pink Floyd",
-        weekOf: "June 23, 2025",
+        weekOf: "May 26, 2025",
         description: "A genre‑defining progressive/psychedelic rock concept album from March 1973 that explores time, money, mental health, death, consumerism, and societal alienation. It interweaves ambient soundscapes, tape loops, synthesizers, and interview snippets into a seamless emotional journey from “Speak to Me” to “Eclipse,” all bookended by a heartbeat motif. With iconic tracks like “Time,” “Money,” “Us and Them,” and “Brain Damage,” it became one of the best-selling and most influential albums ever, certified multi-platinum and sustaining legendary status for decades"
     },
 ];
