@@ -859,7 +859,7 @@ const PICK_HISTORY = [
         albumTitle: "The Bends",
         artistName: "Radiohead",
         weekOf: "July 28, 2025",
-        description: "...",
+        description: "An emotional and introspective Radiohead album. It marked a departure from their grunge-influenced debut, showcasing a more atmospheric and emotional sound. Featuring standout tracks like 'Fake Plastic Trees' and 'Street Spirit (Fade Out),' the album explores themes of alienation and identity. Though initially overlooked, it later gained acclaim as a pivotal moment in Radiohead’s evolution and a defining work of '90s alternative rock.",
         isCurrent: true
     },
     {
