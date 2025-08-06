@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-08-04",
+        searchQuery: "Born to Run Bruce Springsteen",
+        albumTitle: "Born to Run",
+        artistName: "Bruce Springsteen",
+        weekOf: "August 4, 2025",
+        description: "",
+        isCurrent: true
+    },
+    {
         id: "2025-07-28",
         searchQuery: "The Bends Radiohead",
         albumTitle: "The Bends",
         artistName: "Radiohead",
         weekOf: "July 28, 2025",
         description: "An emotional and introspective Radiohead album. It marked a departure from their grunge-influenced debut, showcasing a more atmospheric and emotional sound. Featuring standout tracks like 'Fake Plastic Trees' and 'Street Spirit (Fade Out),' the album explores themes of alienation and identity. Though initially overlooked, it later gained acclaim as a pivotal moment in Radiohead’s evolution and a defining work of '90s alternative rock.",
-        isCurrent: true
     },
     {
         id: "2025-07-21",
