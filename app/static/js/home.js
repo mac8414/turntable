@@ -854,13 +854,37 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-08-18",
+        searchQuery: "Songs in the Key of Life Stevie Wonder",
+        albumTitle: "Songs in the Key of Life",
+        artistName: "Stevie Wonder",
+        weekOf: "August 18, 2025",
+        description: "A landmark double album from Stevie Wonder, blending soul, funk, jazz, and pop into a cohesive masterpiece. Featuring classics like 'Isn’t She Lovely' and 'Sir Duke,' it explores themes of love, social justice, and spirituality. The album showcases Wonder’s virtuosity on multiple instruments and his innovative production techniques. Widely regarded as one of the greatest albums of all time, it remains a defining work in the history of popular music.",
+        isCurrent: true
+    },
+    {
+        id: "2025-08-11",
+        searchQuery: "One Beer MF DOOM",
+        albumTitle: "MM..FOOD",
+        artistName: "MF DOOM",
+        weekOf: "August 11, 2025",
+        description: "A cult classic from the late MF DOOM, MM..FOOD is a concept album that blends intricate wordplay with food metaphors. Known for its unique production and clever lyricism, it features tracks like 'Rapp Snitch Knishes' and 'Hoe Cakes.' The album showcases DOOM's signature style, combining humor, introspection, and a love for hip-hop culture. It remains a beloved work in underground rap circles."
+    },
+    {
+        id: "2025-08-04",
+        searchQuery: "Thunder Road Bruce Springsteen",
+        albumTitle: "Born to Run",
+        artistName: "Bruce Springsteen",
+        weekOf: "August 4, 2025",
+        description: "A soaring and cinematic Bruce Springsteen album. It marked his breakthrough into mainstream success, blending rock, soul, and poetry into anthems of youth and escape. Featuring standout tracks like 'Born to Run' and 'Thunder Road,' the album captures themes of freedom, longing, and working-class dreams. Widely acclaimed, it became a defining work of 1970s rock and cemented Springsteen’s status as a major voice in American music."
+    },
+    {
         id: "2025-07-28",
         searchQuery: "The Bends Radiohead",
         albumTitle: "The Bends",
         artistName: "Radiohead",
         weekOf: "July 28, 2025",
         description: "An emotional and introspective Radiohead album. It marked a departure from their grunge-influenced debut, showcasing a more atmospheric and emotional sound. Featuring standout tracks like 'Fake Plastic Trees' and 'Street Spirit (Fade Out),' the album explores themes of alienation and identity. Though initially overlooked, it later gained acclaim as a pivotal moment in Radiohead’s evolution and a defining work of '90s alternative rock.",
-        isCurrent: true
     },
     {
         id: "2025-07-21",
@@ -896,7 +920,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-06-23",
-        searchQuery: "Led Zeppelin IV Led Zeppelin",
+        searchQuery: "Led Zeppelin IV(Remaster) Led Zeppelin",
         albumTitle: "Led Zeppelin IV",
         artistName: "Led Zeppelin",
         weekOf: "June 23, 2025",
@@ -912,7 +936,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-06-09",
-        searchQuery: "Thriller Michael Jackson",
+        searchQuery: "Human Nature Michael Jackson",
         albumTitle: "Thriller",
         artistName: "Michael Jackson",
         weekOf: "June 9, 2025",
@@ -920,7 +944,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-06-02",
-        searchQuery: "Appetite for Destruction Guns N Roses",
+        searchQuery: "Think About You Guns N Roses",
         albumTitle: "Appetite for Destruction",
         artistName: "Guns N Roses",
         weekOf: "June 2, 2025",
