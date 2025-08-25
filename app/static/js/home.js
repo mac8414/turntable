@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-08-25",
+        searchQuery: "Blonde Frank Ocean",
+        albumTitle: "Blonde",
+        artistName: "Frank Ocean",
+        weekOf: "August 25, 2025",
+        description: "An introspective and genre-defying masterpiece from Frank Ocean. Blonde blends R&B, pop, and experimental sounds to create a deeply personal and emotional journey. With standout tracks like 'Nights' and 'Self Control,' the album explores themes of identity, love, and vulnerability. Its innovative production and Ocean's soulful vocals have made it a defining work of the 2010s, earning critical acclaim and a dedicated fanbase.",
+        isCurrent: true
+    },
+    {
         id: "2025-08-18",
         searchQuery: "Songs in the Key of Life Stevie Wonder",
         albumTitle: "Songs in the Key of Life",
         artistName: "Stevie Wonder",
         weekOf: "August 18, 2025",
-        description: "A landmark double album from Stevie Wonder, blending soul, funk, jazz, and pop into a cohesive masterpiece. Featuring classics like 'Isn’t She Lovely' and 'Sir Duke,' it explores themes of love, social justice, and spirituality. The album showcases Wonder’s virtuosity on multiple instruments and his innovative production techniques. Widely regarded as one of the greatest albums of all time, it remains a defining work in the history of popular music.",
-        isCurrent: true
+        description: "A landmark double album from Stevie Wonder, blending soul, funk, jazz, and pop into a cohesive masterpiece. Featuring classics like 'Isn’t She Lovely' and 'Sir Duke,' it explores themes of love, social justice, and spirituality. The album showcases Wonder’s virtuosity on multiple instruments and his innovative production techniques. Widely regarded as one of the greatest albums of all time, it remains a defining work in the history of popular music."
     },
     {
         id: "2025-08-11",
