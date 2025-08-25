@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@react-native/typescript-config": "^0.81.0"
+  }
+}
