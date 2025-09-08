@@ -681,6 +681,20 @@ h1 {
 .search-input-container {
   position: relative;
   z-index: 1001;
+  
+}
+
+.clear-search {
+  position: absolute;
+  right: 1em;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.25em;
+  color: var(--text-light-gray);
+  z-index: 1100; /* higher than input */
+  user-select: none;
+  display: none; /* shown only when input has text */
 }
 
 .search-input {

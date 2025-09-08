@@ -854,13 +854,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-09-08",
+        searchQuery: "Sweet Baby James James Taylor",
+        albumTitle: "Sweet Baby James",
+        artistName: "James Taylor",
+        weekOf: "September 8, 2025",
+        description: "A classic James Taylor album filled with soothing acoustic melodies and heartfelt lyrics. Featuring timeless tracks like 'Fire and Rain' and the title track 'Sweet Baby James,' the album showcases Taylor's signature blend of folk, rock, and country influences. Its introspective themes of love, loss, and hope have resonated with listeners for decades, making it a staple in the singer-songwriter genre.",
+        isCurrent: true
+    },
+    {
+        id: "2025-09-01",
+        searchQuery: "Naeem Bon Iver",
+        albumTitle: "i,i",
+        artistName: "Bon Iver",
+        weekOf: "September 1, 2025",
+        description: "A lush and introspective Bon Iver album that blends folk, indie rock, and electronic elements. Featuring standout tracks like 'Hey, Ma'"
+    },
+    {
         id: "2025-08-25",
         searchQuery: "Blonde Frank Ocean",
         albumTitle: "Blonde",
         artistName: "Frank Ocean",
         weekOf: "August 25, 2025",
-        description: "An introspective and genre-defying masterpiece from Frank Ocean. Blonde blends R&B, pop, and experimental sounds to create a deeply personal and emotional journey. With standout tracks like 'Nights' and 'Self Control,' the album explores themes of identity, love, and vulnerability. Its innovative production and Ocean's soulful vocals have made it a defining work of the 2010s, earning critical acclaim and a dedicated fanbase.",
-        isCurrent: true
+        description: "An introspective and genre-defying masterpiece from Frank Ocean. Blonde blends R&B, pop, and experimental sounds to create a deeply personal and emotional journey. With standout tracks like 'Nights' and 'Self Control,' the album explores themes of identity, love, and vulnerability. Its innovative production and Ocean's soulful vocals have made it a defining work of the 2010s, earning critical acclaim and a dedicated fanbase."
     },
     {
         id: "2025-08-18",
@@ -1257,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Clear the input and hide results when the button is clicked
-        clearBtn.addEventListener('mousedown', function(e) {
+        clearBtn.addEventListener('click', function(e) {
             // Use mousedown instead of click to prevent input blur
             e.preventDefault();
             searchInput.value = '';
