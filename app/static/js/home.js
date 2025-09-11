@@ -896,7 +896,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-08-04",
-        searchQuery: "Thunder Road Bruce Springsteen",
+        searchQuery: "Jungleland Bruce Springsteen",
         albumTitle: "Born to Run",
         artistName: "Bruce Springsteen",
         weekOf: "August 4, 2025",
