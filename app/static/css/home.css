@@ -1116,6 +1116,7 @@ h1 {
       right: 18px; /* or whatever looks best */
       top: 50%;
       transform: translateY(-50%);
+      z-index: 2147483647 !important; 
       font-size: 1.3em;
       color: white;
       cursor: pointer;
@@ -1126,6 +1127,7 @@ h1 {
       border: none;
       padding: 0;
       line-height: 1;
+      pointer-events: auto;
   }
 /* Updated animation for seamless movement */
 @keyframes moveDiagonalSeamless {
