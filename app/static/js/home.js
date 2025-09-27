@@ -855,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
 const PICK_HISTORY = [
     {
         id: "2025-09-22",
-        searchQuery: "Exodus Bob Marley",
+        searchQuery: "The Heathen Bob Marley",
         albumTitle: "Exodus",
         artistName: "Bob Marley & The Wailers",
         weekOf: "September 22, 2025",
