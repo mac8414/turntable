@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-09-22",
+        searchQuery: "Exodus Bob Marley",
+        albumTitle: "Exodus",
+        artistName: "Bob Marley & The Wailers",
+        weekOf: "September 22, 2025",
+        description: "A seminal reggae album from Bob Marley & The Wailers, blending socially conscious lyrics with infectious rhythms. Featuring classics like 'Jamming,' 'Three Little Birds,' and the title track 'Exodus,' the album explores themes of freedom, unity, and resilience. Its fusion of reggae, rock, and soul elements helped bring Jamaican music to a global audience, solidifying Marley's status as a cultural icon and one of the most influential musicians of all time.",
+        isCurrent: true
+    },
+    {
         id: "2025-09-15",
         searchQuery: "The Divine Femine Mac Miller",
         albumTitle: "The Divine Feminine",
         artistName: "Mac Miller",
         weekOf: "September 15, 2025",
-        description: "A soulful and jazzy exploration of love and relationships from the late Mac Miller. The Divine Feminine blends hip-hop with R&B, jazz, and funk influences, creating a smooth and intimate soundscape. Featuring collaborations with artists like Anderson .Paak and Ariana Grande, the album delves into themes of romance, vulnerability, and self-discovery. Its heartfelt lyrics and lush production make it a standout in Miller's discography, showcasing his growth as an artist before his untimely passing.",
-        isCurrent: true
+        description: "A soulful and jazzy exploration of love and relationships from the late Mac Miller. The Divine Feminine blends hip-hop with R&B, jazz, and funk influences, creating a smooth and intimate soundscape. Featuring collaborations with artists like Anderson .Paak and Ariana Grande, the album delves into themes of romance, vulnerability, and self-discovery. Its heartfelt lyrics and lush production make it a standout in Miller's discography, showcasing his growth as an artist before his untimely passing."
     },
     {
         id: "2025-09-08",
