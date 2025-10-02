@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-09-29",
+        seachQuery: "Is This It The Strokes",
+        albumTitle: "Is This It",
+        artistName: "The Strokes",
+        weekOf: "September 29, 2025",
+        description: "A defining album of the early 2000s garage rock revival, The Strokes' debut 'Is This It' is a raw and energetic collection of songs that capture the essence of youthful rebellion and urban cool. With its lo-fi production and catchy hooks, the album features standout tracks like 'Last Nite,' 'Someday,' and 'Hard to Explain.' Its influence can be seen in countless bands that followed, making it a landmark release in modern rock history.",
+        isCurrent: true
+    },
+    {
         id: "2025-09-22",
         searchQuery: "The Heathen Bob Marley",
         albumTitle: "Exodus",
         artistName: "Bob Marley & The Wailers",
         weekOf: "September 22, 2025",
-        description: "A seminal reggae album from Bob Marley & The Wailers, blending socially conscious lyrics with infectious rhythms. Featuring classics like 'Jamming,' 'Three Little Birds,' and the title track 'Exodus,' the album explores themes of freedom, unity, and resilience. Its fusion of reggae, rock, and soul elements helped bring Jamaican music to a global audience, solidifying Marley's status as a cultural icon and one of the most influential musicians of all time.",
-        isCurrent: true
+        description: "A seminal reggae album from Bob Marley & The Wailers, blending socially conscious lyrics with infectious rhythms. Featuring classics like 'Jamming,' 'Three Little Birds,' and the title track 'Exodus,' the album explores themes of freedom, unity, and resilience. Its fusion of reggae, rock, and soul elements helped bring Jamaican music to a global audience, solidifying Marley's status as a cultural icon and one of the most influential musicians of all time."
     },
     {
         id: "2025-09-15",
