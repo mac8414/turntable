@@ -1000,7 +1000,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-05-26",
-        searchQuery: "The Dark Side of the Moon Pink Floyd",
+        searchQuery: "Time Pink Floyd",
         albumTitle: "The Dark Side of the Moon",
         artistName: "Pink Floyd",
         weekOf: "May 26, 2025",
