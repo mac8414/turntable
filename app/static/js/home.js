@@ -855,11 +855,11 @@ document.addEventListener('DOMContentLoaded', function() {
 const PICK_HISTORY = [
     {
         id: "2025-09-29",
-        seachQuery: "Is This It The Strokes",
-        albumTitle: "Is This It",
-        artistName: "The Strokes",
+        searchQuery: "Rumors Fleetwood Mac",
+        albumTitle: "Rumors",
+        artistName: "Fleetwood Mac",
         weekOf: "September 29, 2025",
-        description: "A defining album of the early 2000s garage rock revival, The Strokes' debut 'Is This It' is a raw and energetic collection of songs that capture the essence of youthful rebellion and urban cool. With its lo-fi production and catchy hooks, the album features standout tracks like 'Last Nite,' 'Someday,' and 'Hard to Explain.' Its influence can be seen in countless bands that followed, making it a landmark release in modern rock history.",
+        description: "A timeless classic from Fleetwood Mac, Rumors is an album filled with emotional depth and musical brilliance. Featuring hits like 'Go Your Own Way,' 'Dreams,' and 'The Chain,' the album explores themes of love, heartbreak, and resilience. Its blend of rock, pop, and folk elements, combined with the band's impeccable harmonies and songwriting, has made it one of the best-selling albums of all time. Rumors remains a defining work in the rock genre, showcasing Fleetwood Mac's enduring influence and artistry.",
         isCurrent: true
     },
     {
