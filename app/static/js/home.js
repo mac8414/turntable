@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-10-06",
+        searchQuery: "Rubber Soul The Beatles",
+        albumTitle: "Rubber Soul",
+        artistName: "The Beatles",
+        weekOf: "October 6, 2025",
+        description: "A transformative album from The Beatles, Rubber Soul marked a significant evolution in their sound and songwriting. Blending folk rock, pop, and soul influences, the album features introspective lyrics and innovative arrangements. Standout tracks like 'Norwegian Wood,' 'In My Life,' and 'Drive My Car' showcase the band's growing maturity and experimentation. Rubber Soul is often regarded as one of the greatest albums of all time, reflecting The Beatles' artistic growth and their impact on the music landscape of the 1960s.",
+        isCurrent: true
+    },
+    {
         id: "2025-09-29",
         searchQuery: "Rumors Fleetwood Mac",
         albumTitle: "Rumors",
         artistName: "Fleetwood Mac",
         weekOf: "September 29, 2025",
         description: "A timeless classic from Fleetwood Mac, Rumors is an album filled with emotional depth and musical brilliance. Featuring hits like 'Go Your Own Way,' 'Dreams,' and 'The Chain,' the album explores themes of love, heartbreak, and resilience. Its blend of rock, pop, and folk elements, combined with the band's impeccable harmonies and songwriting, has made it one of the best-selling albums of all time. Rumors remains a defining work in the rock genre, showcasing Fleetwood Mac's enduring influence and artistry.",
-        isCurrent: true
     },
     {
         id: "2025-09-22",
