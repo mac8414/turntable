@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-10-13",
+        searchQuery: "Californication Red Hot Chili Peppers",
+        albumTitle: "Californication",
+        artistName: "Red Hot Chili Peppers",
+        weekOf: "October 13, 2025",
+        description: "A defining album from the Red Hot Chili Peppers, Californication marked a return to form for the band. Blending funk, rock, and alternative sounds, the album features introspective lyrics and memorable melodies. Standout tracks like 'Scar Tissue,' 'Otherside,' and the title track 'Californication' showcase the band's ability to craft emotionally resonant songs with infectious grooves. The album's exploration of themes like fame, addiction, and personal growth has made it a fan favorite and a staple in the band's discography.",
+        isCurrent: true
+    },
+    {
         id: "2025-10-06",
         searchQuery: "Rubber Soul The Beatles",
         albumTitle: "Rubber Soul",
         artistName: "The Beatles",
         weekOf: "October 6, 2025",
-        description: "A transformative album from The Beatles, Rubber Soul marked a significant evolution in their sound and songwriting. Blending folk rock, pop, and soul influences, the album features introspective lyrics and innovative arrangements. Standout tracks like 'Norwegian Wood,' 'In My Life,' and 'Drive My Car' showcase the band's growing maturity and experimentation. Rubber Soul is often regarded as one of the greatest albums of all time, reflecting The Beatles' artistic growth and their impact on the music landscape of the 1960s.",
-        isCurrent: true
+        description: "A transformative album from The Beatles, Rubber Soul marked a significant evolution in their sound and songwriting. Blending folk rock, pop, and soul influences, the album features introspective lyrics and innovative arrangements. Standout tracks like 'Norwegian Wood,' 'In My Life,' and 'Drive My Car' showcase the band's growing maturity and experimentation. Rubber Soul is often regarded as one of the greatest albums of all time, reflecting The Beatles' artistic growth and their impact on the music landscape of the 1960s."
     },
     {
         id: "2025-09-29",
