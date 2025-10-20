@@ -35,7 +35,8 @@ FINAL_RECOMMENDATIONS_COUNT = 5
 
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")
 LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET")
-API_URL = "http://ws.audioscrobbler.com/2.0/"
+# Use HTTPS for Last.fm API
+API_URL = "https://ws.audioscrobbler.com/2.0/"
 
 @dataclass
 class Track:
@@ -67,6 +68,10 @@ class LastFMClient:
         self.similar_artist_cache = {}
         
     def get_similar_tracks(self, artist: str, track: str, limit: int = 100) -> List[Track]:
+        if not self.api_key:
+            logger.error("LastFM API key is not configured for LastFMClient.get_similar_tracks")
+            return []
+
         params = {
             'method': 'track.getSimilar',
             'artist': artist,
@@ -75,13 +80,22 @@ class LastFMClient:
             'format': 'json',
             'limit': limit
         }
-        
+
         try:
             response = requests.get(API_URL, params=params, timeout=15)
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                # Log response body to help diagnose Last.fm 4xx/5xx errors
+                try:
+                    logger.error(f"LastFM HTTP error ({response.status_code}): {response.text}")
+                except Exception:
+                    logger.error(f"LastFM HTTP error and failed to read response body: status={response.status_code}")
+                return []
+
             data = response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"LastFM API error: {e}")
+            logger.error(f"LastFM API request error: {e}")
             return []
         
         if 'similartracks' not in data or 'track' not in data['similartracks']:
@@ -104,6 +118,10 @@ class LastFMClient:
                 similar_artist = self.similar_artist_cache[artist]
             else:
                 # Step 1: Get similar artist
+                if not self.api_key:
+                    logger.error("LastFM API key is not configured for get_top_tracks_by_similar_artist")
+                    return []
+
                 similar_params = {
                     'method': 'artist.getsimilar',
                     'artist': artist,
@@ -112,7 +130,15 @@ class LastFMClient:
                     'limit': 1
                 }
                 response = requests.get(API_URL, params=similar_params, timeout=15)
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except requests.exceptions.HTTPError:
+                    try:
+                        logger.error(f"LastFM HTTP error ({response.status_code}) for artist.getsimilar: {response.text}")
+                    except Exception:
+                        logger.error(f"LastFM HTTP error for artist.getsimilar and failed to read response body: status={response.status_code}")
+                    return []
+
                 similar_data = response.json()
 
                 artist_list = similar_data.get('similarartists', {}).get('artist', [])
@@ -132,7 +158,15 @@ class LastFMClient:
                     'limit': limit
                 }
                 response = requests.get(API_URL, params=top_tracks_params, timeout=15)
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except requests.exceptions.HTTPError:
+                    try:
+                        logger.error(f"LastFM HTTP error ({response.status_code}) for artist.gettoptracks: {response.text}")
+                    except Exception:
+                        logger.error(f"LastFM HTTP error for artist.gettoptracks and failed to read response body: status={response.status_code}")
+                    return []
+
                 top_tracks_data = response.json()
                 top_tracks = top_tracks_data.get('toptracks', {}).get('track', [])
                 return [(t.get('name', 'Unknown'), similar_artist) for t in top_tracks]
@@ -142,6 +176,10 @@ class LastFMClient:
     
     def get_artist_top_tracks(self, artist: str, limit: int = 10) -> List[Tuple[str, str]]:
         try:
+            if not self.api_key:
+                logger.error("LastFM API key is not configured for get_artist_top_tracks")
+                return []
+
             params = {
                 'method': 'artist.gettoptracks',
                 'artist': artist,
@@ -150,7 +188,15 @@ class LastFMClient:
                 'limit': limit
             }
             response = requests.get(API_URL, params=params, timeout=15)
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                try:
+                    logger.error(f"LastFM HTTP error ({response.status_code}) for artist.gettoptracks: {response.text}")
+                except Exception:
+                    logger.error(f"LastFM HTTP error for artist.gettoptracks and failed to read response body: status={response.status_code}")
+                return []
+
             data = response.json()
             tracks = data.get('toptracks', {}).get('track', [])
             return [(t.get('name', 'Unknown'), t.get('artist', {}).get('name', artist)) for t in tracks]

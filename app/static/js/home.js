@@ -67,10 +67,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Use Vue if available
     const { createApp } = Vue;
+
+    // Detect Safari (not Chrome/Chromium/Android)
+    const isSafari = (typeof navigator !== 'undefined') && (/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
     
     createApp({
         data() {
             return {
+                // flag used to optimize animation for Safari
+                isSafari: isSafari,
+                frameCounter: 0,
                 blobs: [
                     { id: 'blob1', x: window.innerWidth * 0.4, y: window.innerHeight * 0.3, 
                       xSpeed: 0.3, ySpeed: 0.4, xOffset: 0, yOffset: 0, phase: 0 },
@@ -105,6 +111,31 @@ document.addEventListener('DOMContentLoaded', function() {
         mounted() {
             // Set initial positions
             this.setInitialPositions();
+
+            // If Safari, reduce complexity: fewer blobs and remove heavy filters/shadows
+            if (this.isSafari) {
+                try {
+                    // keep only a subset to lower rendering cost
+                    this.blobs = this.blobs.slice(0, 6);
+
+                    // remove SVG filters or heavy box-shadows on existing elements
+                    this.blobs.forEach(blob => {
+                        const el = document.getElementById(blob.id);
+                        if (el) {
+                            // remove filter and box-shadow for Safari
+                            el.style.filter = 'none';
+                            el.style.boxShadow = 'none';
+                            el.style.opacity = '0.85';
+                            el.style.willChange = 'transform';
+                            // promote to its own layer
+                            el.style.transform = (el.style.transform || '') + ' translateZ(0)';
+                        }
+                    });
+                } catch (e) {
+                    // non-fatal
+                    console.warn('Safari optimization: failed to simplify blobs', e);
+                }
+            }
             
             // Update boundaries on window resize
             window.addEventListener('resize', () => {
@@ -128,12 +159,22 @@ document.addEventListener('DOMContentLoaded', function() {
             animate() {
                 // Update time
                 this.time += 0.01;
-                
+
+                // If on Safari, throttle updates to reduce paint/composite cost
+                if (this.isSafari) {
+                    this.frameCounter = (this.frameCounter || 0) + 1;
+                    // skip every other frame (effectively half frame rate)
+                    if (this.frameCounter % 2 !== 0) {
+                        requestAnimationFrame(this.animate);
+                        return;
+                    }
+                }
+
                 // Update all blob positions
                 this.blobs.forEach(blob => {
                     this.updateBlobPosition(blob);
                 });
-                
+
                 // Continue animation
                 requestAnimationFrame(this.animate);
             },
@@ -223,6 +264,10 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
     recommendationBox.innerHTML = `
         <div class="recommendations-show">
             <h3>Loading recommendations for ${title} by ${artist}...</h3>
+            <!-- loading bar placed immediately under the heading -->
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="recommendLoadingBar"><div class="progress"></div></div>
+            </div>
             <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
             <h5>Powered by <strong>CadenceAI</strong></h5>
             <div class="artist-fact-container">
@@ -230,6 +275,75 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
             </div>
         </div>
     `;
+
+    // Helper function to hide/remove the loading bar
+    function hideLoadingBar() {
+        const bar = document.getElementById('recommendLoadingBar');
+        if (bar) {
+            bar.classList.add('hidden');
+            setTimeout(() => { const parent = bar.parentNode; if (parent && parent.parentNode) parent.parentNode.removeChild(parent); }, 400);
+        }
+    }
+
+    // Simulated determinate progress controller (smooth ramp + finish on resolve)
+    let progressInterval = null;
+    let currentProgress = 0; // 0..100
+
+    function setProgress(pct) {
+        currentProgress = Math.max(0, Math.min(100, pct));
+        const progElem = document.querySelector('#recommendLoadingBar .progress');
+        if (progElem) {
+            progElem.style.width = currentProgress + '%';
+            progElem.style.opacity = currentProgress > 0 ? '1' : '0';
+        }
+    }
+
+    function startProgress(expectedCount = 5) {
+        // Reset
+        clearInterval(progressInterval);
+        currentProgress = 0;
+        setProgress(2); // slight initial hint
+
+        // Two-phase ramp:
+        // 1) Quick ramp to ~20-30% within the first second
+        // 2) Long, slow ramp from ~25% up toward ~92% while the server analyzes audio for each track
+        const start = Date.now();
+        progressInterval = setInterval(() => {
+            const elapsed = (Date.now() - start) / 1000; // seconds
+
+            // Phase 1: fast initial ramp
+            if (elapsed < 1) {
+                const delta = 6 + Math.random() * 6; // fast ramp first second
+                const initialCap = 20 + Math.random() * 10; // 20-30
+                if (currentProgress < initialCap) setProgress(Math.min(initialCap, currentProgress + delta));
+                return;
+            }
+
+            // Phase 2: long slow ramp (dominates the wait time). Scale by expectedCount.
+            // Base slow delta increases slightly with expectedCount but remains small so the bar takes most of the time.
+            const base = 0.38; // faster base increment per tick
+                const countFactor = Math.min(3, Math.max(0.6, expectedCount / 2.5)); // slightly higher sensitivity
+                // Make increments smaller over time, but allow faster early growth
+                const slowDelta = (base * countFactor) * (1 / (1 + elapsed / 6));
+
+                const cap = 96; // allow closer approach to 100% so finalization is quick
+                if (currentProgress < cap) setProgress(Math.min(cap, currentProgress + slowDelta));
+        }, 360);
+    }
+
+    function finalizeProgressAndHide() {
+        clearInterval(progressInterval);
+        // Smoothly go to 100%
+        const progElem = document.querySelector('#recommendLoadingBar .progress');
+        if (progElem) {
+            // jump to 98% then to 100% for a nice finish
+            setProgress(98);
+            setTimeout(() => { setProgress(100); }, 160);
+            setTimeout(() => { hideLoadingBar(); setProgress(0); }, 420);
+        } else {
+            hideLoadingBar();
+        }
+    }
 
     // Fetch artist fact and update only the artist fact section
     fetchArtistInfo(artist)
@@ -247,6 +361,10 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
             if (factElem) factElem.textContent = "Error loading artist fact.";
             console.error('Error fetching artist fact:', error);
         });
+
+    // Start simulated determinate progress for the recommendations fetch
+    // Pass the requested count so the ramp duration scales with analysis workload
+    startProgress(count);
 
     // Fetch recommendations WITHOUT timeout - let it run as long as needed
     fetch('/api/recommend', {
@@ -277,6 +395,9 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
         return response.json();
     })
     .then(recData => {
+        // finalize progress and hide when recommendations arrive
+        finalizeProgressAndHide();
+
         let recHTML = `
             <div class="recommendations-show">
                 <h3>Top results for ${title} by ${artist}</h3>
@@ -325,6 +446,9 @@ function updateRecommendationWithArtistFact(recommendationBox, title, artist, ti
         recommendationBox.innerHTML = recHTML;
     })
     .catch(error => {
+        // finalize and hide progress on error as well
+        try { finalizeProgressAndHide(); } catch (e) { try { hideLoadingBar(); } catch (e) {} }
+
         let errorMessage = 'Error loading recommendations';
         if (error.message.includes('504')) {
             errorMessage = 'Server timeout - the recommendation system is taking too long';
