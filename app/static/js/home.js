@@ -854,13 +854,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-10-20",
+        searchQuery: "Nebraska Bruce Springsteen",
+        albumTitle: "Nebraska",
+        artistName: "Bruce Springsteen",
+        weekOf: "October 20, 2025",
+        description: "A stark and haunting album from Bruce Springsteen, Nebraska is a departure from his usual rock sound. Recorded as a series of solo demos, the album features raw acoustic arrangements and introspective lyrics that explore themes of isolation, despair, and the American experience. Standout tracks like 'Atlantic City,' 'Johnny 99,' and the title track 'Nebraska' showcase Springsteen's storytelling prowess and his ability to capture the struggles of everyday people. The album's minimalist production and somber tone have made it a cult favorite among fans and critics alike.",
+        isCurrent: true
+    },
+    {
         id: "2025-10-13",
         searchQuery: "Californication Red Hot Chili Peppers",
         albumTitle: "Californication",
         artistName: "Red Hot Chili Peppers",
         weekOf: "October 13, 2025",
-        description: "A defining album from the Red Hot Chili Peppers, Californication marked a return to form for the band. Blending funk, rock, and alternative sounds, the album features introspective lyrics and memorable melodies. Standout tracks like 'Scar Tissue,' 'Otherside,' and the title track 'Californication' showcase the band's ability to craft emotionally resonant songs with infectious grooves. The album's exploration of themes like fame, addiction, and personal growth has made it a fan favorite and a staple in the band's discography.",
-        isCurrent: true
+        description: "A defining album from the Red Hot Chili Peppers, Californication marked a return to form for the band. Blending funk, rock, and alternative sounds, the album features introspective lyrics and memorable melodies. Standout tracks like 'Scar Tissue,' 'Otherside,' and the title track 'Californication' showcase the band's ability to craft emotionally resonant songs with infectious grooves. The album's exploration of themes like fame, addiction, and personal growth has made it a fan favorite and a staple in the band's discography."
     },
     {
         id: "2025-10-06",
