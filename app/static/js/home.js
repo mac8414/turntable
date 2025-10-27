@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-10-27",
+        searchQuery: "good kid, m.A.A.d city Kendrick Lamar",
+        albumTitle: "good kid, m.A.A.d city",
+        artistName: "Kendrick Lamar",
+        weekOf: "October 27, 2025",
+        description: "A groundbreaking album from Kendrick Lamar, good kid, m.A.A.d city is a cinematic exploration of life in Compton. Blending hip-hop with storytelling, the album features vivid narratives and complex characters. Standout tracks like 'Swimming Pools (Drank),' 'Bitch, Don't Kill My Vibe,' and 'm.A.A.d city' showcase Lamar's lyrical prowess and social commentary. The album's innovative production and cohesive concept have made it a modern classic, solidifying Lamar's status as one of the most influential rappers of his generation.",
+        isCurrent: true
+    },
+    {
         id: "2025-10-20",
         searchQuery: "Nebraska Bruce Springsteen",
         albumTitle: "Nebraska",
         artistName: "Bruce Springsteen",
         weekOf: "October 20, 2025",
-        description: "A stark and haunting album from Bruce Springsteen, Nebraska is a departure from his usual rock sound. Recorded as a series of solo demos, the album features raw acoustic arrangements and introspective lyrics that explore themes of isolation, despair, and the American experience. Standout tracks like 'Atlantic City,' 'Johnny 99,' and the title track 'Nebraska' showcase Springsteen's storytelling prowess and his ability to capture the struggles of everyday people. The album's minimalist production and somber tone have made it a cult favorite among fans and critics alike.",
-        isCurrent: true
+        description: "A stark and haunting album from Bruce Springsteen, Nebraska is a departure from his usual rock sound. Recorded as a series of solo demos, the album features raw acoustic arrangements and introspective lyrics that explore themes of isolation, despair, and the American experience. Standout tracks like 'Atlantic City,' 'Johnny 99,' and the title track 'Nebraska' showcase Springsteen's storytelling prowess and his ability to capture the struggles of everyday people. The album's minimalist production and somber tone have made it a cult favorite among fans and critics alike."
     },
     {
         id: "2025-10-13",
