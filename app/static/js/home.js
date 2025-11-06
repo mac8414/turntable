@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-11-03",
+        searchQuery: "Exit U2",
+        albumTitle: "The Joshua Tree",
+        artistName: "U2",
+        weekOf: "November 3, 2025",
+        description: "A landmark album from U2, The Joshua Tree captures the band's exploration of American roots music while addressing themes of spirituality, politics, and personal reflection. Featuring iconic tracks like 'With or Without You,' 'I Still Haven't Found What I'm Looking For,' and 'Where the Streets Have No Name,' the album showcases U2's signature sound with The Edge's atmospheric guitar work and Bono's passionate vocals. The Joshua Tree received critical acclaim and commercial success, solidifying U2's status as one of the world's leading rock bands.",
+        isCurrent: true
+    },
+    {
         id: "2025-10-27",
         searchQuery: "good kid, m.A.A.d city Kendrick Lamar",
         albumTitle: "good kid, m.A.A.d city",
         artistName: "Kendrick Lamar",
         weekOf: "October 27, 2025",
-        description: "A groundbreaking album from Kendrick Lamar, good kid, m.A.A.d city is a cinematic exploration of life in Compton. Blending hip-hop with storytelling, the album features vivid narratives and complex characters. Standout tracks like 'Swimming Pools (Drank),' 'Bitch, Don't Kill My Vibe,' and 'm.A.A.d city' showcase Lamar's lyrical prowess and social commentary. The album's innovative production and cohesive concept have made it a modern classic, solidifying Lamar's status as one of the most influential rappers of his generation.",
-        isCurrent: true
+        description: "A groundbreaking album from Kendrick Lamar, good kid, m.A.A.d city is a cinematic exploration of life in Compton. Blending hip-hop with storytelling, the album features vivid narratives and complex characters. Standout tracks like 'Swimming Pools (Drank),' 'Bitch, Don't Kill My Vibe,' and 'm.A.A.d city' showcase Lamar's lyrical prowess and social commentary. The album's innovative production and cohesive concept have made it a modern classic, solidifying Lamar's status as one of the most influential rappers of his generation."
     },
     {
         id: "2025-10-20",
