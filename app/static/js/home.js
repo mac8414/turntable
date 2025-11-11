@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-11-10",
+        searchQuery: "Curtis Curtis Mayfield",
+        albumTitle: "Curtis",
+        artistName: "Curtis Mayfield",
+        weekOf: "November 10, 2025",
+        description: "A seminal soul album from Curtis Mayfield, blending funk, R&B, and socially conscious lyrics. Featuring classics like 'Move On Up,' 'Superfly,' and 'Freddie's Dead,' the album explores themes of empowerment, social justice, and personal resilience. Its innovative production and Mayfield's distinctive falsetto vocals have made it a timeless classic, influencing generations of artists across genres.",
+        isCurrent: true
+    },
+    {
         id: "2025-11-03",
         searchQuery: "Exit U2",
         albumTitle: "The Joshua Tree",
         artistName: "U2",
         weekOf: "November 3, 2025",
-        description: "A landmark album from U2, The Joshua Tree captures the band's exploration of American roots music while addressing themes of spirituality, politics, and personal reflection. Featuring iconic tracks like 'With or Without You,' 'I Still Haven't Found What I'm Looking For,' and 'Where the Streets Have No Name,' the album showcases U2's signature sound with The Edge's atmospheric guitar work and Bono's passionate vocals. The Joshua Tree received critical acclaim and commercial success, solidifying U2's status as one of the world's leading rock bands.",
-        isCurrent: true
+        description: "A landmark album from U2, The Joshua Tree captures the band's exploration of American roots music while addressing themes of spirituality, politics, and personal reflection. Featuring iconic tracks like 'With or Without You,' 'I Still Haven't Found What I'm Looking For,' and 'Where the Streets Have No Name,' the album showcases U2's signature sound with The Edge's atmospheric guitar work and Bono's passionate vocals. The Joshua Tree received critical acclaim and commercial success, solidifying U2's status as one of the world's leading rock bands."
     },
     {
         id: "2025-10-27",
