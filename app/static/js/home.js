@@ -978,13 +978,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-11-24",
+        searchQuery: "Black Pearl Jam",
+        albumTitle: "Ten",
+        artistName: "Pearl Jam",
+        weekOf: "November 24, 2025",
+        description: "A defining album of the 1990s grunge movement, Ten by Pearl Jam is a powerful blend of raw emotion and hard-hitting rock. Featuring iconic tracks like 'Alive,' 'Even Flow,' and 'Jeremy,' the album explores themes of personal struggle, identity, and social issues. With Eddie Vedder's distinctive vocals and the band's dynamic instrumentation, Ten has become a timeless classic that continues to resonate with listeners worldwide.",
+        isCurrent: true
+    },
+    {
+        id: "2025-11-17",
+        searchQuery: "Demon Days Gorillaz",
+        albumTitle: "Demon Days",
+        artistName: "Gorillaz",
+        weekOf: "November 17, 2025",
+        description: "A genre-defying album from Gorillaz, Demon Days blends alternative rock, hip-hop, and electronic music to create a unique sonic experience. Featuring hits like 'Feel Good Inc.,' 'DARE,' and 'Dirty Harry,' the album explores themes of environmentalism, consumerism, and societal decay. With its innovative production, eclectic collaborations, and thought-provoking lyrics, Demon Days has become a landmark album that pushes the boundaries of modern music."
+    },
+    {
         id: "2025-11-10",
         searchQuery: "Curtis Curtis Mayfield",
         albumTitle: "Curtis",
         artistName: "Curtis Mayfield",
         weekOf: "November 10, 2025",
-        description: "A seminal soul album from Curtis Mayfield, blending funk, R&B, and socially conscious lyrics. Featuring classics like 'Move On Up,' 'Superfly,' and 'Freddie's Dead,' the album explores themes of empowerment, social justice, and personal resilience. Its innovative production and Mayfield's distinctive falsetto vocals have made it a timeless classic, influencing generations of artists across genres.",
-        isCurrent: true
+        description: "A seminal soul album from Curtis Mayfield, blending funk, R&B, and socially conscious lyrics. Featuring classics like 'Move On Up,' 'Superfly,' and 'Freddie's Dead,' the album explores themes of empowerment, social justice, and personal resilience. Its innovative production and Mayfield's distinctive falsetto vocals have made it a timeless classic, influencing generations of artists across genres."
     },
     {
         id: "2025-11-03",
