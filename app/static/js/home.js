@@ -1116,7 +1116,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-08-25",
-        searchQuery: "Blonde Frank Ocean",
+        searchQuery: "Ivy Frank Ocean",
         albumTitle: "Blonde",
         artistName: "Frank Ocean",
         weekOf: "August 25, 2025",
