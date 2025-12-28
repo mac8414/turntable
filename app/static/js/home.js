@@ -978,13 +978,45 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-12-22",
+        searchQuery: "4:44 Jay-Z",
+        albumTitle: "4:44",
+        artistName: "Jay-Z",
+        weekOf: "December 22, 2025",
+        description: "A deeply personal and introspective album from Jay-Z, 4:44 is a reflection on his life, relationships, and legacy. Produced by No I.D., the album features soulful beats and poignant lyrics that address themes of infidelity, family, and self-improvement. Standout tracks like 'The Story of O.J.,' '4:44,' and 'Family Feud' showcase Jay-Z's growth as an artist and his willingness to confront his past mistakes. The album received critical acclaim for its honesty and vulnerability, solidifying Jay-Z's status as one of hip-hop's most influential figures.",
+        isCurrent: true
+    },
+    {
+        id: "2025-12-15",
+        searchQuery: "Mother John Lennon",
+        albumTitle: "Plastic Ono Band",
+        artistName: "John Lennon",
+        weekOf: "December 15, 2025",
+        description: "A deeply personal and raw album from John Lennon, John Lennon/Plastic Ono Band is a powerful exploration of his emotions and experiences following the breakup of The Beatles. Produced by Phil Spector, the album features sparse arrangements that highlight Lennon's vulnerable vocals and introspective lyrics. Standout tracks like 'Mother,' 'Working Class Hero,' and 'God' showcase Lennon's ability to confront his past and express his innermost thoughts. The album is widely regarded as one of Lennon's finest solo works, solidifying his legacy as a solo artist."
+    },
+    {
+        id: "2025-12-08",
+        searchQuery: "Red Headed Stranger Willie Nelson",
+        albumTitle: "Red Headed Stranger",
+        artistName: "Willie Nelson",
+        weekOf: "December 8, 2025",
+        description: "A classic country album from Willie Nelson, Red Headed Stranger is a concept album that tells the story of a fugitive on the run after killing his wife and her lover. With its sparse arrangements and haunting melodies, the album captures the essence of traditional country music while showcasing Nelson's distinctive voice and songwriting prowess. Standout tracks like 'Blue Eyes Crying in the Rain,' 'Time of the Preacher,' and the title track 'Red Headed Stranger' have become timeless classics, solidifying the album's status as one of the greatest country albums of all time."
+    },
+    {
+        id: "2025-12-01",
+        searchQuery: "Be Common",
+        albumTitle: "Be",
+        artistName: "Common",
+        weekOf: "December 1, 2025",
+        description: "A landmark album from Common, Be is a soulful and introspective journey through themes of love, life, and social consciousness. Produced by the legendary J Dilla, the album features smooth beats and jazzy instrumentation that perfectly complement Common's thoughtful lyrics. Standout tracks like 'The Light,' 'Go!,' and 'Faithful' showcase Common's lyrical prowess and his ability to craft meaningful narratives. Be is widely regarded as one of the greatest hip-hop albums of all time, solidifying Common's status as a leading voice in the genre."
+    },
+    {
         id: "2025-11-24",
         searchQuery: "Black Pearl Jam",
         albumTitle: "Ten",
         artistName: "Pearl Jam",
         weekOf: "November 24, 2025",
-        description: "A defining album of the 1990s grunge movement, Ten by Pearl Jam is a powerful blend of raw emotion and hard-hitting rock. Featuring iconic tracks like 'Alive,' 'Even Flow,' and 'Jeremy,' the album explores themes of personal struggle, identity, and social issues. With Eddie Vedder's distinctive vocals and the band's dynamic instrumentation, Ten has become a timeless classic that continues to resonate with listeners worldwide.",
-        isCurrent: true
+        description: "A defining album of the 1990s grunge movement, Ten by Pearl Jam is a powerful blend of raw emotion and hard-hitting rock. Featuring iconic tracks like 'Alive,' 'Even Flow,' and 'Jeremy,' the album explores themes of personal struggle, identity, and social issues. With Eddie Vedder's distinctive vocals and the band's dynamic instrumentation, Ten has become a timeless classic that continues to resonate with listeners worldwide."
     },
     {
         id: "2025-11-17",
