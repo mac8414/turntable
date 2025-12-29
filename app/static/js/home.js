@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2025-12-29",
+        searchQuery: "(What's the Story) Morning Glory? Oasis",
+        albumTitle: "(What's the Story) Morning Glory?",
+        artistName: "Oasis",
+        weekOf: "December 29, 2025",
+        description: "A defining album of the Britpop era, (What's the Story) Morning Glory? by Oasis is a collection of anthemic rock songs that capture the spirit of the 1990s. Featuring iconic tracks like 'Wonderwall,' 'Don't Look Back in Anger,' and 'Champagne Supernova,' the album showcases Noel Gallagher's songwriting prowess and Liam Gallagher's distinctive vocals. With its blend of catchy melodies, powerful guitar riffs, and introspective lyrics, Morning Glory became one of the best-selling albums in UK history and solidified Oasis's status as one of the leading bands of their generation.",
+        isCurrent: true
+    },
+    {
         id: "2025-12-22",
         searchQuery: "4:44 Jay-Z",
         albumTitle: "4:44",
         artistName: "Jay-Z",
         weekOf: "December 22, 2025",
-        description: "A deeply personal and introspective album from Jay-Z, 4:44 is a reflection on his life, relationships, and legacy. Produced by No I.D., the album features soulful beats and poignant lyrics that address themes of infidelity, family, and self-improvement. Standout tracks like 'The Story of O.J.,' '4:44,' and 'Family Feud' showcase Jay-Z's growth as an artist and his willingness to confront his past mistakes. The album received critical acclaim for its honesty and vulnerability, solidifying Jay-Z's status as one of hip-hop's most influential figures.",
-        isCurrent: true
+        description: "A deeply personal and introspective album from Jay-Z, 4:44 is a reflection on his life, relationships, and legacy. Produced by No I.D., the album features soulful beats and poignant lyrics that address themes of infidelity, family, and self-improvement. Standout tracks like 'The Story of O.J.,' '4:44,' and 'Family Feud' showcase Jay-Z's growth as an artist and his willingness to confront his past mistakes. The album received critical acclaim for its honesty and vulnerability, solidifying Jay-Z's status as one of hip-hop's most influential figures."   
     },
     {
         id: "2025-12-15",
