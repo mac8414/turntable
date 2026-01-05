@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-01-05",
+        searchQuery: "The Low End Theory A Tribe Called Quest",
+        albumTitle: "The Low End Theory",
+        artistName: "A Tribe Called Quest",
+        weekOf: "January 5, 2026",
+        description: "A groundbreaking album in hip-hop history, The Low End Theory by A Tribe Called Quest is a masterful blend of jazz-infused beats and socially conscious lyrics. Released in 1991, the album features classic tracks like 'Check the Rhime,' 'Jazz (We've Got),' and 'Scenario,' showcasing the group's innovative approach to production and storytelling. With its smooth flows, intricate wordplay, and thought-provoking themes, The Low End Theory has become a timeless classic that continues to influence artists across genres.",
+        isCurrent: true
+    },
+    {
         id: "2025-12-29",
         searchQuery: "(What's the Story) Morning Glory? Oasis",
         albumTitle: "(What's the Story) Morning Glory?",
         artistName: "Oasis",
         weekOf: "December 29, 2025",
-        description: "A defining album of the Britpop era, (What's the Story) Morning Glory? by Oasis is a collection of anthemic rock songs that capture the spirit of the 1990s. Featuring iconic tracks like 'Wonderwall,' 'Don't Look Back in Anger,' and 'Champagne Supernova,' the album showcases Noel Gallagher's songwriting prowess and Liam Gallagher's distinctive vocals. With its blend of catchy melodies, powerful guitar riffs, and introspective lyrics, Morning Glory became one of the best-selling albums in UK history and solidified Oasis's status as one of the leading bands of their generation.",
-        isCurrent: true
+        description: "A defining album of the Britpop era, (What's the Story) Morning Glory? by Oasis is a collection of anthemic rock songs that capture the spirit of the 1990s. Featuring iconic tracks like 'Wonderwall,' 'Don't Look Back in Anger,' and 'Champagne Supernova,' the album showcases Noel Gallagher's songwriting prowess and Liam Gallagher's distinctive vocals. With its blend of catchy melodies, powerful guitar riffs, and introspective lyrics, Morning Glory became one of the best-selling albums in UK history and solidified Oasis's status as one of the leading bands of their generation."
     },
     {
         id: "2025-12-22",
