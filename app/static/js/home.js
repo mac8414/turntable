@@ -978,13 +978,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-01-19",
+        searchQuery: "One Thing At A Time Morgan Wallen",
+        albumTitle: "One Thing At A Time",
+        artistName: "Morgan Wallen",
+        weekOf: "January 19, 2026",
+        description: "One Thing At A Time is the third studio album by American country music singer Morgan Wallen, released March 3, 2023. The 36-track double album showcases Wallen's versatility as an artist, blending traditional country sounds with modern influences like rock and pop. Featuring hit singles such as 'You Proof,' 'Thought You Should Know,' and 'Last Night,' the album explores themes of love, heartbreak, and personal growth. One Thing At A Time received critical acclaim for its songwriting and production, solidifying Wallen's status as one of country music's leading stars.",
+        isCurrent: true
+    },
+    {
+        id: "2026-01-12",
+        searchQuery: "The Dichotomy David Kushner",
+        albumTitle: "The Dichotomy",
+        artistName: "David Kushner",
+        weekOf: "January 12, 2026",
+        description: "The Dichotomy is the debut studio album by American singer-songwriter David Kushner, released August 30, 2024. The 17-track record is an introspective, autobiographical musical journey that explores the tension between opposing forces in life—light and darkness, faith and doubt, good and evil. Across its songs, Kushner reflects on personal struggles, spiritual questions, relationships, and the human condition, crafting a narrative that moves from despair and inner conflict toward revelation and hope. The album blends pop and gothic pop influences and showcases Kushner’s emotional depth and vocal range."
+    },
+    {
         id: "2026-01-05",
         searchQuery: "The Low End Theory A Tribe Called Quest",
         albumTitle: "The Low End Theory",
         artistName: "A Tribe Called Quest",
         weekOf: "January 5, 2026",
-        description: "A groundbreaking album in hip-hop history, The Low End Theory by A Tribe Called Quest is a masterful blend of jazz-infused beats and socially conscious lyrics. Released in 1991, the album features classic tracks like 'Check the Rhime,' 'Jazz (We've Got),' and 'Scenario,' showcasing the group's innovative approach to production and storytelling. With its smooth flows, intricate wordplay, and thought-provoking themes, The Low End Theory has become a timeless classic that continues to influence artists across genres.",
-        isCurrent: true
+        description: "A groundbreaking album in hip-hop history, The Low End Theory by A Tribe Called Quest is a masterful blend of jazz-infused beats and socially conscious lyrics. Released in 1991, the album features classic tracks like 'Check the Rhime,' 'Jazz (We've Got),' and 'Scenario,' showcasing the group's innovative approach to production and storytelling. With its smooth flows, intricate wordplay, and thought-provoking themes, The Low End Theory has become a timeless classic that continues to influence artists across genres."
     },
     {
         id: "2025-12-29",
