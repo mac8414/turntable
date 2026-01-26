@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-01-26",
+        searchQuery: "If You're Feeling Sinister Belle and Sebastian",
+        albumTitle: "If You're Feeling Sinister",
+        artistName: "Belle and Sebastian",
+        weekOf: "January 26, 2026",
+        description: "If You're Feeling Sinister is the second studio album by Scottish indie pop band Belle and Sebastian, released in 1996. The album is a seminal work in the indie pop genre, featuring lush arrangements, introspective lyrics, and a blend of folk and pop influences. With standout tracks like 'The Stars of Track and Field,' 'Get Me Away from Here, I'm Dying,' and the title track 'If You're Feeling Sinister,' the album showcases the band's ability to craft poignant narratives and memorable melodies. If You're Feeling Sinister received critical acclaim upon its release and has since become a cult classic, solidifying Belle and Sebastian's place in indie music history.",
+        isCurrent: true
+    },
+    {
         id: "2026-01-19",
         searchQuery: "One Thing At A Time Morgan Wallen",
         albumTitle: "One Thing At A Time",
         artistName: "Morgan Wallen",
         weekOf: "January 19, 2026",
-        description: "One Thing At A Time is the third studio album by American country music singer Morgan Wallen, released March 3, 2023. The 36-track double album showcases Wallen's versatility as an artist, blending traditional country sounds with modern influences like rock and pop. Featuring hit singles such as 'You Proof,' 'Thought You Should Know,' and 'Last Night,' the album explores themes of love, heartbreak, and personal growth. One Thing At A Time received critical acclaim for its songwriting and production, solidifying Wallen's status as one of country music's leading stars.",
-        isCurrent: true
+        description: "One Thing At A Time is the third studio album by American country music singer Morgan Wallen, released March 3, 2023. The 36-track double album showcases Wallen's versatility as an artist, blending traditional country sounds with modern influences like rock and pop. Featuring hit singles such as 'You Proof,' 'Thought You Should Know,' and 'Last Night,' the album explores themes of love, heartbreak, and personal growth. One Thing At A Time received critical acclaim for its songwriting and production, solidifying Wallen's status as one of country music's leading stars."
     },
     {
         id: "2026-01-12",
