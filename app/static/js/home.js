@@ -978,13 +978,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-02-09",
+        searchQuery: "Transistor 311",
+        albumTitle: "Transistor",
+        artistName: "311",
+        weekOf: "February 9, 2026",
+        description: "Transistor is the fourth studio album by American rock band 311, released in 1997. The album is a fusion of rock, reggae, hip-hop, and funk, showcasing the band's eclectic style and musical versatility. With standout tracks like 'Beautiful Disaster, 'Transistor,' and 'Galaxy,' the album features catchy melodies, energetic rhythms, and introspective lyrics that explore themes of self-discovery, unity, and positivity. Transistor received critical acclaim for its innovative sound and remains a fan favorite, solidifying 311's place in the alternative rock scene of the late 90s.",
+        isCurrent: true
+    },
+    {
+        id: "2026-02-02",
+        searchQuery: "Here, My Dear Marvin Gaye",
+        albumTitle: "Here, My Dear",
+        artistName: "Marvin Gaye",
+        weekOf: "February 2, 2026",
+        description: "Here, My Dear is the fifteenth studio album by American singer-songwriter Marvin Gaye, released in 1978. The album is a deeply personal and autobiographical work that chronicles Gaye's tumultuous relationship with his first wife, Anna Gordy. With its soulful melodies, introspective lyrics, and innovative production, Here, My Dear stands as a unique and emotionally raw entry in Gaye's discography. The album features standout tracks like 'Here, My Dear,' 'I Met a Little', and 'When Did You Stop Loving Me, When Did I Stop Loving You,' showcasing Gaye's ability to blend vulnerability with musical brilliance. Despite its initial commercial failure, Here, My Dear has since been re-evaluated as a classic and is regarded as one of Gaye's most honest and compelling works."
+    },
+    {
         id: "2026-01-26",
         searchQuery: "If You're Feeling Sinister Belle and Sebastian",
         albumTitle: "If You're Feeling Sinister",
         artistName: "Belle and Sebastian",
         weekOf: "January 26, 2026",
-        description: "If You're Feeling Sinister is the second studio album by Scottish indie pop band Belle and Sebastian, released in 1996. The album is a seminal work in the indie pop genre, featuring lush arrangements, introspective lyrics, and a blend of folk and pop influences. With standout tracks like 'The Stars of Track and Field,' 'Get Me Away from Here, I'm Dying,' and the title track 'If You're Feeling Sinister,' the album showcases the band's ability to craft poignant narratives and memorable melodies. If You're Feeling Sinister received critical acclaim upon its release and has since become a cult classic, solidifying Belle and Sebastian's place in indie music history.",
-        isCurrent: true
+        description: "If You're Feeling Sinister is the second studio album by Scottish indie pop band Belle and Sebastian, released in 1996. The album is a seminal work in the indie pop genre, featuring lush arrangements, introspective lyrics, and a blend of folk and pop influences. With standout tracks like 'The Stars of Track and Field,' 'Get Me Away from Here, I'm Dying,' and the title track 'If You're Feeling Sinister,' the album showcases the band's ability to craft poignant narratives and memorable melodies. If You're Feeling Sinister received critical acclaim upon its release and has since become a cult classic, solidifying Belle and Sebastian's place in indie music history."
     },
     {
         id: "2026-01-19",
