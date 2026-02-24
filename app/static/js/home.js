@@ -978,13 +978,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-02-23",
+        searchQuery: "Mellon Collie and the Infinite Sadness Smashing Pumpkins",
+        albumTitle: "Mellon Collie and the Infinite Sadness",
+        artistName: "Smashing Pumpkins",
+        weekOf: "February 23, 2026",
+        description: "Mellon Collie and the Infinite Sadness is the third studio album by American alternative rock band The Smashing Pumpkins, released in 1995. The double album is a sprawling, ambitious work that explores a wide range of musical styles and themes, from aggressive rock to delicate ballads. With hits like 'Bullet with Butterfly Wings,' '1979,' and 'Tonight, Tonight,' Mellon Collie showcases the band's ability to blend heavy guitars with orchestral arrangements and introspective lyrics. The album received critical acclaim for its scope and creativity, solidifying The Smashing Pumpkins' place as one of the defining bands of the 90s alternative rock scene.",
+        isCurrent: true
+    },
+    {
+        id: "2026-02-16",
+        searchQuery: "Dookie Green Day",
+        albumTitle: "Dookie",
+        artistName: "Green Day",
+        weekOf: "February 16, 2026",
+        description: "Dookie is the third studio album by American punk rock band Green Day, released in 1994. The album is a landmark in the punk rock genre, featuring fast-paced songs with catchy melodies and socially conscious lyrics. With hits like 'Basket Case,' 'When I Come Around,' and 'Longview,' Dookie catapulted Green Day to mainstream success and helped popularize punk rock in the 1990s. The album's raw energy, relatable themes of anxiety and alienation, and memorable hooks have made it a timeless classic that continues to resonate with fans across generations."
+    },
+    {
         id: "2026-02-09",
         searchQuery: "Transistor 311",
         albumTitle: "Transistor",
         artistName: "311",
         weekOf: "February 9, 2026",
-        description: "Transistor is the fourth studio album by American rock band 311, released in 1997. The album is a fusion of rock, reggae, hip-hop, and funk, showcasing the band's eclectic style and musical versatility. With standout tracks like 'Beautiful Disaster, 'Transistor,' and 'Galaxy,' the album features catchy melodies, energetic rhythms, and introspective lyrics that explore themes of self-discovery, unity, and positivity. Transistor received critical acclaim for its innovative sound and remains a fan favorite, solidifying 311's place in the alternative rock scene of the late 90s.",
-        isCurrent: true
+        description: "Transistor is the fourth studio album by American rock band 311, released in 1997. The album is a fusion of rock, reggae, hip-hop, and funk, showcasing the band's eclectic style and musical versatility. With standout tracks like 'Beautiful Disaster, 'Transistor,' and 'Galaxy,' the album features catchy melodies, energetic rhythms, and introspective lyrics that explore themes of self-discovery, unity, and positivity. Transistor received critical acclaim for its innovative sound and remains a fan favorite, solidifying 311's place in the alternative rock scene of the late 90s."
     },
     {
         id: "2026-02-02",
