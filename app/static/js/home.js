@@ -978,13 +978,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-03-02",
+        searchQuery: "The Art of Loving Olivia Dean",
+        albumTitle: "The Art of Loving",
+        artistName: "Olivia Dean",
+        weekOf: "March 2, 2026",
+        description: "The Art of Loving is the debut studio album by British singer-songwriter Olivia Dean, released in 2023. The album is a soulful and introspective exploration of love, relationships, and self-discovery, blending elements of pop, R&B, and jazz. With standout tracks like 'The Hardest Part,' 'Show Me,' and 'The Art of Loving,' the album showcases Dean's powerful vocals, heartfelt lyrics, and sophisticated production. The Art of Loving received critical acclaim for its emotional depth and musicality, establishing Olivia Dean as a rising star in the contemporary music scene.",
+        isCurrent: true
+    },
+    {
         id: "2026-02-23",
         searchQuery: "Mellon Collie and the Infinite Sadness Smashing Pumpkins",
         albumTitle: "Mellon Collie and the Infinite Sadness",
         artistName: "Smashing Pumpkins",
         weekOf: "February 23, 2026",
-        description: "Mellon Collie and the Infinite Sadness is the third studio album by American alternative rock band The Smashing Pumpkins, released in 1995. The double album is a sprawling, ambitious work that explores a wide range of musical styles and themes, from aggressive rock to delicate ballads. With hits like 'Bullet with Butterfly Wings,' '1979,' and 'Tonight, Tonight,' Mellon Collie showcases the band's ability to blend heavy guitars with orchestral arrangements and introspective lyrics. The album received critical acclaim for its scope and creativity, solidifying The Smashing Pumpkins' place as one of the defining bands of the 90s alternative rock scene.",
-        isCurrent: true
+        description: "Mellon Collie and the Infinite Sadness is the third studio album by American alternative rock band The Smashing Pumpkins, released in 1995. The double album is a sprawling, ambitious work that explores a wide range of musical styles and themes, from aggressive rock to delicate ballads. With hits like 'Bullet with Butterfly Wings,' '1979,' and 'Tonight, Tonight,' Mellon Collie showcases the band's ability to blend heavy guitars with orchestral arrangements and introspective lyrics. The album received critical acclaim for its scope and creativity, solidifying The Smashing Pumpkins' place as one of the defining bands of the 90s alternative rock scene."
     },
     {
         id: "2026-02-16",
