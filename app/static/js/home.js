@@ -978,13 +978,37 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configuration: Add new weeks here as they come
 const PICK_HISTORY = [
     {
+        id: "2026-03-23",
+        searchQuery: "Jar of Flies Alice in Chains",
+        albumTitle: "Jar of Flies",
+        artistName: "Alice in Chains",
+        weekOf: "March 23, 2026",
+        description: "Jar of Flies is the fourth studio album by American rock band Alice in Chains, released in 1994. The album is a departure from the band's heavier sound, featuring a more acoustic and introspective style. With tracks like 'No Excuses,' 'I Stay Away,' and 'Nutshell,' Jar of Flies explores themes of isolation, addiction, and emotional vulnerability. The album received critical acclaim for its raw honesty, haunting melodies, and the band's ability to create a powerful atmosphere with stripped-down arrangements. Jar of Flies remains one of Alice in Chains' most beloved and influential works, showcasing their versatility and depth as musicians.",
+        isCurrent: true
+    },
+    {
+        id: "2026-03-16",
+        searchQuery: "The Wall Pink Floyd", 
+        albumTitle: "The Wall",
+        artistName: "Pink Floyd",
+        weekOf: "March 16, 2026",
+        description: "The Wall is the eleventh studio album by English rock band Pink Floyd, released in 1979. The album is a rock opera that tells the story of Pink, a troubled rock star who isolates himself from the world behind a metaphorical wall. With iconic tracks like 'Another Brick in the Wall,' 'Comfortably Numb,' and 'Hey You,' The Wall explores themes of alienation, mental illness, and the impact of war. The album's ambitious concept, innovative production, and powerful performances have made it one of Pink Floyd's most enduring and influential works, solidifying its place as a classic in rock history."
+    },
+    {
+        id: "2026-03-09",
+        searchQuery: "Everything Is Love The Carters",
+        albumTitle: "Everything Is Love",
+        artistName: "The Carters",
+        weekOf: "March 9, 2026",
+        description: "Everything Is Love is a collaborative studio album by American musical duo The Carters, consisting of Beyoncé and Jay-Z. Released in 2018, the album is a blend of hip-hop, R&B, and soul, showcasing the couple's chemistry and musical synergy. With tracks like 'Apeshit,' 'Summer,' and 'Boss,' Everything Is Love explores themes of love, fame, wealth, and empowerment. The album received critical acclaim for its production, lyricism, and the dynamic performances of both artists, solidifying The Carters' status as one of the most influential power couples in music history."
+    },
+    {
         id: "2026-03-02",
         searchQuery: "The Art of Loving Olivia Dean",
         albumTitle: "The Art of Loving",
         artistName: "Olivia Dean",
         weekOf: "March 2, 2026",
-        description: "The Art of Loving is the debut studio album by British singer-songwriter Olivia Dean, released in 2023. The album is a soulful and introspective exploration of love, relationships, and self-discovery, blending elements of pop, R&B, and jazz. With standout tracks like 'The Hardest Part,' 'Show Me,' and 'The Art of Loving,' the album showcases Dean's powerful vocals, heartfelt lyrics, and sophisticated production. The Art of Loving received critical acclaim for its emotional depth and musicality, establishing Olivia Dean as a rising star in the contemporary music scene.",
-        isCurrent: true
+        description: "The Art of Loving is the debut studio album by British singer-songwriter Olivia Dean, released in 2023. The album is a soulful and introspective exploration of love, relationships, and self-discovery, blending elements of pop, R&B, and jazz. With standout tracks like 'The Hardest Part,' 'Show Me,' and 'The Art of Loving,' the album showcases Dean's powerful vocals, heartfelt lyrics, and sophisticated production. The Art of Loving received critical acclaim for its emotional depth and musicality, establishing Olivia Dean as a rising star in the contemporary music scene."
     },
     {
         id: "2026-02-23",
