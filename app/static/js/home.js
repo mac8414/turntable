@@ -1,981 +1,584 @@
-// --- IMAGE COMPRESSION UTILITY ---
-function compressImageUrl(originalUrl, width = 300, height = 300, quality = 0.8) {
-    // If it's a Spotify image, we can use their built-in resizing
-    if (originalUrl && originalUrl.includes('i.scdn.co')) {
-        // Spotify images can be resized by changing the URL
-        return originalUrl.replace(/\/\d+x\d+\//, `/${width}x${height}/`);
-    }
-    
-    // For other images, we'll create a compressed version using canvas
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size to desired dimensions
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Draw and compress
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Convert to compressed data URL
-            const compressedUrl = canvas.toDataURL('image/jpeg', quality);
-            resolve(compressedUrl);
-        };
-        
-        img.onerror = function() {
-            // If compression fails, return original URL
-            resolve(originalUrl);
-        };
-        
-        img.src = originalUrl;
+// --- SHARED HELPERS ---
+function escapeHtml(value) {
+    const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(value ?? '').replace(/[&<>"']/g, ch => entities[ch]);
+}
+
+const PLACEHOLDER_COVER = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+    '<rect width="100" height="100" fill="#2a1a10"/><circle cx="50" cy="50" r="32" fill="#111"/>' +
+    '<circle cx="50" cy="50" r="7" fill="#fe9900"/></svg>'
+);
+
+// Swap broken or missing album art for a placeholder record
+function attachCoverFallbacks(root) {
+    root.querySelectorAll('img[data-cover]').forEach(img => {
+        img.addEventListener('error', () => { img.src = PLACEHOLDER_COVER; }, { once: true });
     });
 }
 
-// Synchronous version for Spotify URLs (most common case)
-function getCompressedImageUrl(originalUrl, size = 'medium') {
-    if (!originalUrl) return originalUrl;
-    
-    // For Spotify images, use their resizing
-    if (originalUrl.includes('i.scdn.co')) {
-        const sizeMap = {
-            'small': '150x150',
-            'medium': '300x300', 
-            'large': '640x640'
-        };
-        return originalUrl.replace(/\/\d+x\d+\//, `/${sizeMap[size] || sizeMap.medium}/`);
+async function postJson(url, body, signal) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal
+    });
+    let data = null;
+    try {
+        data = await response.json();
+    } catch (e) {
+        // Non-JSON error page; handled below
     }
-    
-    // For other images, return original (you could implement server-side compression)
-    return originalUrl;
+    if (!response.ok) {
+        throw new Error((data && data.error) || `Request failed (${response.status})`);
+    }
+    return data || {};
+}
+
+const TIMEFRAMES = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
+const GENRES = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
+
+function readSettings() {
+    const timeframeKnob = document.getElementById('timeframeKnob');
+    const genreKnob = document.getElementById('genreKnob');
+    const slider = document.getElementById('recommendationSlider');
+    return {
+        timeframe: TIMEFRAMES[Number(timeframeKnob && timeframeKnob.dataset.value) || 0],
+        genre: GENRES[Number(genreKnob && genreKnob.dataset.value) || 0],
+        count: Number(slider && slider.value) || 5
+    };
 }
 
 // --- LAVA LAMP ANIMATION ---
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if Vue is available
-    if (typeof Vue === 'undefined') {
-        console.error('Vue is not loaded! Using plain JavaScript for animation instead.');
-        animateLavaLamp();
-        return;
+function startLavaLamp() {
+    const container = document.getElementById('lavaLamp');
+    if (!container) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Safari struggles with the SVG goo filter, so animate fewer blobs at half frame rate there
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    // Starting position as a fraction of the window, horizontal sway speed and phase
+    const layout = [
+        [0.4, 0.3, 0.3, 0], [0.6, 0.5, 0.4, 1.5], [0.5, 0.7, 0.2, 3], [0.3, 0.4, 0.25, 4.5],
+        [0.7, 0.2, 0.35, 6], [0.2, 0.6, 0.15, 7.5], [0.8, 0.3, 0.3, 9], [0.4, 0.8, 0.2, 10.5],
+        [0.6, 0.1, 0.25, 12], [0.2, 0.2, 0.15, 13.5]
+    ];
+    let blobs = layout.map(([x, y, xSpeed, phase], i) => ({
+        el: document.getElementById(`blob${i + 1}`),
+        x: window.innerWidth * x,
+        y: window.innerHeight * y,
+        xSpeed,
+        phase
+    })).filter(blob => blob.el);
+
+    if (isSafari) {
+        blobs.slice(6).forEach(blob => { blob.el.style.display = 'none'; });
+        blobs = blobs.slice(0, 6);
     }
-    
-    window.isPlaying = false;
 
-    // Use Vue if available
-    const { createApp } = Vue;
-
-    // Detect Safari (not Chrome/Chromium/Android)
-    const isSafari = (typeof navigator !== 'undefined') && (/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
-    
-    createApp({
-        data() {
-            return {
-                // flag used to optimize animation for Safari
-                isSafari: isSafari,
-                frameCounter: 0,
-                blobs: [
-                    { id: 'blob1', x: window.innerWidth * 0.4, y: window.innerHeight * 0.3, 
-                      xSpeed: 0.3, ySpeed: 0.4, xOffset: 0, yOffset: 0, phase: 0 },
-                    { id: 'blob2', x: window.innerWidth * 0.6, y: window.innerHeight * 0.5, 
-                      xSpeed: 0.4, ySpeed: 0.5, xOffset: 1, yOffset: 2, phase: 1.5 },
-                    { id: 'blob3', x: window.innerWidth * 0.5, y: window.innerHeight * 0.7, 
-                      xSpeed: 0.2, ySpeed: 0.3, xOffset: 2, yOffset: 1, phase: 3 },
-                    { id: 'blob4', x: window.innerWidth * 0.3, y: window.innerHeight * 0.4, 
-                      xSpeed: 0.25, ySpeed: 0.35, xOffset: 3, yOffset: 3, phase: 4.5 },
-                    { id: 'blob5', x: window.innerWidth * 0.7, y: window.innerHeight * 0.2, 
-                      xSpeed: 0.35, ySpeed: 0.2, xOffset: 4, yOffset: 2, phase: 6 },
-                    { id: 'blob6', x: window.innerWidth * 0.2, y: window.innerHeight * 0.6, 
-                      xSpeed: 0.15, ySpeed: 0.25, xOffset: 5, yOffset: 5, phase: 7.5 },
-                    { id: 'blob7', x: window.innerWidth * 0.8, y: window.innerHeight * 0.3, 
-                      xSpeed: 0.3, ySpeed: 0.15, xOffset: 6, yOffset: 4, phase: 9 },
-                    { id: 'blob8', x: window.innerWidth * 0.4, y: window.innerHeight * 0.8, 
-                      xSpeed: 0.2, ySpeed: 0.3, xOffset: 7, yOffset: 1, phase: 10.5 },
-                    { id: 'blob9', x: window.innerWidth * 0.6, y: window.innerHeight * 0.1, 
-                      xSpeed: 0.25, ySpeed: 0.2, xOffset: 8, yOffset: 6, phase: 12 },
-                    { id: 'blob10', x: window.innerWidth * 0.2, y: window.innerHeight * 0.2, 
-                      xSpeed: 0.15, ySpeed: 0.15, xOffset: 9, yOffset: 3, phase: 13.5 }
-                ],
-                bounds: {
-                    minX: -100,
-                    minY: -100,
-                    maxX: window.innerWidth + 100,
-                    maxY: window.innerHeight + 100
-                },
-                time: 0
-            };
-        },
-        mounted() {
-            // Set initial positions
-            this.setInitialPositions();
-
-            // If Safari, reduce complexity: fewer blobs and remove heavy filters/shadows
-            if (this.isSafari) {
-                try {
-                    // keep only a subset to lower rendering cost
-                    this.blobs = this.blobs.slice(0, 6);
-
-                    // remove SVG filters or heavy box-shadows on existing elements
-                    this.blobs.forEach(blob => {
-                        const el = document.getElementById(blob.id);
-                        if (el) {
-                            // remove filter and box-shadow for Safari
-                            el.style.filter = 'none';
-                            el.style.boxShadow = 'none';
-                            el.style.opacity = '0.85';
-                            el.style.willChange = 'transform';
-                            // promote to its own layer
-                            el.style.transform = (el.style.transform || '') + ' translateZ(0)';
-                        }
-                    });
-                } catch (e) {
-                    // non-fatal
-                    console.warn('Safari optimization: failed to simplify blobs', e);
-                }
-            }
-            
-            // Update boundaries on window resize
-            window.addEventListener('resize', () => {
-                this.bounds.maxX = window.innerWidth + 100;
-                this.bounds.maxY = window.innerHeight + 100;
-            });
-            
-            // Start animation using requestAnimationFrame for smoother animation
-            this.animate();
-        },
-        methods: {
-            setInitialPositions() {
-                this.blobs.forEach(blob => {
-                    const element = document.getElementById(blob.id);
-                    if (element) {
-                        element.setAttribute('cx', blob.x);
-                        element.setAttribute('cy', blob.y);
-                    }
-                });
-            },
-            animate() {
-                // Update time
-                this.time += 0.01;
-
-                // If on Safari, throttle updates to reduce paint/composite cost
-                if (this.isSafari) {
-                    this.frameCounter = (this.frameCounter || 0) + 1;
-                    // skip every other frame (effectively half frame rate)
-                    if (this.frameCounter % 2 !== 0) {
-                        requestAnimationFrame(this.animate);
-                        return;
-                    }
-                }
-
-                // Update all blob positions
-                this.blobs.forEach(blob => {
-                    this.updateBlobPosition(blob);
-                });
-
-                // Continue animation
-                requestAnimationFrame(this.animate);
-            },
-            updateBlobPosition(blob) {
-                // Use sinusoidal motion for more fluid, organic movement
-                const xWave = Math.sin(this.time * blob.xSpeed + blob.phase) * 50;
-                const yWave = Math.cos(this.time * blob.ySpeed + blob.phase) * 50;
-                
-                // Add slow drift upward to simulate rising heat
-                blob.y -= 0.1;
-                
-                // Add wave motion
-                blob.x += xWave * 0.02;
-                
-                // Boundary checks with smooth transitions
-                if (blob.y < this.bounds.minY) {
-                    // When a blob reaches the top, reset it to the bottom
-                    blob.y = this.bounds.maxY;
-                    // Randomize horizontal position slightly
-                    blob.x = Math.max(this.bounds.minX, Math.min(this.bounds.maxX, blob.x + (Math.random() - 0.5) * 100));
-                }
-                
-                if (blob.x < this.bounds.minX) {
-                    blob.x = this.bounds.minX;
-                    blob.xSpeed = Math.abs(blob.xSpeed);
-                } else if (blob.x > this.bounds.maxX) {
-                    blob.x = this.bounds.maxX;
-                    blob.xSpeed = -Math.abs(blob.xSpeed);
-                }
-                
-                // Update SVG element position
-                const element = document.getElementById(blob.id);
-                if (element) {
-                    element.setAttribute('cx', blob.x);
-                    element.setAttribute('cy', blob.y);
-                }
-            }
-        }
-    }).mount('#lavaLamp');
-    
-    // Fallback animation function if Vue is not available
-    function animateLavaLamp() {
-        // Plain JavaScript implementation of the same animation
-        // This would be very similar to the Vue implementation but using
-        // vanilla JS for state management instead
-        console.log('Fallback animation running.');
-        
-        // Implementation details would go here
+    function draw(blob) {
+        blob.el.setAttribute('cx', blob.x);
+        blob.el.setAttribute('cy', blob.y);
     }
-});
+    blobs.forEach(draw);
+    if (reduceMotion) return;
 
-// --- LAST.FM API INTEGRATION ---
-const LASTFM_API_KEY = 'YOUR_LASTFM_API_KEY'; // You'll need to get this from Last.fm
-const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
-
-// Function to fetch artist info from your Flask backend
-async function fetchArtistInfo(artistName) {
-    try {
-        const response = await fetch('/api/artist-info', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ artist_name: artistName })
+    let time = 0;
+    let frame = 0;
+    function step() {
+        requestAnimationFrame(step);
+        if (isSafari && frame++ % 2) return;
+        time += 0.01;
+        const minX = -100;
+        const maxX = window.innerWidth + 100;
+        blobs.forEach(blob => {
+            // Slow upward drift like rising wax, with a gentle side-to-side sway
+            blob.y -= 0.1;
+            blob.x += Math.sin(time * blob.xSpeed + blob.phase);
+            if (blob.y < -100) {
+                blob.y = window.innerHeight + 100;
+                blob.x += (Math.random() - 0.5) * 100;
+            }
+            blob.x = Math.max(minX, Math.min(maxX, blob.x));
+            draw(blob);
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.artist_info && data.artist_info.bio) {
-            return data.artist_info.bio;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Error fetching artist info:', error);
-        return null;
     }
+    requestAnimationFrame(step);
 }
 
-// Function to update recommendation display with artist fact
-function updateRecommendationWithArtistFact(recommendationBox, title, artist, timeframe, genre, count) {
-    // Initial loading UI with a placeholder for the artist fact
-    recommendationBox.innerHTML = `
-        <div class="recommendations-show">
-            <h3>Loading recommendations for ${title} by ${artist}...</h3>
-            <!-- loading bar placed immediately under the heading -->
-            <div class="loading-bar-container">
-                <div class="loading-bar" id="recommendLoadingBar"><div class="progress"></div></div>
+// --- RECORD PLAYER ---
+let isPlaying = false;
+
+function setPlaying(playing) {
+    isPlaying = playing;
+    const record = document.getElementById('record');
+    const recordArm = document.getElementById('recordArm');
+    if (record) record.classList.toggle('playing', playing);
+    if (recordArm) recordArm.style.transform = playing ? 'rotate(-15deg)' : 'rotate(-90deg)';
+}
+
+function showOnRecord(song) {
+    const albumCover = document.getElementById('albumCover');
+    if (albumCover) {
+        albumCover.innerHTML = `<img data-cover src="${escapeHtml(song.album_cover || PLACEHOLDER_COVER)}"
+            alt="${escapeHtml(song.title)} by ${escapeHtml(song.artist)}">`;
+        attachCoverFallbacks(albumCover);
+    }
+    setPlaying(true);
+}
+
+// --- RECOMMENDATIONS ---
+let activeRecommendation = null;
+
+// The server doesn't stream progress, so ease the bar toward ~95% while we wait
+function createProgress(bar) {
+    const fill = bar.querySelector('.progress');
+    let current = 0;
+    const start = Date.now();
+    const set = pct => {
+        current = Math.max(0, Math.min(100, pct));
+        fill.style.width = current + '%';
+        fill.style.opacity = current > 0 ? '1' : '0';
+    };
+    set(2);
+    const interval = setInterval(() => {
+        const elapsed = (Date.now() - start) / 1000;
+        if (elapsed < 1) {
+            set(Math.min(25, current + 8));
+        } else {
+            set(Math.min(95, current + 0.6 / (1 + elapsed / 6)));
+        }
+    }, 300);
+    return {
+        finish() {
+            clearInterval(interval);
+            set(100);
+            setTimeout(() => bar.classList.add('hidden'), 200);
+            setTimeout(() => bar.parentNode && bar.parentNode.remove(), 600);
+        },
+        cancel() {
+            clearInterval(interval);
+        }
+    };
+}
+
+function musicLinks(title, artist) {
+    const query = encodeURIComponent(`${title} ${artist}`);
+    return {
+        spotify: `https://open.spotify.com/search/${query}`,
+        apple: `https://music.apple.com/us/search?term=${query}`
+    };
+}
+
+function renderRecommendationItem(rec) {
+    const links = musicLinks(rec.title, rec.artist);
+    const year = rec.release_year ? ` · ${escapeHtml(rec.release_year)}` : '';
+    const cover = escapeHtml(rec.album_cover || PLACEHOLDER_COVER);
+    return `
+        <li class="recommendation-item">
+            <div class="recommendation-bg" style="background-image: url('${cover}')"></div>
+            <div class="recommendation-cover">
+                <img data-cover src="${cover}" alt="${escapeHtml(rec.title)} album cover" loading="lazy">
             </div>
-            <p>Time Frame: ${timeframe} | Genre: ${genre} | Count: ${count}</p>
-            <h5>Powered by <strong>CadenceAI</strong></h5>
-            <div class="artist-fact-container">
-                <p class="artist-fact-loading" id="artistFactLoading">Loading artist fact...</p>
+            <div class="recommendation-info">
+                <h4 class="recommendation-title">${escapeHtml(rec.title)}</h4>
+                <p class="recommendation-artist">${escapeHtml(rec.artist)}${year}</p>
             </div>
-        </div>
+            <div class="recommendation-right">
+                <div class="recommendation-match">${escapeHtml(rec.similarity_score || 0)}% match</div>
+                <div class="musicLink">
+                    <a href="${escapeHtml(links.apple)}" target="_blank" rel="noopener noreferrer">Listen on Apple Music</a>
+                </div>
+                <div class="musicLink">
+                    <a href="${escapeHtml(links.spotify)}" target="_blank" rel="noopener noreferrer">Listen on Spotify</a>
+                </div>
+            </div>
+        </li>
     `;
+}
 
-    // Helper function to hide/remove the loading bar
-    function hideLoadingBar() {
-        const bar = document.getElementById('recommendLoadingBar');
-        if (bar) {
-            bar.classList.add('hidden');
-            setTimeout(() => { const parent = bar.parentNode; if (parent && parent.parentNode) parent.parentNode.removeChild(parent); }, 400);
-        }
-    }
-
-    // Simulated determinate progress controller (smooth ramp + finish on resolve)
-    let progressInterval = null;
-    let currentProgress = 0; // 0..100
-
-    function setProgress(pct) {
-        currentProgress = Math.max(0, Math.min(100, pct));
-        const progElem = document.querySelector('#recommendLoadingBar .progress');
-        if (progElem) {
-            progElem.style.width = currentProgress + '%';
-            progElem.style.opacity = currentProgress > 0 ? '1' : '0';
-        }
-    }
-
-    function startProgress(expectedCount = 5) {
-        // Reset
-        clearInterval(progressInterval);
-        currentProgress = 0;
-        setProgress(2); // slight initial hint
-
-        // Two-phase ramp:
-        // 1) Quick ramp to ~20-30% within the first second
-        // 2) Long, slow ramp from ~25% up toward ~92% while the server analyzes audio for each track
-        const start = Date.now();
-        progressInterval = setInterval(() => {
-            const elapsed = (Date.now() - start) / 1000; // seconds
-
-            // Phase 1: fast initial ramp
-            if (elapsed < 1) {
-                const delta = 6 + Math.random() * 6; // fast ramp first second
-                const initialCap = 20 + Math.random() * 10; // 20-30
-                if (currentProgress < initialCap) setProgress(Math.min(initialCap, currentProgress + delta));
+function loadArtistFact(artist, factElem, signal) {
+    postJson('/api/artist-info', { artist_name: artist }, signal)
+        .then(data => {
+            const info = data.artist_info || {};
+            if (!info.bio) {
+                factElem.textContent = 'No artist fact found.';
                 return;
             }
-
-            // Phase 2: long slow ramp (dominates the wait time). Scale by expectedCount.
-            // Base slow delta increases slightly with expectedCount but remains small so the bar takes most of the time.
-            const base = 0.38; // faster base increment per tick
-                const countFactor = Math.min(3, Math.max(0.6, expectedCount / 2.5)); // slightly higher sensitivity
-                // Make increments smaller over time, but allow faster early growth
-                const slowDelta = (base * countFactor) * (1 / (1 + elapsed / 6));
-
-                const cap = 96; // allow closer approach to 100% so finalization is quick
-                if (currentProgress < cap) setProgress(Math.min(cap, currentProgress + slowDelta));
-        }, 360);
-    }
-
-    function finalizeProgressAndHide() {
-        clearInterval(progressInterval);
-        // Smoothly go to 100%
-        const progElem = document.querySelector('#recommendLoadingBar .progress');
-        if (progElem) {
-            // jump to 98% then to 100% for a nice finish
-            setProgress(98);
-            setTimeout(() => { setProgress(100); }, 160);
-            setTimeout(() => { hideLoadingBar(); setProgress(0); }, 420);
-        } else {
-            hideLoadingBar();
-        }
-    }
-
-    // Fetch artist fact and update only the artist fact section
-    fetchArtistInfo(artist)
-        .then(artistFact => {
-            const factElem = document.getElementById('artistFactLoading');
-            if (factElem && artistFact) {
-                factElem.className = 'artist-fact';
-                factElem.innerHTML = `<strong>About ${artist}:</strong> ${artistFact}`;
-            } else if (factElem) {
-                factElem.textContent = "No artist fact found.";
+            factElem.className = 'artist-fact';
+            factElem.innerHTML = `<strong>About ${escapeHtml(artist)}:</strong> ${escapeHtml(info.bio)}`;
+            if (info.tags && info.tags.length) {
+                factElem.innerHTML += `<br><span class="artist-tags">${info.tags.map(escapeHtml).join(' · ')}</span>`;
             }
         })
         .catch(error => {
-            const factElem = document.getElementById('artistFactLoading');
-            if (factElem) factElem.textContent = "Error loading artist fact.";
-            console.error('Error fetching artist fact:', error);
+            if (error.name === 'AbortError') return;
+            factElem.textContent = 'No artist fact found.';
         });
+}
 
-    // Start simulated determinate progress for the recommendations fetch
-    // Pass the requested count so the ramp duration scales with analysis workload
-    startProgress(count);
+function loadRecommendations(song) {
+    const recommendationBox = document.querySelector('.recommendationBox');
+    if (!recommendationBox) return;
 
-    // Fetch recommendations WITHOUT timeout - let it run as long as needed
-    fetch('/api/recommend', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            track_name: title, 
-            artist_name: artist,
-            timeframe: timeframe === 'Any' ? '' : timeframe,
-            genre: genre === 'Any' ? '' : genre,
-            count: count
+    // Only the most recent selection should update the page
+    if (activeRecommendation) activeRecommendation.abort();
+    const controller = new AbortController();
+    activeRecommendation = controller;
+
+    const { timeframe, genre, count } = readSettings();
+    const filters = `Time Frame: ${escapeHtml(timeframe)} | Genre: ${escapeHtml(genre)}`;
+
+    recommendationBox.innerHTML = `
+        <div class="recommendations-show" aria-live="polite">
+            <h3 class="recommendations-heading">Finding ${escapeHtml(count)} songs like ${escapeHtml(song.title)} by ${escapeHtml(song.artist)}...</h3>
+            <div class="loading-bar-container">
+                <div class="loading-bar"><div class="progress"></div></div>
+            </div>
+            <p>${filters}</p>
+            <h5>Powered by <strong>CadenceAI</strong></h5>
+            <div class="recommendation-notices"></div>
+            <div class="artist-fact-container">
+                <p class="artist-fact-loading">Loading artist fact...</p>
+            </div>
+        </div>
+        <ul class="recommendation-list"></ul>
+    `;
+
+    const heading = recommendationBox.querySelector('.recommendations-heading');
+    const notices = recommendationBox.querySelector('.recommendation-notices');
+    const list = recommendationBox.querySelector('.recommendation-list');
+    const progress = createProgress(recommendationBox.querySelector('.loading-bar'));
+
+    loadArtistFact(song.artist, recommendationBox.querySelector('.artist-fact-loading'), controller.signal);
+
+    postJson('/api/recommend', {
+        track_id: song.id,
+        track_name: song.title,
+        artist_name: song.artist,
+        timeframe: timeframe === 'Any' ? '' : timeframe,
+        genre: genre === 'Any' ? '' : genre,
+        count
+    }, controller.signal)
+        .then(data => {
+            progress.finish();
+            const recs = data.recommendations || [];
+            heading.textContent = `Top results for ${song.title} by ${song.artist}`;
+            notices.innerHTML = (data.notices || [])
+                .map(notice => `<p class="recommendation-notice">${escapeHtml(notice)}</p>`)
+                .join('');
+            list.innerHTML = recs.length
+                ? recs.map(renderRecommendationItem).join('')
+                : '<li class="recommendation-item recommendation-empty">No recommendations found. Try another song or set the knobs to Any.</li>';
+            attachCoverFallbacks(list);
         })
-        // Removed the signal parameter - no more timeout!
-    })
-    .then(response => {
-        // Check if the response is HTML (error page) instead of JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`Server returned ${response.status}: ${response.statusText}. Expected JSON but got ${contentType}`);
-        }
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return response.json();
-    })
-    .then(recData => {
-        // finalize progress and hide when recommendations arrive
-        finalizeProgressAndHide();
-
-        let recHTML = `
-            <div class="recommendations-show">
-                <h3>Top results for ${title} by ${artist}</h3>
-                <p>Time Frame: ${timeframe} | Genre: ${genre}</p>
-                <h5>Powered by <strong>CadenceAI</strong></h5>
-            </div>
-            <ul class="recommendation-list">
-        `;
-        if (recData.recommendations && recData.recommendations.length > 0) {
-            recData.recommendations.forEach(rec => {
-                const albumCoverUrl = rec.album_cover || '/api/placeholder/50/50';
-                const spotifyLink = rec.spotify_link || `https://open.spotify.com/search/${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                const appleMusicLink = rec.apple_music_link || `https://music.apple.com/us/search?term=${encodeURIComponent(rec.title + ' ' + rec.artist)}`;
-                recHTML += `
-                    <li class="recommendation-item">
-                        <div class="recommendation-bg" style="background-image: url('${albumCoverUrl}')"></div>
-                        <div class="recommendation-cover">
-                            <img src="${albumCoverUrl}" alt="${rec.title} album cover">
-                        </div>
-                        <div class="recommendation-info">
-                            <h4 class="recommendation-title">${rec.title}</h4>
-                            <p class="recommendation-artist">${rec.artist}</p>
-                        </div>
-                        <div class="recommendation-right">
-                            <div class="recommendation-match">${rec.similarity_score || 0}% match</div>
-                            <div class="musicLink">
-                                <a href="${appleMusicLink}" target="_blank" rel="noopener noreferrer">
-                                    Listen on Apple Music
-                                </a>
-                            </div>
-                            <div class="musicLink">
-                                <a href="${spotifyLink}" target="_blank" rel="noopener noreferrer">
-                                    Listen on Spotify
-                                </a>
-                            </div>
-                        </div>
-                    </li>
-                `;
-            });
-        } else {
-            recHTML += `<li class="recommendation-item">No recommendations found</li>`;
-        }
-        recHTML += `</ul>`;
-
-        // Replace the entire recommendationBox content (removes the artist fact)
-        recommendationBox.innerHTML = recHTML;
-    })
-    .catch(error => {
-        // finalize and hide progress on error as well
-        try { finalizeProgressAndHide(); } catch (e) { try { hideLoadingBar(); } catch (e) {} }
-
-        let errorMessage = 'Error loading recommendations';
-        if (error.message.includes('504')) {
-            errorMessage = 'Server timeout - the recommendation system is taking too long';
-        } else if (error.message.includes('500')) {
-            errorMessage = 'Internal server error - please try again';
-        }
-        
-        recommendationBox.innerHTML = `
-            <div class="recommendations-show">
-                <h3>${errorMessage}</h3>
-                <p>Please try again with a different song or fewer recommendations.</p>
-                <h5>Powered by <strong>CadenceAI</strong></h5>
-            </div>
-        `;
-        console.error('Error fetching recommendations:', error);
-    });
+        .catch(error => {
+            if (error.name === 'AbortError') {
+                progress.cancel();
+                return;
+            }
+            progress.finish();
+            heading.textContent = error instanceof TypeError
+                ? "Couldn't reach the server"
+                : 'Error loading recommendations';
+            notices.innerHTML = `<p class="recommendation-notice">${escapeHtml(error.message || 'Please try again.')}</p>`;
+            console.error('Error fetching recommendations:', error);
+        });
 }
 
-// --- RANDOMIZER LOGIC (UPDATED TO USE ARTIST FACTS) ---
-function randomizeSelection() {
-    console.log('Randomize button clicked!');
-    
-    const button = document.querySelector('.randomize-button') || document.querySelector('.randomizeButton');
+function selectSong(song) {
     const searchInput = document.getElementById('songSearch');
-    
-    if (!button || !searchInput) {
-        console.error('Button or search input not found!');
-        return;
+    if (searchInput) {
+        searchInput.value = `${song.title} - ${song.artist}`;
+        searchInput.dispatchEvent(new Event('value-set'));
     }
-    
+    showOnRecord(song);
+    loadRecommendations(song);
+}
+
+// --- RANDOMIZER ---
+const RANDOM_SEARCH_TERMS = [
+    'love', 'heart', 'night', 'dream', 'fire', 'rock', 'dance', 'soul', 'blue', 'gold',
+    'time', 'life', 'free', 'high', 'run', 'fly', 'star', 'sun', 'moon', 'home',
+    'world', 'way', 'light', 'dark', 'wind', 'rain', 'day', 'gone', 'stay', 'move'
+];
+
+function randomizeSelection() {
+    const button = document.querySelector('.randomize-button');
+    if (!button || button.disabled) return;
+
     button.disabled = true;
-    button.textContent = "Loading...";
-    
-    // Array of random search terms to get different results
-    const randomSearchTerms = [
-        'love', 'heart', 'night', 'dream', 'fire', 'rock', 'dance', 'soul', 'blue', 'gold',
-        'time', 'life', 'free', 'high', 'run', 'fly', 'star', 'sun', 'moon', 'home',
-        'world', 'way', 'light', 'dark', 'wind', 'rain', 'day', 'gone', 'stay', 'move'
-    ];
-    
-    // Pick a random search term
-    const randomTerm = randomSearchTerms[Math.floor(Math.random() * randomSearchTerms.length)];
-    
-    console.log(`Searching for random term: ${randomTerm}`);
-    
-    // Use your existing search API
-    fetch('/api/search', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: randomTerm, limit: 20 }) // <-- Add limit here
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Search results:', data);
-        
-        if (data.results && data.results.length > 0) {
-            // Pick a random song from the results
-            const randomSong = data.results[Math.floor(Math.random() * data.results.length)];
-            
-            // Update the search input
-            searchInput.value = `${randomSong.title} - ${randomSong.artist}`;
-            console.log(`Selected random song: ${randomSong.title} - ${randomSong.artist}`);
-            
-            // Trigger the search result selection logic
-            const albumCover = document.getElementById('albumCover');
-            const record = document.getElementById('record');
-            const recordArm = document.getElementById('recordArm');
-            const recommendationBox = document.querySelector('.recommendationBox');
-            
-            // Update record player
-            if (albumCover && randomSong.album_cover) {
-                albumCover.innerHTML = `<img src="${randomSong.album_cover}" alt="${randomSong.title} by ${randomSong.artist}">`;
+    button.textContent = 'Loading...';
+
+    const randomTerm = RANDOM_SEARCH_TERMS[Math.floor(Math.random() * RANDOM_SEARCH_TERMS.length)];
+    postJson('/api/search', { query: randomTerm, limit: 25 })
+        .then(data => {
+            const results = data.results || [];
+            if (results.length) {
+                selectSong(results[Math.floor(Math.random() * results.length)]);
             }
-            
-            // Start record playing
-            if (record && !window.isPlaying) {
-                window.isPlaying = true;
-                record.classList.add('playing');
-                if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
-            }
-            
-            // Get recommendation settings
-            const timeframeKnob = document.getElementById('timeframeKnob');
-            const genreKnob = document.getElementById('genreKnob');
-            const recommendationSlider = document.getElementById('recommendationSlider');
-            
-            const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
-            const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
-            
-            const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
-            const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
-            const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
-            
-            // Load recommendations with artist fact
-            if (recommendationBox) {
-                updateRecommendationWithArtistFact(recommendationBox, randomSong.title, randomSong.artist, timeframe, genre, count);
-            }
-            
+        })
+        .catch(error => console.error('Error searching for random song:', error))
+        .finally(() => {
+            button.disabled = false;
+            button.textContent = 'Randomize';
+        });
+}
+
+// --- KNOBS ---
+function setupKnob(knob, valueDisplay, options, label) {
+    if (!knob || !valueDisplay) return;
+
+    const maxIndex = options.length - 1;
+    const step = 270 / maxIndex;
+    const rotationFor = index => index * step - 135;
+    let rotation = rotationFor(Number(knob.dataset.value) || 0);
+
+    knob.tabIndex = 0;
+    knob.setAttribute('role', 'slider');
+    knob.setAttribute('aria-label', label);
+    knob.setAttribute('aria-valuemin', '0');
+    knob.setAttribute('aria-valuemax', String(maxIndex));
+
+    function setValue(index, snapRotation = true) {
+        index = Math.max(0, Math.min(maxIndex, Math.round(index)));
+        knob.dataset.value = index;
+        valueDisplay.textContent = options[index];
+        knob.setAttribute('aria-valuenow', String(index));
+        knob.setAttribute('aria-valuetext', options[index]);
+        if (snapRotation) rotation = rotationFor(index);
+        knob.style.transform = `rotate(${rotationFor(index)}deg)`;
+    }
+    setValue(Number(knob.dataset.value) || 0);
+
+    function pointerAngle(e, center) {
+        return Math.atan2(e.clientY - center.y, e.clientX - center.x) * 180 / Math.PI;
+    }
+
+    let drag = null;
+    knob.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        knob.focus();
+        knob.setPointerCapture(e.pointerId);
+        const rect = knob.getBoundingClientRect();
+        const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        drag = { center, lastAngle: pointerAngle(e, center), moved: 0 };
+        knob.classList.add('knob-active');
+    });
+
+    knob.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const angle = pointerAngle(e, drag.center);
+        // Accumulate small deltas so dragging past the 180° seam doesn't jump
+        let delta = angle - drag.lastAngle;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        drag.lastAngle = angle;
+        drag.moved += Math.abs(delta);
+        rotation = Math.max(-135, Math.min(135, rotation + delta));
+        setValue((rotation + 135) / step, false);
+    });
+
+    function endDrag(e) {
+        if (!drag) return;
+        // A press without much movement acts as a click: right half steps up, left half steps down
+        if (e.type === 'pointerup' && drag.moved < 4) {
+            const current = Number(knob.dataset.value) || 0;
+            setValue(e.clientX > drag.center.x ? current + 1 : current - 1);
         } else {
-            console.log("No search results found");
-            searchInput.value = '';
+            setValue(Number(knob.dataset.value) || 0);
         }
-        
-        // Re-enable button
-        button.disabled = false;
-        button.textContent = "Randomize";
-    })
-    .catch(error => {
-        console.error('Error searching for random song:', error);
-        button.disabled = false;
-        button.textContent = "Randomize";
+        drag = null;
+        knob.classList.remove('knob-active');
+    }
+    knob.addEventListener('pointerup', endDrag);
+    knob.addEventListener('pointercancel', endDrag);
+
+    knob.addEventListener('keydown', e => {
+        const current = Number(knob.dataset.value) || 0;
+        const keyMap = { ArrowRight: current + 1, ArrowUp: current + 1, ArrowLeft: current - 1, ArrowDown: current - 1, Home: 0, End: maxIndex };
+        if (e.key in keyMap) {
+            e.preventDefault();
+            setValue(keyMap[e.key]);
+        }
     });
 }
 
-// Make sure the button click event is properly attached
-document.addEventListener('DOMContentLoaded', function() {
-    const randomizeBtn = document.querySelector('.randomize-button') || document.querySelector('.randomizeButton');
-    if (randomizeBtn) {
-        randomizeBtn.addEventListener('click', randomizeSelection);
-        console.log('Randomize button event listener attached');
-    } else {
-        console.error('Could not find randomize button to attach event listener');
-    }
-    
-    // Initialize the global playing state
-    if (typeof window.isPlaying === 'undefined') {
-        window.isPlaying = false;
-    }
-});
-
-function toggleSelection(button) {
-    document.querySelectorAll('.optionButton').forEach(btn => btn.classList.remove('selected'));
-    button.classList.add('selected');
-    console.log(`Selected option: ${button.textContent}`);
-
-    const yearDropdown = document.querySelector('.dropDownTimePeriod');
-    if (button.textContent === "Artist") {
-        yearDropdown.disabled = true;
-        yearDropdown.value = "";
-        console.log("Year dropdown disabled for Artist selection.");
-    } else {
-        yearDropdown.disabled = false;
-        console.log("Year dropdown enabled.");
-    }
-}
-
-// --- ENHANCED SEARCH AND RECOMMENDATION SYSTEM ---
-document.addEventListener('DOMContentLoaded', function () {
+// --- SEARCH ---
+function setupSearch() {
     const searchInput = document.getElementById('songSearch');
     const searchResults = document.getElementById('searchResults');
-    const albumCover = document.getElementById('albumCover');
-    const record = document.getElementById('record');
-    const recordArm = document.getElementById('recordArm');
-    const recommendationBox = document.querySelector('.recommendationBox');
-    
-    // Knob controls - only timeframe and genre remain
-    const timeframeKnob = document.getElementById('timeframeKnob');
-    const timeframeValue = document.getElementById('timeframeValue');
-    const genreKnob = document.getElementById('genreKnob');
-    const genreValue = document.getElementById('genreValue');
-    
-    // Slider
-    const recommendationSlider = document.getElementById('recommendationSlider');
-    const sliderValue = document.getElementById('sliderValue');
-    
-    let typingTimer;
-    const typingDelay = 500;
-    
-    // Timeframe options
-    const timeframes = ['Any', '60s', '70s', '80s', '90s', '2000s', '2010s', '2020s'];
-    
-    // Genre options
-    const genres = ['Any', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal'];
+    const clearBtn = document.getElementById('clearSearch');
+    if (!searchInput || !searchResults) return;
 
-    // Track whether a song is playing
-    let isPlaying = false;
-    
-    // Add cursor:pointer to record CSS if record element exists
+    let typingTimer;
+    let searchController = null;
+    let activeIndex = -1;
+
+    searchInput.setAttribute('role', 'combobox');
+    searchInput.setAttribute('aria-autocomplete', 'list');
+    searchInput.setAttribute('aria-controls', 'searchResults');
+    searchResults.setAttribute('role', 'listbox');
+
+    function showResults(show) {
+        searchResults.style.display = show ? 'block' : 'none';
+        searchInput.setAttribute('aria-expanded', String(show));
+    }
+
+    function showMessage(message) {
+        searchResults.innerHTML = `<div class="searchResultItem searchResultMessage"><div class="searchResultItem-content"><p class="searching-message">${escapeHtml(message)}</p></div></div>`;
+        activeIndex = -1;
+        showResults(true);
+    }
+
+    function resultItems() {
+        return Array.from(searchResults.querySelectorAll('.searchResultItem[data-index]'));
+    }
+
+    function setActive(index) {
+        const items = resultItems();
+        if (!items.length) return;
+        activeIndex = (index + items.length) % items.length;
+        items.forEach((item, i) => {
+            item.classList.toggle('active', i === activeIndex);
+            item.setAttribute('aria-selected', String(i === activeIndex));
+        });
+        items[activeIndex].scrollIntoView({ block: 'nearest' });
+    }
+
+    function renderResults(tracks) {
+        searchResults.innerHTML = '';
+        activeIndex = -1;
+        tracks.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = 'searchResultItem';
+            item.dataset.index = index;
+            item.setAttribute('role', 'option');
+            item.innerHTML = `
+                <div class="searchResultItem-bg" style="background-image: url('${escapeHtml(track.album_cover || '')}')"></div>
+                <div class="searchResultItem-content">
+                    <div class="searchResultItem-artwork">
+                        <img data-cover src="${escapeHtml(track.album_cover || PLACEHOLDER_COVER)}" alt="${escapeHtml(track.title)} album cover" loading="lazy">
+                    </div>
+                    <div class="searchResultItem-info">
+                        <p class="searchResultItem-title">${escapeHtml(track.title)}</p>
+                        <p class="searchResultItem-artist">${escapeHtml(track.artist)}</p>
+                    </div>
+                </div>
+            `;
+            item.addEventListener('click', () => choose(track));
+            searchResults.appendChild(item);
+        });
+        attachCoverFallbacks(searchResults);
+        showResults(true);
+        searchResults._tracks = tracks;
+    }
+
+    function choose(track) {
+        showResults(false);
+        selectSong(track);
+    }
+
+    function runSearch(query) {
+        if (searchController) searchController.abort();
+        searchController = new AbortController();
+        postJson('/api/search', { query, limit: 20 }, searchController.signal)
+            .then(data => {
+                const results = data.results || [];
+                if (results.length) {
+                    renderResults(results);
+                } else {
+                    showMessage('No results found.');
+                }
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') showMessage('Error searching. Try again.');
+            });
+    }
+
+    function updateClearButton() {
+        if (clearBtn) clearBtn.style.display = searchInput.value ? 'block' : 'none';
+    }
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        updateClearButton();
+        const query = searchInput.value.trim();
+        if (!query) {
+            if (searchController) searchController.abort();
+            searchResults.innerHTML = '';
+            showResults(false);
+            return;
+        }
+        showMessage('Searching...');
+        typingTimer = setTimeout(() => runSearch(query), 350);
+    });
+    searchInput.addEventListener('value-set', updateClearButton);
+
+    searchInput.addEventListener('keydown', e => {
+        const items = resultItems();
+        if (e.key === 'ArrowDown' && items.length) {
+            e.preventDefault();
+            showResults(true);
+            setActive(activeIndex + 1);
+        } else if (e.key === 'ArrowUp' && items.length) {
+            e.preventDefault();
+            setActive(activeIndex - 1);
+        } else if (e.key === 'Enter' && items.length && searchResults._tracks) {
+            e.preventDefault();
+            choose(searchResults._tracks[Math.max(activeIndex, 0)]);
+        } else if (e.key === 'Escape') {
+            showResults(false);
+        }
+    });
+
+    // Hide results when clicking outside, show them again on focus
+    document.addEventListener('click', e => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) showResults(false);
+    });
+    searchInput.addEventListener('focus', () => {
+        if (searchResults.innerHTML.trim() !== '') showResults(true);
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', e => {
+            e.preventDefault();
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    startLavaLamp();
+    setupSearch();
+
+    const record = document.getElementById('record');
     if (record) {
         record.style.cursor = 'pointer';
-        
-        // Function to toggle play/stop
-        function togglePlayState() {
-            isPlaying = !isPlaying;
-            
-            if (isPlaying) {
-                record.classList.add('playing');
-                if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
-            } else {
-                record.classList.remove('playing');
-                if (recordArm) recordArm.style.transform = 'rotate(-90deg)';
-            }
-        }
-        
-        // Make record clickable
-        record.addEventListener('click', togglePlayState);
+        record.addEventListener('click', () => setPlaying(!isPlaying));
     }
-    
-    // Initialize knob positions
-    function rotateKnob(knob, value, maxValue) {
-        if (!knob) return;
-        const rotation = value * (270 / maxValue) - 135;
-        knob.style.transform = `rotate(${rotation}deg)`;
-    }
-    
-    // Initialize knobs if they exist
-    if (timeframeKnob && timeframeValue) {
-        rotateKnob(timeframeKnob, timeframeKnob.dataset.value || 0, timeframes.length - 1);
-        timeframeValue.textContent = timeframes[timeframeKnob.dataset.value || 0];
-    }
-    
-    if (genreKnob && genreValue) {
-        rotateKnob(genreKnob, genreKnob.dataset.value || 0, genres.length - 1);
-        genreValue.textContent = genres[genreKnob.dataset.value || 0];
-    }
-    
-    // Improved knob event listeners
-    function setupKnob(knob, valueDisplay, options) {
-        if (!knob || !valueDisplay) return;
-        
-        let isDragging = false;
-        let startAngle = 0;
-        let startRotation = 0;
-        let currentRotation = 0;
-        let knobRect = knob.getBoundingClientRect();
-        let knobCenter = {
-            x: knobRect.left + knobRect.width / 2,
-            y: knobRect.top + knobRect.height / 2
-        };
-        
-        // Add visual indication that knobs are interactive
-        knob.style.cursor = 'grab';
-        
-        // Get angle between points
-        function getAngle(x1, y1, x2, y2) {
-            return Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-        }
-        
-        // Update knob rotation and value display
-        function updateKnobValue(rotation) {
-            // Normalize rotation to 0-270 range (-135 to +135 degrees)
-            let normalizedRotation = rotation;
-            while (normalizedRotation < -135) normalizedRotation += 360;
-            while (normalizedRotation > 135) normalizedRotation -= 360;
-            
-            // Clamp to valid range
-            normalizedRotation = Math.max(-135, Math.min(135, normalizedRotation));
-            
-            // Convert to 0-270 scale
-            const normalizedAngle = normalizedRotation + 135;
-            
-            // Calculate value based on angle
-            const value = Math.round(normalizedAngle / (270 / (options.length - 1)));
-            
-            // Update knob
-            knob.style.transform = `rotate(${normalizedRotation}deg)`;
-            knob.dataset.value = value;
-            valueDisplay.textContent = options[value];
-            
-            return normalizedRotation;
-        }
-        
-        knob.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            
-            // Update knob center position
-            knobRect = knob.getBoundingClientRect();
-            knobCenter = {
-                x: knobRect.left + knobRect.width / 2,
-                y: knobRect.top + knobRect.height / 2
-            };
-            
-            // Get initial angle
-            startAngle = getAngle(knobCenter.x, knobCenter.y, e.clientX, e.clientY);
-            
-            // Get current rotation from transform or default to 0
-            const transform = window.getComputedStyle(knob).getPropertyValue('transform');
-            let matrix = new DOMMatrix(transform);
-            startRotation = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
-            currentRotation = startRotation;
-            
-            isDragging = true;
-            knob.style.cursor = 'grabbing';
-            document.body.style.cursor = 'grabbing';
-            
-            knob.classList.add('knob-active');
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            // Calculate new angle
-            const currentAngle = getAngle(knobCenter.x, knobCenter.y, e.clientX, e.clientY);
-            const angleDelta = currentAngle - startAngle;
-            
-            // Calculate new rotation
-            let newRotation = startRotation + angleDelta;
-            
-            // Update knob position and value
-            currentRotation = updateKnobValue(newRotation);
-        });
-        
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                knob.style.cursor = 'grab';
-                document.body.style.cursor = 'default';
-                knob.classList.remove('knob-active');
-                
-                // Update start positions for next drag
-                startRotation = currentRotation;
-            }
-        });
-        
-        // Click to increment/decrement
-        knob.addEventListener('click', (e) => {
-            if (e.target !== knob) return; // Make sure we clicked on the knob itself
-            
-            // Update knob center position
-            knobRect = knob.getBoundingClientRect();
-            knobCenter = {
-                x: knobRect.left + knobRect.width / 2,
-                y: knobRect.top + knobRect.height / 2
-            };
-            
-            // Determine if click was on left or right half
-            const isRightSide = e.clientX > knobCenter.x;
-            
-            // Get current value
-            const currentValue = parseInt(knob.dataset.value || 0);
-            
-            // Calculate new value
-            let newValue;
-            if (isRightSide) {
-                newValue = Math.min(currentValue + 1, options.length - 1);
-            } else {
-                newValue = Math.max(currentValue - 1, 0);
-            }
-            
-            // Update knob
-            const newRotation = (newValue * (270 / (options.length - 1))) - 135;
-            knob.style.transform = `rotate(${newRotation}deg)`;
-            knob.dataset.value = newValue;
-            valueDisplay.textContent = options[newValue];
-            
-            // Update start rotation for next drag
-            startRotation = newRotation;
-        });
-    }
-    
-    // Set up all knobs
-    setupKnob(timeframeKnob, timeframeValue, timeframes);
-    setupKnob(genreKnob, genreValue, genres);
-    
-    // Slider event listener
-    if (recommendationSlider && sliderValue) {
-        recommendationSlider.addEventListener('input', function() {
-            sliderValue.textContent = this.value;
-        });
-    }
-    
-    // Enhanced search input event listener
-    if (searchInput && searchResults) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(typingTimer);
-            
-            const query = searchInput.value.trim();
-            
-            if (query) {
-                // Show the loading message in search results
-                searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p class="searching-message">Searching...</p></div></div>';
-                searchResults.style.display = 'block';
-                
-                // Force high z-index and proper positioning
-                searchResults.style.position = 'absolute';
-                searchResults.style.zIndex = '9999';
-                searchResults.style.top = '100%';
-                searchResults.style.left = '0';
-                searchResults.style.right = '0';
-                
-                typingTimer = setTimeout(() => {
-                    // Make an actual API call
-                    fetch('/api/search', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ query: query, limit: 20 }) // <-- Add limit here
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        
-                        // Maintain z-index after clearing content
-                        searchResults.style.position = 'absolute';
-                        searchResults.style.zIndex = '9999';
-                        searchResults.style.top = '100%';
-                        searchResults.style.left = '0';
-                        searchResults.style.right = '0';
-                        
-                        // Check if the response contains results
-                        if (data.results && data.results.length > 0) {
-                            data.results.forEach(track => {
-                                const div = document.createElement('div');
-                                div.className = 'searchResultItem';
-                                div.setAttribute('data-title', track.title);
-                                div.setAttribute('data-artist', track.artist);
-                                div.setAttribute('data-album-cover', track.album_cover);
-                                
-                                // Create enhanced search result with background and styling
-                                const bg = document.createElement('div');
-                                bg.className = 'searchResultItem-bg';
-                                bg.style.backgroundImage = `url("${track.album_cover}")`;
-                                
-                                const content = document.createElement('div');
-                                content.className = 'searchResultItem-content';
-                                
-                                const artwork = document.createElement('div');
-                                artwork.className = 'searchResultItem-artwork';
-                                
-                                const img = document.createElement('img');
-                                img.src = track.album_cover;
-                                img.alt = `${track.title} album cover`;
-                                artwork.appendChild(img);
-                                
-                                const info = document.createElement('div');
-                                info.className = 'searchResultItem-info';
-                                
-                                const title = document.createElement('p');
-                                title.className = 'searchResultItem-title';
-                                title.textContent = track.title;
-                                
-                                const artist = document.createElement('p');
-                                artist.className = 'searchResultItem-artist';
-                                artist.textContent = track.artist;
-                                
-                                info.appendChild(title);
-                                info.appendChild(artist);
-                                content.appendChild(artwork);
-                                content.appendChild(info);
-                                
-                                div.appendChild(bg);
-                                div.appendChild(content);
-                                searchResults.appendChild(div);
-                            });
-                        } else {
-                            searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p class="searching-message">No results found.</p></div></div>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error searching:', error);
-                        searchResults.innerHTML = '<div class="searchResultItem"><div class="searchResultItem-content"><p>Error searching. Try again.</p></div></div>';
-                    });
-                }, typingDelay);
-            } else {
-                searchResults.innerHTML = '';
-                searchResults.style.display = 'none';
-            }
-        });
-        
-        // Enhanced hide search results when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
-                searchResults.style.display = 'none';
-            }
-        });
-        
-        // Show search results when focusing on input (if there's content)
-        searchInput.addEventListener('focus', function() {
-            if (searchResults.innerHTML.trim() !== '') {
-                searchResults.style.display = 'block';
-                // Re-apply z-index styling
-                searchResults.style.position = 'absolute';
-                searchResults.style.zIndex = '9999';
-                searchResults.style.top = '100%';
-                searchResults.style.left = '0';
-                searchResults.style.right = '0';
-            }
-        });
-        
-        // Enhanced search result click handler
-        searchResults.addEventListener('click', function(event) {
-            const clicked = event.target.closest('.searchResultItem');
-            if (!clicked) return;
-            
-            const title = clicked.getAttribute('data-title');
-            const artist = clicked.getAttribute('data-artist');
-            const albumCoverUrl = clicked.getAttribute('data-album-cover');
-            
-            if (title && artist) {
-                // Update the record player with the selected song if elements exist
-                if (albumCover) {
-                    albumCover.innerHTML = `<img src="${albumCoverUrl}" alt="${title} by ${artist}">`;
-                }
-                searchInput.value = `${title} - ${artist}`;
-                searchResults.style.display = 'none';
 
-                // Start the record playing if record player exists
-                if (record && !isPlaying) {
-                    isPlaying = true;
-                    record.classList.add('playing');
-                    if (recordArm) recordArm.style.transform = 'rotate(-15deg)';
-                }
-                
-                // Get current timeframe, genre and recommendations count
-                const timeframe = timeframes[parseInt((timeframeKnob && timeframeKnob.dataset.value) || 0)];
-                const genre = genres[parseInt((genreKnob && genreKnob.dataset.value) || 0)];
-                const count = parseInt((recommendationSlider && recommendationSlider.value) || 5);
-                
-                // Show loading in recommendation box and fetch both artist fact and recommendations
-                if (recommendationBox) {
-                    updateRecommendationWithArtistFact(recommendationBox, title, artist, timeframe, genre, count);
-                }
-            }
-        });
-    }
-});
+    setupKnob(document.getElementById('timeframeKnob'), document.getElementById('timeframeValue'), TIMEFRAMES, 'Time frame');
+    setupKnob(document.getElementById('genreKnob'), document.getElementById('genreValue'), GENRES, 'Genre');
 
-// --- PICK OF THE WEEK FUNCTIONALITY ---
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Pick of the Week
+    const slider = document.getElementById('recommendationSlider');
+    const sliderValue = document.getElementById('sliderValue');
+    if (slider && sliderValue) {
+        slider.addEventListener('input', () => { sliderValue.textContent = slider.value; });
+    }
+
+    const randomizeBtn = document.querySelector('.randomize-button');
+    if (randomizeBtn) randomizeBtn.addEventListener('click', randomizeSelection);
+
     initializePickOfTheWeek();
 });
 
-// Configuration: Add new weeks here as they come
+// --- PICK OF THE WEEK ---
+// Add new weeks to the top. The most recent pick is featured automatically.
 const PICK_HISTORY = [
     {
         id: "2026-03-23",
@@ -983,8 +586,7 @@ const PICK_HISTORY = [
         albumTitle: "Jar of Flies",
         artistName: "Alice in Chains",
         weekOf: "March 23, 2026",
-        description: "Jar of Flies is the fourth studio album by American rock band Alice in Chains, released in 1994. The album is a departure from the band's heavier sound, featuring a more acoustic and introspective style. With tracks like 'No Excuses,' 'I Stay Away,' and 'Nutshell,' Jar of Flies explores themes of isolation, addiction, and emotional vulnerability. The album received critical acclaim for its raw honesty, haunting melodies, and the band's ability to create a powerful atmosphere with stripped-down arrangements. Jar of Flies remains one of Alice in Chains' most beloved and influential works, showcasing their versatility and depth as musicians.",
-        isCurrent: true
+        description: "Jar of Flies is the fourth studio album by American rock band Alice in Chains, released in 1994. The album is a departure from the band's heavier sound, featuring a more acoustic and introspective style. With tracks like 'No Excuses,' 'I Stay Away,' and 'Nutshell,' Jar of Flies explores themes of isolation, addiction, and emotional vulnerability. The album received critical acclaim for its raw honesty, haunting melodies, and the band's ability to create a powerful atmosphere with stripped-down arrangements. Jar of Flies remains one of Alice in Chains' most beloved and influential works, showcasing their versatility and depth as musicians."
     },
     {
         id: "2026-03-16",
@@ -1180,11 +782,11 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-09-29",
-        searchQuery: "Rumors Fleetwood Mac",
-        albumTitle: "Rumors",
+        searchQuery: "Rumours Fleetwood Mac",
+        albumTitle: "Rumours",
         artistName: "Fleetwood Mac",
         weekOf: "September 29, 2025",
-        description: "A timeless classic from Fleetwood Mac, Rumors is an album filled with emotional depth and musical brilliance. Featuring hits like 'Go Your Own Way,' 'Dreams,' and 'The Chain,' the album explores themes of love, heartbreak, and resilience. Its blend of rock, pop, and folk elements, combined with the band's impeccable harmonies and songwriting, has made it one of the best-selling albums of all time. Rumors remains a defining work in the rock genre, showcasing Fleetwood Mac's enduring influence and artistry.",
+        description: "A timeless classic from Fleetwood Mac, Rumours is an album filled with emotional depth and musical brilliance. Featuring hits like 'Go Your Own Way,' 'Dreams,' and 'The Chain,' the album explores themes of love, heartbreak, and resilience. Its blend of rock, pop, and folk elements, combined with the band's impeccable harmonies and songwriting, has made it one of the best-selling albums of all time. Rumours remains a defining work in the rock genre, showcasing Fleetwood Mac's enduring influence and artistry.",
     },
     {
         id: "2025-09-22",
@@ -1196,7 +798,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-09-15",
-        searchQuery: "The Divine Femine Mac Miller",
+        searchQuery: "The Divine Feminine Mac Miller",
         albumTitle: "The Divine Feminine",
         artistName: "Mac Miller",
         weekOf: "September 15, 2025",
@@ -1216,7 +818,7 @@ const PICK_HISTORY = [
         albumTitle: "i,i",
         artistName: "Bon Iver",
         weekOf: "September 1, 2025",
-        description: "A lush and introspective Bon Iver album that blends folk, indie rock, and electronic elements. Featuring standout tracks like 'Hey, Ma'"
+        description: "A lush and introspective Bon Iver album that blends folk, indie rock, and electronic elements. Featuring standout tracks like 'Hey, Ma,' 'Faith,' and 'Naeem,' it was released in 2019 as the band's fourth album."
     },
     {
         id: "2025-08-25",
@@ -1268,7 +870,7 @@ const PICK_HISTORY = [
     },
     {
         id: "2025-07-14",
-        searchQuery: "Tapestry Carol King",
+        searchQuery: "Tapestry Carole King",
         albumTitle: "Tapestry",
         artistName: "Carole King",
         weekOf: "July 14, 2025",
@@ -1332,49 +934,35 @@ const PICK_HISTORY = [
     },
 ];
 
-// Store loaded song data to avoid re-fetching
-let songCache = {};
+// Store loaded album data to avoid re-fetching
+const songCache = {};
 let displayedPickId = null; // Track which pick is currently displayed at the top
+
+function sortedPicks() {
+    return [...PICK_HISTORY].sort((a, b) => b.id.localeCompare(a.id));
+}
+
+// The newest pick is "This Week" only while it's actually this week
+function isThisWeek(pick) {
+    const age = Date.now() - new Date(pick.id + 'T00:00:00').getTime();
+    return age >= 0 && age < 7 * 24 * 60 * 60 * 1000;
+}
 
 function initializePickOfTheWeek() {
     const pickSection = document.querySelector('.pick-of-week-section');
-    if (!pickSection) {
-        console.error('Pick of the Week section not found');
-        return;
-    }
-    
-    // Show loading state
-    pickSection.innerHTML = `
-        <div class="pick-loading">
-            <h2>Pick of the Week</h2>
-            <p>Loading this week's pick...</p>
-        </div>
-    `;
-    
-    // Load the current pick (first item in history or the one marked as current)
-    const currentPick = PICK_HISTORY.find(pick => pick.isCurrent) || PICK_HISTORY[0];
-    displayedPickId = currentPick.id;
-    
-    // Load all picks
-    loadAllPicks();
-}
+    if (!pickSection) return;
 
-function loadAllPicks() {
-    const pickSection = document.querySelector('.pick-of-week-section');
-    
-    // Create the main structure
+    const picks = sortedPicks();
+    displayedPickId = picks[0].id;
+
     pickSection.innerHTML = `
         <div class="pick-of-week-container">
             <h2>Pick of the Week</h2>
-            
-            <!-- Main featured pick -->
             <div class="featured-pick-container">
                 <div class="pick-loading-inline">
                     <p>Loading this week's pick...</p>
                 </div>
             </div>
-            
-            <!-- Horizontal scroll list of past picks -->
             <div class="past-picks-section">
                 <h3>Past Picks</h3>
                 <div class="past-picks-scroll">
@@ -1385,254 +973,145 @@ function loadAllPicks() {
             </div>
         </div>
     `;
-    
-    // Load songs for all picks
-    const loadPromises = PICK_HISTORY.map(pick => loadSongData(pick));
-    
-    Promise.all(loadPromises).then(() => {
-        renderFeaturedPick();
-        renderPastPicks();
-    }).catch(error => {
-        console.error('Error loading picks:', error);
-        showPickError('Failed to load picks');
-    });
+
+    // Show the featured pick as soon as it loads rather than waiting for every past pick
+    loadSongData(picks[0]).then(renderFeaturedPick);
+    Promise.all(picks.map(loadSongData)).then(renderPastPicks);
 }
 
+function loosely(text) {
+    return String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// Never rejects: a failed lookup still shows the pick, just with placeholder art
 function loadSongData(pickConfig) {
-    // Return cached data if available
     if (songCache[pickConfig.id]) {
         return Promise.resolve(songCache[pickConfig.id]);
     }
-    
-    return fetch('/api/search', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: pickConfig.searchQuery })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.results && data.results.length > 0) {
-            // Try to find the best match for the album
-            let bestMatch = data.results[0];
-            if (pickConfig.albumTitle && pickConfig.artistName) {
-                const exactMatch = data.results.find(result =>
-                    result.title.toLowerCase().includes(pickConfig.albumTitle.toLowerCase()) &&
-                    result.artist.toLowerCase().includes(pickConfig.artistName.toLowerCase())
-                );
-                if (exactMatch) bestMatch = exactMatch;
-            }
-            const albumData = {
-                song: {
-                    title: pickConfig.albumTitle || bestMatch.title,
-                    artist: pickConfig.artistName || bestMatch.artist,
-                    album_cover: bestMatch.album_cover
-                },
-                config: pickConfig
-            };
-            songCache[pickConfig.id] = albumData;
-            return albumData;
-        } else {
-            throw new Error(`Album not found for ${pickConfig.weekOf}`);
-        }
-    });
+
+    const fallback = { song: { title: pickConfig.albumTitle, artist: pickConfig.artistName, album_cover: null }, config: pickConfig };
+
+    return postJson('/api/search', { query: pickConfig.searchQuery, limit: 10 })
+        .then(data => {
+            const results = data.results || [];
+            const sameArtist = results.filter(r => loosely(r.artist).includes(loosely(pickConfig.artistName)) ||
+                                                   loosely(pickConfig.artistName).includes(loosely(r.artist)));
+            const sameAlbum = sameArtist.find(r => loosely(r.album).includes(loosely(pickConfig.albumTitle)));
+            const bestMatch = sameAlbum || sameArtist[0] || results[0];
+            if (bestMatch) fallback.song.album_cover = bestMatch.album_cover;
+            songCache[pickConfig.id] = fallback;
+            return fallback;
+        })
+        .catch(error => {
+            console.error(`Error loading pick ${pickConfig.id}:`, error);
+            return fallback;
+        });
 }
 
 function renderFeaturedPick() {
     const featuredContainer = document.querySelector('.featured-pick-container');
-    const pickData = songCache[displayedPickId];
-    
-    if (!pickData) {
-        featuredContainer.innerHTML = '<p class="pick-error">Failed to load featured album</p>';
-        return;
-    }
-    
+    const pickData = songCache[displayedPickId] || {
+        song: {}, config: PICK_HISTORY.find(p => p.id === displayedPickId)
+    };
     const { song, config } = pickData;
-    const isCurrentWeek = config.isCurrent;
+    const title = song.title || config.albumTitle;
+    const artist = song.artist || config.artistName;
+    const isLatest = config.id === sortedPicks()[0].id;
+    const badge = isLatest
+        ? `<div class="current-pick-badge">${isThisWeek(config) ? 'This Week' : 'Latest Pick'}</div>`
+        : '<div class="past-pick-badge">Past Pick</div>';
 
     // Use album search links instead of song search
-    const spotifyAlbumSearch = `https://open.spotify.com/search/${encodeURIComponent('album:"' + song.title + '" artist:"' + song.artist + '"')}`;
-    const appleAlbumSearch = `https://music.apple.com/us/search?term=${encodeURIComponent(song.title + ' ' + song.artist)}&entity=album`;
+    const spotifyAlbumSearch = `https://open.spotify.com/search/${encodeURIComponent(`${title} ${artist}`)}/albums`;
+    const appleAlbumSearch = `https://music.apple.com/us/search?term=${encodeURIComponent(`${title} ${artist}`)}`;
 
     featuredContainer.innerHTML = `
         <div class="featured-pick-card">
             <div class="featured-pick-image">
-                <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="featured-cover-image">
-                ${isCurrentWeek ? '<div class="current-pick-badge">This Week</div>' : '<div class="past-pick-badge">Past Pick</div>'}
+                <img data-cover src="${escapeHtml(song.album_cover || PLACEHOLDER_COVER)}" alt="${escapeHtml(title)} by ${escapeHtml(artist)}" class="featured-cover-image">
+                ${badge}
             </div>
-            
+
             <div class="featured-pick-info">
                 <div class="featured-pick-details">
-                    <p class="featured-pick-week">Week of ${config.weekOf}</p>
-                    <h3 class="featured-pick-title">${song.title}</h3>
-                    <p class="featured-pick-artist">by ${song.artist}</p>
-                    ${config.description ? `<p class="featured-pick-description">${config.description}</p>` : ''}
+                    <p class="featured-pick-week">Week of ${escapeHtml(config.weekOf)}</p>
+                    <h3 class="featured-pick-title">${escapeHtml(title)}</h3>
+                    <p class="featured-pick-artist">by ${escapeHtml(artist)}</p>
+                    ${config.description ? `<p class="featured-pick-description">${escapeHtml(config.description)}</p>` : ''}
                 </div>
-                
+
                 <div class="featured-music-links">
-                    <a href="${spotifyAlbumSearch}" 
-                       target="_blank" rel="noopener noreferrer" class="music-link spotify">
+                    <a href="${escapeHtml(spotifyAlbumSearch)}" target="_blank" rel="noopener noreferrer" class="music-link spotify">
                         <span class="link-icon">♪</span> Listen on Spotify
                     </a>
-                    <a href="${appleAlbumSearch}" 
-                       target="_blank" rel="noopener noreferrer" class="music-link apple">
+                    <a href="${escapeHtml(appleAlbumSearch)}" target="_blank" rel="noopener noreferrer" class="music-link apple">
                         <span class="link-icon">♪</span> Listen on Apple Music
                     </a>
                 </div>
             </div>
         </div>
     `;
+    attachCoverFallbacks(featuredContainer);
 }
 
 function renderPastPicks() {
     const pastPicksScroll = document.querySelector('.past-picks-scroll');
-    
-    // Get all picks except the currently displayed one
-    const pastPicks = PICK_HISTORY.filter(pick => pick.id !== displayedPickId);
-    
+    const pastPicks = sortedPicks().filter(pick => pick.id !== displayedPickId);
+
     if (pastPicks.length === 0) {
         pastPicksScroll.innerHTML = '<p class="no-past-picks">No past albums to show</p>';
         return;
     }
-    
-    let pastPicksHTML = '';
-    
-    pastPicks.forEach(pick => {
-        const pickData = songCache[pick.id];
-        if (pickData) {
-            const { song, config } = pickData;
-            pastPicksHTML += `
-                <div class="past-pick-card" data-pick-id="${pick.id}">
-                    <div class="past-pick-content">
-                        <div class="past-pick-image">
-                            <img src="${song.album_cover}" alt="${song.title} by ${song.artist}" class="past-cover-image">
-                            ${config.isCurrent ? '<div class="current-indicator">Current</div>' : ''}
-                        </div>
-                        <div class="past-pick-info">
-                            <p class="past-pick-week">${config.weekOf}</p>
-                            <h4 class="past-pick-title">${song.title}</h4>
-                            <p class="past-pick-artist">${song.artist}</p>
-                        </div>
+
+    const latestId = sortedPicks()[0].id;
+    pastPicksScroll.innerHTML = pastPicks.map(pick => {
+        const { song } = songCache[pick.id] || { song: {} };
+        const title = song.title || pick.albumTitle;
+        const artist = song.artist || pick.artistName;
+        return `
+            <div class="past-pick-card" data-pick-id="${escapeHtml(pick.id)}" role="button" tabindex="0"
+                 aria-label="Show ${escapeHtml(title)} by ${escapeHtml(artist)}">
+                <div class="past-pick-content">
+                    <div class="past-pick-image">
+                        <img data-cover src="${escapeHtml(song.album_cover || PLACEHOLDER_COVER)}" alt="" class="past-cover-image" loading="lazy">
+                        ${pick.id === latestId ? '<div class="current-indicator">Latest</div>' : ''}
+                    </div>
+                    <div class="past-pick-info">
+                        <p class="past-pick-week">${escapeHtml(pick.weekOf)}</p>
+                        <h4 class="past-pick-title">${escapeHtml(title)}</h4>
+                        <p class="past-pick-artist">${escapeHtml(artist)}</p>
                     </div>
                 </div>
-            `;
-        }
-    });
-    
-    pastPicksScroll.innerHTML = pastPicksHTML;
-    
-    // Add click event listeners to past pick cards
-    const pastPickCards = pastPicksScroll.querySelectorAll('.past-pick-card');
-    pastPickCards.forEach(card => {
-        card.addEventListener('click', function() {
-            const pickId = this.dataset.pickId;
-            if (pickId && pickId !== displayedPickId) {
-                switchToPickWithAnimation(pickId);
+            </div>
+        `;
+    }).join('');
+    attachCoverFallbacks(pastPicksScroll);
+
+    pastPicksScroll.querySelectorAll('.past-pick-card').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => switchToPickWithAnimation(card.dataset.pickId));
+        card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                switchToPickWithAnimation(card.dataset.pickId);
             }
         });
-        
-        // Add hover effect
-        card.style.cursor = 'pointer';
     });
 }
 
 function switchToPickWithAnimation(newPickId) {
+    if (!newPickId || newPickId === displayedPickId) return;
     const featuredContainer = document.querySelector('.featured-pick-container');
-    
-    // Add fade-out animation
+
     featuredContainer.style.opacity = '0.5';
     featuredContainer.style.transform = 'scale(0.95)';
-    
+
     setTimeout(() => {
-        // Update the displayed pick
         displayedPickId = newPickId;
-        
-        // Re-render both sections
         renderFeaturedPick();
         renderPastPicks();
-        
-        // Add fade-in animation
         featuredContainer.style.opacity = '1';
         featuredContainer.style.transform = 'scale(1)';
+        featuredContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 200);
 }
-
-function showPickError(message) {
-    const pickSection = document.querySelector('.pick-of-week-section');
-    
-    pickSection.innerHTML = `
-        <div class="pick-error-container">
-            <h2>Album of the Week</h2>
-            <p class="error-message">${message}</p>
-            <button onclick="initializePickOfTheWeek()" class="pick-retry-btn">Try Again</button>
-        </div>
-    `;
-}
-
-// Helper function to add a new album pick (for future weeks)
-function addNewPick(searchQuery, weekOf, description, makeCurrent = true) {
-    // Remove current flag from all picks if making this one current
-    if (makeCurrent) {
-        PICK_HISTORY.forEach(pick => pick.isCurrent = false);
-    }
-    
-    // Create new pick object
-    const newPick = {
-        id: new Date(weekOf).toISOString().split('T')[0], // Convert date to YYYY-MM-DD format
-        searchQuery: searchQuery,
-        weekOf: weekOf,
-        description: description,
-        isCurrent: makeCurrent
-    };
-    
-    // Add to beginning of array (most recent first)
-    PICK_HISTORY.unshift(newPick);
-    
-    // Clear cache for the new pick
-    delete songCache[newPick.id];
-    
-    // Reload the pick section if it exists
-    const pickSection = document.querySelector('.pick-of-week-section');
-    if (pickSection) {
-        initializePickOfTheWeek();
-    }
-}
-
-// Helper function to manually switch to a specific pick (useful for testing)
-function switchToPick(pickId) {
-    const pick = PICK_HISTORY.find(p => p.id === pickId);
-    if (pick && songCache[pickId]) {
-        switchToPickWithAnimation(pickId);
-    } else {
-        console.error(`Pick with ID ${pickId} not found or not loaded`);
-    }
-}
-
-// --- SEARCH FUNCTIONALITY ENHANCEMENTS ---
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('songSearch');
-    const clearBtn = document.getElementById('clearSearch');
-    const searchResults = document.getElementById('searchResults');
-    if (searchInput && clearBtn) {
-        // Show/hide the clear button based on input value
-        searchInput.addEventListener('input', function() {
-            clearBtn.style.display = this.value ? 'block' : 'none';
-        });
-
-        // Clear the input and hide results when the button is clicked
-        clearBtn.addEventListener('click', function(e) {
-            // Use mousedown instead of click to prevent input blur
-            e.preventDefault();
-            searchInput.value = '';
-            clearBtn.style.display = 'none';
-            searchInput.focus();
-            if (searchResults) {
-                searchResults.style.display = 'none';
-                searchResults.innerHTML = '';
-            }
-            // Optionally, trigger input event if you have logic tied to it
-            searchInput.dispatchEvent(new Event('input'));
-        });
-    }
-});

@@ -2602,3 +2602,67 @@ footer {
 
 
 
+
+/* ===========================================
+   ACCESSIBILITY & NEW UI STATES
+   =========================================== */
+
+.clear-search {
+  background: none;
+  border: none;
+  padding: 0 var(--spacing-sm, 6px);
+  line-height: 1;
+}
+
+.clear-search:focus-visible,
+.knob:focus-visible,
+.past-pick-card:focus-visible {
+  outline: 3px solid var(--primary-orange);
+  outline-offset: 4px;
+}
+
+.knob {
+  touch-action: none; /* let pointer events drive the knob on touch screens */
+}
+
+.searchResultItem.active {
+  background: rgba(150, 150, 150, 0.5);
+}
+
+.searchResultMessage {
+  cursor: default;
+}
+
+.recommendation-notice {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--primary-orange);
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: var(--primary-orange-light);
+  font-size: 14px;
+}
+
+.artist-tags {
+  display: inline-block;
+  margin-top: 6px;
+  color: #cccccc;
+  font-style: normal;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.recommendation-empty {
+  justify-content: center;
+  padding: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

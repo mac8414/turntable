@@ -18,3 +18,8 @@ env/
 Thumbs.db
 
 mobile/TurntableMobile/
+
+# Ignore IDE/workspace files
+.idea/
+.metadata/
+.vscode/

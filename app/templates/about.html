@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}About & Contact{% endblock %}
+{% block title %}About & Contact | Turntable{% endblock %}
 
 {% block extra_head %}
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -22,23 +22,23 @@
         <h2>Meet the Team</h2>
         <div class="team">
             <div class="team-member">
-                <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKayHunter" />
+                <img src="{{ url_for('static', filename='images/mckayImage.jpeg') }}" alt="McKay Hunter" />
                 <h4>McKay Hunter</h4>
                 <p>Co-founder & Lead Backend Developer</p>
             </div>
             <div class="team-member">
-                <img src="{{ url_for('static', filename='images/rasimImage.jpg') }}" alt="RasimCrnica" />
+                <img src="{{ url_for('static', filename='images/rasimImage.jpg') }}" alt="Rasim Crnica" />
                 <h4>Rasim Crnica</h4>
                 <p>Co-founder & Developer</p>
             </div>
             <div class="team-member">
-                <img src="{{ url_for('static', filename='images/zachImage.jpg') }}" alt="ZachAinge" />
+                <img src="{{ url_for('static', filename='images/zachImage.jpg') }}" alt="Zach Ainge" />
                 <h4>Zach Ainge</h4>
                 <p>Lead Designer & Developer</p>
             </div>
             <div class="team-member" style="visibility: hidden;"></div>
             <div class="team-member">
-                <img src="{{ url_for('static', filename='images/dallinImage.jpeg') }}" alt="DallinMunger" />
+                <img src="{{ url_for('static', filename='images/dallinImage.jpeg') }}" alt="Dallin Munger" />
                 <h4>Dallin Munger</h4>
                 <p>AI Developer</p>
             </div>
@@ -48,7 +48,7 @@
 </section>
 
 <!-- Contact Section -->
-<section class="contact-section">
+<section class="contact-section" id="contact">
     <div class="contact-form">
         <form action="/contact-help" method="POST">
             <h2>Contact</h2>
@@ -62,9 +62,9 @@
                     </div>
                 {% endif %}
             {% endwith %}
-            <input type="text" name="name" placeholder="Your Name" required>
-            <input type="email" name="email" placeholder="Your Email" required>
-            <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+            <input type="text" name="name" placeholder="Your Name" aria-label="Your name" maxlength="100" required>
+            <input type="email" name="email" placeholder="Your Email" aria-label="Your email" maxlength="200" required>
+            <textarea name="message" placeholder="Your Message" aria-label="Your message" rows="5" maxlength="5000" required></textarea>
             <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
             <button type="submit">Send Message</button>
         </form>

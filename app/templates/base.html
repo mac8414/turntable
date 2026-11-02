@@ -6,20 +6,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Turntable{% endblock %}</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     {% block extra_head %}{% endblock %}
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-924YLLEGRQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-924YLLEGRQ');
+    </script>
 </head>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-924YLLEGRQ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-924YLLEGRQ');
-</script>
 
 <body>
     <main>
@@ -43,7 +43,7 @@
         </div>
         
         <div class="footer-bottom">
-            <p>&copy; 2025 Turntable. All rights reserved. Made with ♪ for music lovers everywhere.</p>
+            <p>&copy; 2025&ndash;2026 Turntable. All rights reserved. Made with ♪ for music lovers everywhere.</p>
         </div>
     </footer>
     

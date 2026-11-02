@@ -6,8 +6,6 @@
 {% block extra_head %}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Special+Gothic+Expanded+One&display=swap">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
-    <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -16,7 +14,7 @@
         <!-- Lava lamp background -->
         <div id="lavaLamp" class="lava-lamp-container">
             <div class="metaballs">
-                <svg class="metasvg">
+                <svg class="metasvg" aria-hidden="true">
                     <defs>
                         <!-- Enhanced gooey filter with more blur and higher contrast -->
                         <filter id="gooify" width="400%" x="-100%" height="400%" y="-100%">
@@ -114,7 +112,7 @@
                                 <div class="slider-tick"></div>
                                 <div class="slider-tick"></div>
                             </div>
-                            <input type="range" min="1" max="10" value="5" class="recommendation-slider-horizontal" id="recommendationSlider">
+                            <input type="range" min="1" max="10" value="5" class="recommendation-slider-horizontal" id="recommendationSlider" aria-label="Number of recommendations">
                             <div class="slider-value" id="sliderValue">5</div>
                         </div>
                     </div>
@@ -123,8 +121,8 @@
                 <!-- Search bar -->
                 <div class="search-container">
                     <button type="button" class="randomize-button">Randomize</button>
-                    <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." />
-                    <span id="clearSearch" class="clear-search" title="Clear">&times;</span>
+                    <input type="text" id="songSearch" class="search-input" placeholder="Search for a song or artist..." autocomplete="off" aria-label="Search for a song or artist" />
+                    <button type="button" id="clearSearch" class="clear-search" title="Clear" aria-label="Clear search">&times;</button>
                     <div id="searchResults" class="search-results"></div>
                 </div>
             </div>

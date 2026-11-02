@@ -2,130 +2,191 @@ import os
 import tempfile
 import logging
 import subprocess
-import numpy as np
-import librosa
-from typing import Optional, Dict, Any, Tuple
-from dataclasses import dataclass
-from sklearn.preprocessing import StandardScaler, RobustScaler
-from sklearn.decomposition import PCA
 import warnings
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy.stats import pearsonr
+from dataclasses import dataclass
+from typing import List, Optional
+
+import librosa
+import numpy as np
+import requests
 
 # Suppress librosa warnings for cleaner output
 warnings.filterwarnings('ignore', category=UserWarning, module='librosa')
+warnings.filterwarnings('ignore', category=FutureWarning, module='librosa')
 
 logger = logging.getLogger(__name__)
 
+SAMPLE_RATE = 22050
+MAX_DURATION = 30.0  # Deezer previews are 30 seconds long
+HOP_LENGTH = 512
+N_FFT = 2048
+
+# Krumhansl-Kessler key profiles, index 0 is the tonic
+MAJOR_PROFILE = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
+MINOR_PROFILE = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
+
+# How much each group of features contributes to the overall audio similarity
+SIMILARITY_WEIGHTS = {
+    'timbre': 0.30,    # MFCCs: what instruments/voices sound like
+    'texture': 0.20,   # Spectral shape: brightness, noisiness
+    'rhythm': 0.15,    # Tempo
+    'energy': 0.15,    # Loudness, dynamics, onset density
+    'harmony': 0.10,   # Pitch-class content
+    'key': 0.10,       # Key compatibility on the circle of fifths
+}
+
+
 @dataclass
 class AudioFeatures:
-    """Comprehensive audio features container"""
-    # Spectral features
-    mfccs: np.ndarray
+    """Summary statistics of a track's audio. Small enough to cache."""
+    mfcc_mean: np.ndarray          # 13
+    mfcc_std: np.ndarray           # 13
+    spectral_contrast: np.ndarray  # 7
+    chroma: np.ndarray             # 12
     spectral_centroid: float
     spectral_bandwidth: float
-    spectral_contrast: np.ndarray
     spectral_rolloff: float
     spectral_flatness: float
     zero_crossing_rate: float
-    
-    # Harmonic features
-    chroma: np.ndarray
-    #tonnetz: np.ndarray
-    
-    # Rhythmic features
     tempo: float
-    #beat_strength: float
     onset_strength: float
-    
-    # Dynamic features
+    onset_density: float           # onsets per second
     rms_energy: float
-    dynamic_range: float
-    
-    # High-level features
-    key_signature: int  # 0-11 for C, C#, D, etc.
-    mode: int  # 0 for minor, 1 for major
-    
+    dynamic_range: float           # dB between loud (95th pct) and quiet (5th pct) frames
+    key_signature: int             # 0-11 for C, C#, D, ...
+    mode: int                      # 0 for minor, 1 for major
+
+    def timbre_vector(self) -> np.ndarray:
+        # MFCC 0 is overall loudness, which the energy group already covers
+        return np.concatenate([self.mfcc_mean[1:], self.mfcc_std[1:]])
+
+    def texture_vector(self) -> np.ndarray:
+        # Log-scale the frequency features so they are compared by ratio, not by Hz
+        return np.concatenate([
+            np.log([
+                max(self.spectral_centroid, 1.0),
+                max(self.spectral_bandwidth, 1.0),
+                max(self.spectral_rolloff, 1.0),
+                max(self.spectral_flatness, 1e-10),
+            ]),
+            [self.zero_crossing_rate],
+            self.spectral_contrast,
+        ])
+
+    def energy_vector(self) -> np.ndarray:
+        return np.array([self.rms_energy, self.dynamic_range, self.onset_strength, self.onset_density])
+
     def to_vector(self) -> np.ndarray:
         """Convert all features to a single feature vector"""
-        features = []
-        
-        # Add all array features (take mean across time)
-        features.extend(np.mean(self.mfccs, axis=1))  # 13 features
-        features.extend(np.mean(self.spectral_contrast, axis=1))  # 7 features
-        features.extend(np.mean(self.chroma, axis=1))  # 12 features
-        #features.extend(np.mean(self.tonnetz, axis=1))  # 6 features
-        
-        # Add scalar features
-        scalar_features = [
-            self.spectral_centroid,
-            self.spectral_bandwidth,
-            self.spectral_rolloff,
-            self.spectral_flatness,
-            self.zero_crossing_rate,
-            self.tempo,
-            #self.beat_strength,
-            self.onset_strength,
-            self.rms_energy,
-            self.dynamic_range,
-            self.key_signature / 12.0,  # Normalize to 0-1
-            self.mode
-        ]
-        
-        features.extend(scalar_features)
-        
-        return np.array(features, dtype=np.float32)
+        return np.concatenate([
+            self.timbre_vector(),
+            self.texture_vector(),
+            self.energy_vector(),
+            self.chroma,
+            [self.tempo, self.key_signature / 12.0, self.mode],
+        ]).astype(np.float32)
+
+
+def _estimate_tempo(onset_envelope: np.ndarray, sr: int) -> float:
+    # librosa.beat.tempo moved to librosa.feature.rhythm.tempo in 0.10 and was removed in 0.11
+    rhythm = getattr(librosa.feature, 'rhythm', None)
+    tempo_fn = rhythm.tempo if rhythm is not None else librosa.beat.tempo
+    return float(np.atleast_1d(tempo_fn(onset_envelope=onset_envelope, sr=sr, hop_length=HOP_LENGTH))[0])
+
+
+def _estimate_key(chroma_mean: np.ndarray) -> tuple:
+    """Krumhansl-Schmuckler key finding. Returns (tonic 0-11, mode 1=major/0=minor)."""
+    if np.allclose(chroma_mean, chroma_mean[0]):
+        return 0, 1
+    best = (0, 1, -np.inf)
+    for tonic in range(12):
+        for mode, profile in ((1, MAJOR_PROFILE), (0, MINOR_PROFILE)):
+            corr = np.corrcoef(chroma_mean, np.roll(profile, tonic))[0, 1]
+            if np.isfinite(corr) and corr > best[2]:
+                best = (tonic, mode, corr)
+    return best[0], best[1]
+
+
+def tempo_similarity(t1: float, t2: float) -> float:
+    """Compare tempos by ratio, treating half/double-time as close (a common estimation error)."""
+    if not t1 or not t2 or t1 <= 0 or t2 <= 0:
+        return 0.5
+    octaves = abs(np.log2(t1 / t2))
+    folded = octaves % 1.0
+    folded = min(folded, 1.0 - folded)
+    octave_penalty = 0.9 ** round(octaves)
+    return float(np.exp(-folded / 0.15) * octave_penalty)
+
+
+def key_similarity(key1: int, mode1: int, key2: int, mode2: int) -> float:
+    """1.0 for the same/relative key, falling off with distance on the circle of fifths."""
+    # Map minor keys to their relative major so A minor == C major
+    rel1 = key1 if mode1 else (key1 + 3) % 12
+    rel2 = key2 if mode2 else (key2 + 3) % 12
+    distance = abs((rel1 * 7) % 12 - (rel2 * 7) % 12)
+    distance = min(distance, 12 - distance)
+    return 1.0 - distance / 6.0
+
+
+def _pool_similarity(reference: np.ndarray, candidates: np.ndarray) -> np.ndarray:
+    """
+    Similarity of each candidate row to the reference after scaling every feature by its
+    spread across the whole pool, so features measured in Hz don't drown out ones measured in 0-1.
+    """
+    pool = np.vstack([reference, candidates])
+    q75, q25 = np.percentile(pool, [75, 25], axis=0)
+    scale = (q75 - q25) / 1.349  # IQR -> standard deviation for normal data
+    std = pool.std(axis=0)
+    scale = np.where(scale > 1e-9, scale, std)
+    scale = np.where(scale > 1e-9, scale, 1.0)
+    z_diff = (candidates - reference) / scale
+    rms_diff = np.sqrt(np.mean(z_diff ** 2, axis=1))
+    # Two unrelated tracks average ~1.4 standard deviations apart, which maps to ~0.4
+    return np.exp(-rms_diff / 1.5)
+
 
 class EnhancedAudioProcessor:
-    def __init__(self):
-        self.scaler = RobustScaler()  # More robust to outliers than StandardScaler
-        self.pca = None  # Optional dimensionality reduction
-        
+
     @staticmethod
     def download_audio(url: str, filename: Optional[str] = None) -> Optional[str]:
-        """Downloads audio from a URL to a local file with improved error handling"""
+        """Downloads audio from a URL to a local file"""
         if not filename:
             temp_file = tempfile.NamedTemporaryFile(suffix='.mp3', delete=False)
             filename = temp_file.name
             temp_file.close()
-        
+
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://www.deezer.com",
             "Accept": "audio/mpeg, audio/*, */*",
-            "Range": "bytes=0-"
         }
-        
+
         try:
-            import requests
-            response = requests.get(url, headers=headers, stream=True, timeout=30)
-            
-            if response.status_code in [200, 206]:
-                total_size = 0
-                with open(filename, "wb") as file:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            file.write(chunk)
-                            total_size += len(chunk)
-                            
-                            # Stop if file gets too large (> 5MB)
-                            if total_size > 5 * 1024 * 1024:
-                                logger.warning(f"File too large, stopping download: {filename}")
-                                break
-                
-                # Validate file size
-                file_size = os.path.getsize(filename)
-                if file_size < 10 * 1024:  # Less than 10KB
-                    logger.error(f"Downloaded file too small: {filename} ({file_size} bytes)")
-                    os.remove(filename)
-                    return None
-                    
-                logger.info(f"Successfully downloaded {file_size} bytes to {filename}")
-                return filename
-            else:
+            response = requests.get(url, headers=headers, stream=True, timeout=15)
+            if response.status_code not in (200, 206):
                 logger.error(f"HTTP error downloading audio: {response.status_code}")
+                os.remove(filename)
                 return None
-                
+
+            total_size = 0
+            with open(filename, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        file.write(chunk)
+                        total_size += len(chunk)
+                        # Stop if file gets too large (> 5MB)
+                        if total_size > 5 * 1024 * 1024:
+                            logger.warning(f"File too large, stopping download: {filename}")
+                            break
+
+            file_size = os.path.getsize(filename)
+            if file_size < 10 * 1024:  # Less than 10KB
+                logger.error(f"Downloaded file too small: {filename} ({file_size} bytes)")
+                os.remove(filename)
+                return None
+
+            return filename
+
         except Exception as e:
             logger.error(f"Exception downloading audio: {e}")
             if filename and os.path.exists(filename):
@@ -134,348 +195,145 @@ class EnhancedAudioProcessor:
 
     @staticmethod
     def convert_mp3_to_wav(mp3_path: str) -> Optional[str]:
-        """Enhanced MP3 to WAV conversion with multiple fallback methods"""
-        wav_path = mp3_path.replace('.mp3', '.wav')
-        
-        # Try ffmpeg first
+        """Convert with ffmpeg as a fallback when librosa can't decode the MP3 directly"""
+        wav_path = mp3_path.rsplit('.', 1)[0] + '.wav'
         try:
-            result = subprocess.run(
-                ['ffmpeg', '-y', '-i', mp3_path, '-acodec', 'pcm_s16le', '-ar', '22050', wav_path],
+            subprocess.run(
+                ['ffmpeg', '-y', '-i', mp3_path, '-acodec', 'pcm_s16le', '-ar', str(SAMPLE_RATE), wav_path],
                 check=True,
                 capture_output=True,
-                text=True,
                 timeout=30
             )
-            
             if os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
-                logger.info(f"Successfully converted to WAV: {wav_path}")
                 return wav_path
-                
-        except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+        except (subprocess.SubprocessError, FileNotFoundError) as e:
             logger.warning(f"ffmpeg conversion failed: {e}")
-        
-        # Fallback: try to use librosa for conversion
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+        return None
+
+    def _load_audio(self, audio_path: str):
         try:
-            y, sr = librosa.load(mp3_path, sr=22050)
-            import soundfile as sf
-            sf.write(wav_path, y, sr)
-            
-            if os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
-                logger.info(f"Successfully converted using librosa/soundfile: {wav_path}")
-                return wav_path
-                
+            return librosa.load(audio_path, sr=SAMPLE_RATE, mono=True, duration=MAX_DURATION)
         except Exception as e:
-            logger.warning(f"Librosa conversion failed: {e}")
-        
-        # If conversion fails, return original file and let librosa handle it
-        logger.info(f"Using original MP3 file: {mp3_path}")
-        return mp3_path
+            logger.warning(f"Failed to load audio directly, trying ffmpeg: {e}")
+
+        wav_path = self.convert_mp3_to_wav(audio_path)
+        if not wav_path:
+            return None, None
+        try:
+            return librosa.load(wav_path, sr=SAMPLE_RATE, mono=True, duration=MAX_DURATION)
+        except Exception as e:
+            logger.error(f"Failed to load converted audio: {e}")
+            return None, None
+        finally:
+            os.remove(wav_path)
 
     def extract_comprehensive_features(self, audio_path: str) -> Optional[AudioFeatures]:
-        """Extract comprehensive audio features using advanced techniques"""
+        """Extract summary audio features from a file"""
         try:
-            # Validate file
-            if not os.path.exists(audio_path):
-                logger.error(f"Audio file does not exist: {audio_path}")
+            if not os.path.exists(audio_path) or os.path.getsize(audio_path) < 10 * 1024:
+                logger.error(f"Audio file missing or too small: {audio_path}")
                 return None
 
-            file_size = os.path.getsize(audio_path)
-            if file_size < 10 * 1024:  # 10KB threshold
-                logger.error(f"Audio file too small: {audio_path} ({file_size} bytes)")
+            y, sr = self._load_audio(audio_path)
+            if y is None or len(y) == 0 or np.max(np.abs(y)) < 1e-4:
+                logger.error(f"Empty or silent audio loaded from: {audio_path}")
                 return None
 
-            # Load audio with optimal parameters
-            try:
-                # Load with specific parameters for better feature extraction
-                y, sr = librosa.load(
-                    audio_path,
-                    sr=16000,  # Standard sample rate for music analysis
-                    mono=True,  # Convert to mono
-                    res_type='kaiser_fast',  # Fast resampling
-                    duration=15.0
-                )
-
-                # Normalize audio to prevent clipping artifacts
-                if len(y) > 0:
-                    y = librosa.util.normalize(y)
-                else:
-                    logger.error(f"Empty audio loaded from: {audio_path}")
-                    return None
-
-            except Exception as e:
-                logger.error(f"Failed to load audio: {e}")
-
-                # Try conversion fallback
-                if audio_path.endswith('.mp3'):
-                    converted_path = self.convert_mp3_to_wav(audio_path)
-                    if converted_path != audio_path:
-                        try:
-                            y, sr = librosa.load(converted_path, sr=22050, mono=True)
-                            y = librosa.util.normalize(y)
-                        except Exception as inner_e:
-                            logger.error(f"Failed to load converted audio: {inner_e}")
-                            return None
-                    else:
-                        return None
-                else:
-                    return None
+            # Normalize peak level so tracks mastered at different volumes compare fairly
+            y = librosa.util.normalize(y)
 
             # Ensure minimum audio length (at least 1 second)
             if len(y) < sr:
-                logger.warning(f"Audio too short for reliable analysis: {len(y) / sr:.2f}s")
-                # Pad with silence if too short
                 y = np.pad(y, (0, sr - len(y)), mode='constant')
 
-            logger.info(f"Processing audio: {len(y) / sr:.2f}s at {sr}Hz")
+            # Precompute spectrogram to share across features
+            stft = np.abs(librosa.stft(y, n_fft=N_FFT, hop_length=HOP_LENGTH))
 
-            # Precompute STFT to share across features
-            hop_length = 1024
-            n_fft = 2048
-            stft = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length))
+            # Timbre
+            mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=HOP_LENGTH)
 
-            # Extract features with error handling for each feature type
-            features = {}
+            # Spectral texture
+            spectral_centroid = np.mean(librosa.feature.spectral_centroid(S=stft, sr=sr))
+            spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(S=stft, sr=sr))
+            spectral_contrast = librosa.feature.spectral_contrast(S=stft, sr=sr, n_bands=6)
+            spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(S=stft, sr=sr))
+            spectral_flatness = np.mean(librosa.feature.spectral_flatness(S=stft))
+            zcr = np.mean(librosa.feature.zero_crossing_rate(y, hop_length=HOP_LENGTH))
 
-            # 1. Spectral Features
-            try:
-                # MFCCs (Mel-frequency cepstral coefficients) - most important
-                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=12, hop_length=hop_length)
-                features['mfccs'] = mfccs
+            # Harmony and key
+            chroma_mean = np.mean(librosa.feature.chroma_stft(S=stft ** 2, sr=sr), axis=1)
+            key_signature, mode = _estimate_key(chroma_mean)
 
-                # Spectral centroid (brightness)
-                spectral_centroid = np.mean(librosa.feature.spectral_centroid(S=stft, sr=sr))
-                features['spectral_centroid'] = float(spectral_centroid)
+            # Rhythm
+            onset_envelope = librosa.onset.onset_strength(y=y, sr=sr, hop_length=HOP_LENGTH)
+            tempo = _estimate_tempo(onset_envelope, sr)
+            onsets = librosa.onset.onset_detect(onset_envelope=onset_envelope, sr=sr, hop_length=HOP_LENGTH)
+            onset_density = len(onsets) / (len(y) / sr)
 
-                # Spectral bandwidth
-                spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(S=stft, sr=sr))
-                features['spectral_bandwidth'] = float(spectral_bandwidth)
+            # Dynamics
+            rms = librosa.feature.rms(S=stft, frame_length=N_FFT, hop_length=HOP_LENGTH)[0]
+            loud, quiet = np.percentile(rms, [95, 5])
+            dynamic_range = 20 * np.log10((loud + 1e-6) / (quiet + 1e-6))
 
-                # Spectral contrast
-                spectral_contrast = librosa.feature.spectral_contrast(S=stft, sr=sr, n_bands=6)
-                features['spectral_contrast'] = spectral_contrast
+            features = AudioFeatures(
+                mfcc_mean=np.mean(mfccs, axis=1),
+                mfcc_std=np.std(mfccs, axis=1),
+                spectral_contrast=np.mean(spectral_contrast, axis=1),
+                chroma=chroma_mean,
+                spectral_centroid=float(spectral_centroid),
+                spectral_bandwidth=float(spectral_bandwidth),
+                spectral_rolloff=float(spectral_rolloff),
+                spectral_flatness=float(spectral_flatness),
+                zero_crossing_rate=float(zcr),
+                tempo=tempo,
+                onset_strength=float(np.mean(onset_envelope)),
+                onset_density=float(onset_density),
+                rms_energy=float(np.mean(rms)),
+                dynamic_range=float(dynamic_range),
+                key_signature=int(key_signature),
+                mode=int(mode),
+            )
 
-                # Spectral rolloff (frequency below which 85% of energy is contained)
-                spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(S=stft, sr=sr))
-                features['spectral_rolloff'] = float(spectral_rolloff)
-
-                # Spectral flatness (measure of how noise-like vs. tonal)
-                spectral_flatness = np.mean(librosa.feature.spectral_flatness(S=stft))
-                features['spectral_flatness'] = float(spectral_flatness)
-
-                # Zero crossing rate (measure of percussive content)
-                zcr = np.mean(librosa.feature.zero_crossing_rate(y, hop_length=hop_length))
-                features['zero_crossing_rate'] = float(zcr)
-
-            except Exception as e:
-                logger.error(f"Error extracting spectral features: {e}")
+            if not np.isfinite(features.to_vector()).all():
+                logger.warning(f"Feature vector contains invalid values: {audio_path}")
                 return None
 
-            # 2. Harmonic Features
-            try:
-                # Chroma features (harmonic content)
-                chroma = librosa.feature.chroma_stft(S=stft, sr=sr)
-                features['chroma'] = chroma
-                """
-                # Tonnetz (tonal centroid features)
-                tonnetz = librosa.feature.tonnetz(y=librosa.effects.harmonic(y), sr=sr)
-                features['tonnetz'] = tonnetz
-                """
-            except Exception as e:
-                logger.warning(f"Error extracting harmonic features: {e}")
-                # Provide fallback values
-                features['chroma'] = np.zeros((12, 1))
-                # features['tonnetz'] = np.zeros((6, 1))
-
-            # 3. Rhythmic Features
-            try:
-                # Approximate tempo using onset strength and Librosa's tempo estimation
-                onset_envelope = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
-                tempo = librosa.beat.tempo(onset_envelope=onset_envelope, sr=sr, hop_length=hop_length)[0]
-                features['tempo'] = float(tempo)
-
-                onset_strength = np.mean(onset_envelope)
-                features['onset_strength'] = float(onset_strength)
-
-            except Exception as e:
-                logger.warning(f"Error extracting rhythmic features: {e}")
-                features['tempo'] = 120.0  # Default tempo
-                # features['beat_strength'] = 0.0
-                features['onset_strength'] = 0.0
-
-            # 4. Dynamic Features
-            try:
-                # RMS energy (overall loudness)
-                rms = librosa.feature.rms(S=stft)
-                rms_energy = np.mean(rms)
-                features['rms_energy'] = float(rms_energy)
-
-                # Dynamic range (difference between loudest and quietest parts)
-                dynamic_range = np.max(rms) - np.min(rms)
-                features['dynamic_range'] = float(dynamic_range)
-
-            except Exception as e:
-                logger.warning(f"Error extracting dynamic features: {e}")
-                features['rms_energy'] = 0.0
-                features['dynamic_range'] = 0.0
-
-            # 5. High-level Features (Key and Mode)
-            try:
-                # Extract key signature and mode using chroma features
-                chroma_mean = np.mean(features['chroma'], axis=1)
-
-                # Simple key detection using chroma profile correlation
-                # This is a basic implementation - more sophisticated methods exist
-                key_profiles = np.array([
-                    [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1],  # C major
-                    [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0],  # A minor
-                ])
-
-                correlations = []
-                for key in range(12):
-                    rotated_chroma = np.roll(chroma_mean, key)
-                    major_corr = np.dot(rotated_chroma, key_profiles[0]) / (
-                            np.linalg.norm(rotated_chroma) * np.linalg.norm(key_profiles[0]))
-                    minor_corr = np.dot(rotated_chroma, key_profiles[1]) / (
-                            np.linalg.norm(rotated_chroma) * np.linalg.norm(key_profiles[1]))
-                    correlations.append((key, 1, major_corr))
-                    correlations.append((key, 0, minor_corr))
-
-                # Find best key and mode
-                best_key, best_mode, _ = max(correlations, key=lambda x: x[2])
-                features['key_signature'] = int(best_key)
-                features['mode'] = int(best_mode)
-
-            except Exception as e:
-                logger.warning(f"Error extracting key/mode: {e}")
-                features['key_signature'] = 0  # Default to C
-                features['mode'] = 1  # Default to major
-
-            # Create AudioFeatures object
-            try:
-                audio_features = AudioFeatures(
-                    mfccs=features['mfccs'],
-                    spectral_centroid=features['spectral_centroid'],
-                    spectral_bandwidth=features['spectral_bandwidth'],
-                    spectral_contrast=features['spectral_contrast'],
-                    spectral_rolloff=features['spectral_rolloff'],
-                    spectral_flatness=features['spectral_flatness'],
-                    zero_crossing_rate=features['zero_crossing_rate'],
-                    chroma=features['chroma'],
-                    # tonnetz=features['tonnetz'],
-                    tempo=features['tempo'],
-                    # beat_strength=features['beat_strength'],
-                    onset_strength=features['onset_strength'],
-                    rms_energy=features['rms_energy'],
-                    dynamic_range=features['dynamic_range'],
-                    key_signature=features['key_signature'],
-                    mode=features['mode']
-                )
-
-                # Validate feature vector
-                feature_vector = audio_features.to_vector()
-                if not np.isfinite(feature_vector).all():
-                    logger.warning("Feature vector contains invalid values, cleaning...")
-                    feature_vector = np.nan_to_num(feature_vector, nan=0.0, posinf=1.0, neginf=-1.0)
-
-                logger.info(f"Successfully extracted {len(feature_vector)} features")
-                return audio_features
-
-            except Exception as e:
-                logger.error(f"Error creating AudioFeatures object: {e}")
-                return None
+            return features
 
         except Exception as e:
             logger.error(f"Unexpected error in feature extraction: {e}")
             return None
 
     def calculate_advanced_similarity(self, reference_features: AudioFeatures,
-                                      comparison_features: list[AudioFeatures]) -> list[float]:
-        """Calculate similarity using feature-specific metrics and weighted combination"""
+                                      comparison_features: List[AudioFeatures]) -> List[float]:
+        """
+        Similarity (0-1) of each comparison track to the reference. Vector features are scaled
+        across the pool of tracks being compared, so scores are relative to that pool.
+        """
         if not comparison_features:
             return []
 
-        try:
-            similarities = []
-            # Precompute reference means
-            ref_mfcc_mean = np.mean(reference_features.mfccs, axis=1)
-            ref_chroma_mean = np.mean(reference_features.chroma, axis=1)
+        group_scores = {}
+        for group, vector_fn in (
+            ('timbre', AudioFeatures.timbre_vector),
+            ('texture', AudioFeatures.texture_vector),
+            ('energy', AudioFeatures.energy_vector),
+            ('harmony', lambda f: f.chroma),
+        ):
+            reference = vector_fn(reference_features)
+            candidates = np.array([vector_fn(f) for f in comparison_features])
+            group_scores[group] = _pool_similarity(reference, candidates)
 
-            for comp_features in comparison_features:
-                # 1. MFCC Similarity (Timbre)
-                comp_mfcc_mean = np.mean(comp_features.mfccs, axis=1)
-                mfcc_sim = cosine_similarity([ref_mfcc_mean], [comp_mfcc_mean])[0, 0]
-                mfcc_sim = (mfcc_sim + 1) / 2  # Normalize from [-1,1] to [0,1]
+        group_scores['rhythm'] = np.array([
+            tempo_similarity(reference_features.tempo, f.tempo) for f in comparison_features
+        ])
+        group_scores['key'] = np.array([
+            key_similarity(reference_features.key_signature, reference_features.mode,
+                           f.key_signature, f.mode)
+            for f in comparison_features
+        ])
 
-                # 2. Chroma Similarity (Harmony)
-                comp_chroma_mean = np.mean(comp_features.chroma, axis=1)
-                chroma_sim = cosine_similarity([ref_chroma_mean], [comp_chroma_mean])[0, 0]
-                chroma_sim = (chroma_sim + 1) / 2
-
-                # 3. Tempo Similarity (Rhythm)
-                tempo_diff = abs(reference_features.tempo - comp_features.tempo
-                                 if reference_features.tempo is not None and comp_features.tempo is not None
-                                 else 0.0)
-                tempo_sim = np.exp(-tempo_diff / 15)
-
-                # 4. Spectral Features Similarity (Texture)
-                spectral_ref = np.array([
-                    reference_features.spectral_centroid,
-                    reference_features.spectral_bandwidth,
-                    reference_features.spectral_rolloff,
-                    reference_features.spectral_flatness,
-                    reference_features.zero_crossing_rate
-                ])
-                spectral_comp = np.array([
-                    comp_features.spectral_centroid,
-                    comp_features.spectral_bandwidth,
-                    comp_features.spectral_rolloff,
-                    comp_features.spectral_flatness,
-                    comp_features.zero_crossing_rate
-                ])
-                spectral_sim = cosine_similarity([spectral_ref], [spectral_comp])[0, 0]
-                spectral_sim = (spectral_sim + 1) / 2
-
-                # 5. Dynamic Features Similarity (Loudness)
-                dynamic_ref = np.array([reference_features.rms_energy, reference_features.dynamic_range])
-                dynamic_comp = np.array([comp_features.rms_energy, comp_features.dynamic_range])
-                dynamic_sim = cosine_similarity([dynamic_ref], [dynamic_comp])[0, 0]
-                dynamic_sim = (dynamic_sim + 1) / 2
-
-                # 6. Key and Mode Similarity (Tonality)
-                key_sim = 1 if reference_features.key_signature == comp_features.key_signature else 0
-                mode_sim = 1 if reference_features.mode == comp_features.mode else 0
-
-                # Combine with weights
-                weights = {
-                    'mfcc': 0.25,  # Timbre
-                    'chroma': 0.15,  # Harmony
-                    'tempo': 0.2,  # Rhythm
-                    'spectral': 0.2,  # Texture
-                    'dynamic': 0.1,  # Dynamics
-                    'key_mode': 0.1  # Tonality
-                }
-                total_similarity = (
-                        weights['mfcc'] * mfcc_sim +
-                        weights['chroma'] * chroma_sim +
-                        weights['tempo'] * tempo_sim +
-                        weights['spectral'] * spectral_sim +
-                        weights['dynamic'] * dynamic_sim +
-                        weights['key_mode'] * (key_sim + mode_sim) / 2
-                )
-                similarities.append(float(total_similarity))
-
-            return similarities
-
-        except Exception as e:
-            logger.error(f"Error calculating advanced similarity: {e}")
-            return [0.5] * len(comparison_features)
-
-# Legacy compatibility function
-def extract_audio_features(audio_path: str) -> Optional[np.ndarray]:
-    """Legacy function that returns a simple feature vector for backwards compatibility"""
-    processor = EnhancedAudioProcessor()
-    features = processor.extract_comprehensive_features(audio_path)
-    
-    if features:
-        return features.to_vector()
-    return None
+        total = sum(SIMILARITY_WEIGHTS[group] * scores for group, scores in group_scores.items())
+        return [float(np.clip(score, 0.0, 1.0)) for score in total]
