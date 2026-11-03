@@ -11,10 +11,11 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
 import deezer
+import numpy as np
 import requests
 from dotenv import load_dotenv
 
-from cadence import AudioFeatures, EnhancedAudioProcessor
+from embeddings import EffnetEmbedder, SongCatalog
 
 # Load variables from .env into the environment
 load_dotenv()
@@ -34,7 +35,9 @@ SIMILAR_ARTISTS_LIMIT = 8
 TRACKS_PER_SIMILAR_ARTIST = 5
 SEED_ARTIST_TRACKS_LIMIT = 10
 MAX_POOL_TRACKS_PER_ARTIST = 3   # keep the analyzed pool from being dominated by one artist
-MIN_ANALYSIS_POOL = 30           # how many candidates to download and analyze
+MIN_ANALYSIS_POOL = 30           # how many Last.fm candidates to compare by sound
+CATALOG_NEIGHBORS = 40           # how many sound-alikes to pull from the song catalog
+CONTEXT_ARTISTS_LIMIT = 100      # similar artists used to judge how related a catalog song is
 
 # Final score = blend of how a track sounds and how listeners relate it (Last.fm)
 AUDIO_WEIGHT = 0.65
@@ -75,7 +78,8 @@ class Track:
     preview_url: Optional[str] = None
     album_cover: Optional[str] = None
     release_year: Optional[int] = None
-    features: Optional[AudioFeatures] = None
+    embedding: Optional[np.ndarray] = None  # Discogs-EffNet description of how it sounds
+    source: str = 'related'        # 'related': found via Last.fm listeners, 'sound': found in the catalog by sound
     context_score: float = 0.0     # how strongly Last.fm listeners relate this track to the seed
     audio_score: Optional[float] = None
     similarity_score: float = 0.0  # final blended score, 0-1
@@ -215,6 +219,28 @@ def artists_match(a: str, b: str) -> bool:
     return any(longer.startswith(f"{shorter} {joiner} ") for joiner in ('and', 'with', 'x', 'vs'))
 
 
+def split_artists(artist: str) -> set:
+    """'Porter Wagoner & Dolly Parton' -> {'porter wagoner and dolly parton', 'porter wagoner', 'dolly parton'}"""
+    parts = re.split(r"\s*(?:&|,|\+|\band\b|\bx\b|\bwith\b|\bvs\.?|\bfeat\.?|\bft\.?|\bfeaturing\b)\s*",
+                     artist, flags=re.IGNORECASE)
+    names = {normalize_artist(part) for part in parts} | {normalize_artist(artist)}
+    names.discard('')
+    return names
+
+
+def _contains_title(a: str, b: str) -> bool:
+    """Whether one normalized title contains the other as whole words, e.g. the full title of a classical piece."""
+    shorter, longer = sorted((a, b), key=len)
+    return bool(shorter) and re.search(rf"\b{re.escape(shorter)}\b", longer) is not None
+
+
+def song_key(title: str, artist: str) -> str:
+    """Identifies a song across sources: normalized title plus the first credited artist."""
+    first_artist = re.split(r"\s*(?:&|,|\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b)\s*", artist,
+                            flags=re.IGNORECASE)[0]
+    return f"{normalize_title(title)}|{normalize_artist(first_artist)}"
+
+
 def parse_timeframe(timeframe: Optional[str]) -> Optional[Tuple[int, int]]:
     """'80s' -> (1980, 1989), '2010s' -> (2010, 2019). None for 'Any' or unknown values."""
     match = re.fullmatch(r"(\d{2}|\d{4})s", (timeframe or '').strip().lower())
@@ -278,6 +304,11 @@ class LastFMClient:
             tracks = data.get('toptracks', {}).get('track', [])
             return [(t.get('name', ''), t.get('artist', {}).get('name', artist)) for t in tracks][:limit]
         return self._cache.get_or_compute(('top_tracks', artist.lower(), limit), fetch)
+
+    def get_tag_top_tracks(self, tag: str, limit: int = 50) -> List[Tuple[str, str]]:
+        data = self._get('tag.getTopTracks', tag=tag, limit=limit) or {}
+        tracks = data.get('tracks', {}).get('track', [])
+        return [(t.get('name', ''), t.get('artist', {}).get('name', '')) for t in tracks][:limit]
 
     def get_artist_tags(self, artist: str, limit: int = 8) -> List[str]:
         def fetch():
@@ -357,37 +388,45 @@ class DeezerClient:
 
 
 class MusicRecommender:
-    def __init__(self):
-        self.deezer_client = DeezerClient()
-        self.audio_processor = EnhancedAudioProcessor()
-        self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
-        self._features_cache = LRUCache(max_size=2000)
+    """
+    Hybrid recommender: candidates come from what Last.fm listeners relate to the seed song AND from
+    the song catalog's closest sound-alikes; all are scored on sound (Discogs-EffNet) plus listener context.
+    """
 
-    def analyze_track(self, track: Track) -> Track:
-        """Download the track's preview and extract audio features (cached per Deezer ID)."""
-        def compute():
-            if not track.preview_url:
-                return None
-            temp_file = self.audio_processor.download_audio(track.preview_url)
-            if not temp_file:
-                return None
-            try:
-                return self.audio_processor.extract_comprehensive_features(temp_file)
-            finally:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+    def __init__(self, embedder: Optional[EffnetEmbedder] = None, catalog: Optional[SongCatalog] = None):
+        self.deezer_client = DeezerClient()
+        self.lastfm_client = LastFMClient(LASTFM_API_KEY, LASTFM_API_SECRET)
+        self.embedder = embedder or EffnetEmbedder()
+        self.catalog = catalog if catalog is not None else SongCatalog(key_fn=song_key)
+
+    def embed_tracks(self, tracks: List[Track]) -> List[Track]:
+        """Attach embeddings from the catalog, analyzing the rest (in batches) and adding them to the catalog."""
+        missing = []
+        for track in tracks:
+            if track.embedding is None:
+                known = self.catalog.get(track.id)
+                if known:
+                    track.embedding = known[1]
+                else:
+                    missing.append(track)
+        if not missing:
+            return tracks
 
         try:
-            features = self._features_cache.get(track.id)
-            if features is LRUCache._MISSING:
-                features = compute()
-                # Only cache successes so a flaky download can be retried next time
-                if features is not None:
-                    self._features_cache.set(track.id, features)
-            track.features = features
+            embeddings = self.embedder.embed_urls([t.preview_url for t in missing])
         except Exception as e:
-            logger.error(f"Error analyzing track {track}: {e}")
-        return track
+            logger.error(f"Error analyzing {len(missing)} tracks: {e}")
+            return tracks
+        for track, embedding in zip(missing, embeddings):
+            if embedding is None:
+                continue
+            track.embedding = embedding
+            song = {'deezer_id': track.id, 'title': track.title, 'artist': track.artist_name,
+                    'cover': track.album_cover}
+            if track.release_year:
+                song['release_year'] = track.release_year
+            self.catalog.add(song, embedding)
+        return tracks
 
     def _resolve_reference(self, track_name: str, artist_name: str, track_id: Optional[int]) -> Optional[Track]:
         if track_id:
@@ -397,34 +436,34 @@ class MusicRecommender:
                 logger.warning(f"Could not load Deezer track {track_id}, falling back to search: {e}")
         return self.deezer_client.find_track(track_name, artist_name)
 
-    def _gather_candidates(self, track_name: str, artist_name: str, similar_artist_limit: int) -> List[Track]:
-        """Collect candidates from Last.fm, each with a 0-1 context score."""
+    def _gather_candidates(self, track_name: str, artist_name: str,
+                           similar_artist_limit: int) -> Tuple[List[Track], List[Tuple[str, float]]]:
+        """Collect candidates from Last.fm, each with a 0-1 context score, plus the seed's similar artists."""
         def decay(rank: int) -> float:
             return 1.0 / (1.0 + 0.25 * rank)
 
-        def from_similar_artists() -> List[Track]:
-            similar_artists = self.lastfm_client.get_similar_artists(artist_name, similar_artist_limit)
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                top_tracks = list(executor.map(
-                    lambda a: self.lastfm_client.get_artist_top_tracks(a[0], TRACKS_PER_SIMILAR_ARTIST),
-                    similar_artists
-                ))
-            return [
-                Track(id=0, title=title, artist_name=artist, context_score=0.8 * match * decay(rank))
-                for (_, match), tracks in zip(similar_artists, top_tracks)
-                for rank, (title, artist) in enumerate(tracks)
-            ]
-
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_similar = executor.submit(self.lastfm_client.get_similar_tracks, artist_name, track_name)
-            future_artists = executor.submit(from_similar_artists)
+            future_artists = executor.submit(self.lastfm_client.get_similar_artists, artist_name, CONTEXT_ARTISTS_LIMIT)
             future_seed = executor.submit(self.lastfm_client.get_artist_top_tracks, artist_name, SEED_ARTIST_TRACKS_LIMIT)
 
+            similar_artists = future_artists.result()
+            closest_artists = similar_artists[:similar_artist_limit]
+            with ThreadPoolExecutor(max_workers=4) as inner:
+                top_tracks = list(inner.map(
+                    lambda a: self.lastfm_client.get_artist_top_tracks(a[0], TRACKS_PER_SIMILAR_ARTIST),
+                    closest_artists
+                ))
+            from_similar_artists = [
+                Track(id=0, title=title, artist_name=artist, context_score=0.8 * match * decay(rank))
+                for (_, match), tracks in zip(closest_artists, top_tracks)
+                for rank, (title, artist) in enumerate(tracks)
+            ]
             seed_artist_tracks = [
                 Track(id=0, title=title, artist_name=artist, context_score=0.4 * decay(rank))
                 for rank, (title, artist) in enumerate(future_seed.result())
             ]
-            return future_similar.result() + future_artists.result() + seed_artist_tracks
+            return future_similar.result() + from_similar_artists + seed_artist_tracks, similar_artists
 
     def get_recommendations(self, track_name: str, artist_name: str,
                             recommendations_count: int = FINAL_RECOMMENDATIONS_COUNT,
@@ -446,48 +485,51 @@ class MusicRecommender:
             # Use the canonical names Deezer has for the track
             track_name, artist_name = reference.title, reference.artist_name
 
-        progress.update("Fetching similar tracks...", 15)
-        # Filters throw away many candidates, so start from a wider net
-        candidates = self._gather_candidates(
-            track_name, artist_name, SIMILAR_ARTISTS_LIMIT * 2 if filtering else SIMILAR_ARTISTS_LIMIT
-        )
-        logger.info(f"Found {len(candidates)} candidate tracks")
+        with ThreadPoolExecutor(max_workers=1) as seed_executor:
+            # Analyze the seed while Last.fm and Deezer are being queried
+            future_reference = seed_executor.submit(self.embed_tracks, [reference]) if reference else None
 
-        candidates = self._filter_tracks(candidates, track_name, artist_name)
-        if genre:
-            candidates = self._filter_by_genre(candidates, genre)
-        if not candidates:
-            result.notices.append("We couldn't find any related tracks for this song. Try another one!")
-            return result
+            progress.update("Fetching similar tracks...", 15)
+            # Filters throw away many candidates, so start from a wider net
+            candidates, similar_artists = self._gather_candidates(
+                track_name, artist_name, SIMILAR_ARTISTS_LIMIT * 2 if filtering else SIMILAR_ARTISTS_LIMIT
+            )
+            logger.info(f"Found {len(candidates)} candidate tracks from Last.fm")
 
-        # Analyze the most related tracks first, with a cap per artist so the pool stays diverse
-        candidates.sort(key=lambda t: t.context_score, reverse=True)
-        pool_size = max(MIN_ANALYSIS_POOL, recommendations_count * 4) * (2 if year_range else 1)
-        pool = self._diversify(candidates, pool_size, MAX_POOL_TRACKS_PER_ARTIST)
+            candidates = self._filter_tracks(candidates, track_name, artist_name)
+            if genre:
+                candidates = self._filter_by_genre(candidates, genre)
 
-        progress.update("Finding tracks on Deezer...", 30)
-        pool = self._resolve_on_deezer(pool)
-        if year_range:
-            pool = self._filter_by_year(pool, year_range)
-        if not pool:
-            result.notices.append("None of the related tracks matched your filters. Try setting them to Any.")
-            return result
+            # Compare the most related tracks first, with a cap per artist so the pool stays diverse
+            candidates.sort(key=lambda t: t.context_score, reverse=True)
+            pool_size = max(MIN_ANALYSIS_POOL, recommendations_count * 4) * (2 if year_range else 1)
+            pool = self._diversify(candidates, pool_size, MAX_POOL_TRACKS_PER_ARTIST)
 
-        progress.update("Analyzing audio...", 50)
-        with ThreadPoolExecutor(max_workers=6) as executor:
-            analyzed = list(executor.map(self.analyze_track, ([reference] if reference else []) + pool))
-        if reference:
-            reference, pool = analyzed[0], analyzed[1:]
+            progress.update("Finding tracks...", 30)
+            pool = self._resolve_tracks(pool)
+            if year_range:
+                pool = self._filter_by_year(pool, year_range)
+
+            progress.update("Listening to tracks...", 50)
+            self.embed_tracks(pool)
+            seed_embedding = future_reference.result()[0].embedding if future_reference else None
+
+        if seed_embedding is not None:
+            progress.update("Searching the catalog for sound-alikes...", 85)
+            pool += self._catalog_neighbors(seed_embedding, pool, track_name, artist_name, genre, year_range)
         else:
-            pool = analyzed
-
-        progress.update("Calculating similarities...", 90)
-        self._score(reference, pool)
-        if not (reference and reference.features):
             result.notices.append(
                 "We couldn't analyze the audio for this song, so these picks are based on what similar listeners play."
             )
+        self.catalog.save()
 
+        if not pool:
+            result.notices.append("None of the related tracks matched your filters. Try setting them to Any."
+                                  if filtering else "We couldn't find any related tracks for this song. Try another one!")
+            return result
+
+        progress.update("Calculating similarities...", 95)
+        self._score(seed_embedding, pool, similar_artists)
         pool.sort(key=lambda t: t.similarity_score, reverse=True)
         result.tracks = self._diversify(pool, recommendations_count, max_per_artist=1)
         if len(result.tracks) < recommendations_count:
@@ -502,41 +544,78 @@ class MusicRecommender:
         logger.info(f"Top {len(result.tracks)} recommendations for '{track_name}' by '{artist_name}':")
         for i, rec in enumerate(result.tracks, 1):
             audio = f"{rec.audio_score:.3f}" if rec.audio_score is not None else "n/a"
-            logger.info(f"  {i}. {rec} (score {rec.similarity_score:.3f}, audio {audio}, context {rec.context_score:.3f})")
+            logger.info(f"  {i}. {rec} [{rec.source}] (score {rec.similarity_score:.3f}, "
+                        f"audio {audio}, context {rec.context_score:.3f})")
         return result
 
-    def _score(self, reference: Optional[Track], pool: List[Track]):
-        """Blend audio similarity with Last.fm context. Tracks that couldn't be analyzed rank on context alone."""
-        max_context = max((t.context_score for t in pool), default=0) or 1.0
-        for track in pool:
-            track.context_score = track.context_score / max_context
+    def _catalog_neighbors(self, seed_embedding: np.ndarray, pool: List[Track], track_name: str,
+                           artist_name: str, genre: Optional[str], year_range: Optional[Tuple[int, int]]) -> List[Track]:
+        """Songs in the catalog that sound most like the seed, excluding the seed artist and the pool."""
+        seed_title, seed_artists = normalize_title(track_name), split_artists(artist_name)
+        taken_ids = {t.id for t in pool}
+        taken_keys = {song_key(t.title, t.artist_name) for t in pool}
 
-        if not (reference and reference.features):
-            for track in pool:
+        def skip(song: dict) -> bool:
+            return (song['deezer_id'] in taken_ids
+                    or song_key(song['title'], song['artist']) in taken_keys
+                    or normalize_title(song['title']) == seed_title
+                    or bool(split_artists(song['artist']) & seed_artists)
+                    or is_alternate_version(song['title']))
+
+        # Filters drop many neighbors, so look further down the list
+        limit = CATALOG_NEIGHBORS * (3 if genre or year_range else 1)
+        neighbors = [
+            Track(id=song['deezer_id'], title=song['title'], artist_name=song['artist'], album_cover=song.get('cover'),
+                  release_year=song.get('release_year'), embedding=vector, source='sound')
+            for _, song, vector in self.catalog.nearest(seed_embedding, limit, skip)
+        ]
+        if genre:
+            neighbors = self._filter_by_genre(neighbors, genre)
+        if year_range:
+            neighbors = self._filter_by_year(neighbors, year_range)
+        return neighbors[:CATALOG_NEIGHBORS]
+
+    def _score(self, seed_embedding: Optional[np.ndarray], tracks: List[Track], similar_artists: List[Tuple[str, float]]):
+        """
+        Blend how much a track sounds like the seed with how related Last.fm listeners consider it.
+        Catalog finds earn context if their artist is among the seed artist's similar artists.
+        """
+        artist_rank = {}
+        for rank, (name, _) in enumerate(similar_artists):
+            artist_rank.setdefault(normalize_artist(name), rank)
+        for track in tracks:
+            ranks = [artist_rank[name] for name in split_artists(track.artist_name) if name in artist_rank]
+            artist_context = 1 - min(ranks) / len(artist_rank) if ranks else 0.0
+            track.context_score = max(track.context_score, 0.5 * artist_context)
+        max_context = max((t.context_score for t in tracks), default=0) or 1.0
+        for track in tracks:
+            track.context_score /= max_context
+
+        embedded = [t for t in tracks if t.embedding is not None]
+        if seed_embedding is None or not embedded:
+            for track in tracks:
                 track.similarity_score = track.context_score
             return
 
-        analyzed = [t for t in pool if t.features is not None]
-        audio_scores = self.audio_processor.calculate_advanced_similarity(
-            reference.features, [t.features for t in analyzed]
-        )
-        for track, audio_score in zip(analyzed, audio_scores):
-            track.audio_score = audio_score
-        for track in pool:
-            if track.audio_score is not None:
-                track.similarity_score = AUDIO_WEIGHT * track.audio_score + CONTEXT_WEIGHT * track.context_score
-            else:
-                track.similarity_score = CONTEXT_WEIGHT * track.context_score
+        # Rescale sound similarity across this set of tracks so the best match is 1 and the worst 0
+        sims = self.catalog.similarity(seed_embedding, [t.embedding for t in embedded])
+        spread = sims.max() - sims.min()
+        for track, sim in zip(embedded, sims):
+            track.audio_score = float((sim - sims.min()) / spread) if spread > 0 else 1.0
+        for track in tracks:
+            audio = track.audio_score if track.audio_score is not None else 0.0
+            track.similarity_score = AUDIO_WEIGHT * audio + CONTEXT_WEIGHT * track.context_score
 
     @staticmethod
     def _diversify(tracks: List[Track], limit: int, max_per_artist: int) -> List[Track]:
-        """Take tracks in order, allowing at most max_per_artist from any one artist."""
+        """Take tracks in order, allowing at most max_per_artist from any one artist (collaborations count for each)."""
         selected, per_artist = [], {}
         for track in tracks:
-            artist = normalize_artist(track.artist_name)
-            if per_artist.get(artist, 0) >= max_per_artist:
+            names = split_artists(track.artist_name)
+            if any(per_artist.get(name, 0) >= max_per_artist for name in names):
                 continue
-            per_artist[artist] = per_artist.get(artist, 0) + 1
+            for name in names:
+                per_artist[name] = per_artist.get(name, 0) + 1
             selected.append(track)
             if len(selected) >= limit:
                 break
@@ -545,27 +624,33 @@ class MusicRecommender:
     def _filter_tracks(self, tracks: List[Track], reference_title: str, reference_artist: str) -> List[Track]:
         """Drop the reference track, alternate versions and duplicates (keeping the highest score)."""
         reference_title = normalize_title(reference_title)
-        best: Dict[Tuple[str, str], Track] = {}
+        reference_artists = split_artists(reference_artist)
+        # Normalized title -> tracks kept with that title; a duplicate shares the title and an artist
+        kept: Dict[str, List[Track]] = {}
         excluded_count = 0
 
         for track in tracks:
             title = normalize_title(track.title)
+            names = split_artists(track.artist_name)
             lowered = track.title.lower()
             if (not title or title == reference_title
+                    or (names & reference_artists and _contains_title(title, reference_title))
                     or is_alternate_version(track.title)
                     or any(word in lowered for word in BLOCKED_TITLE_WORDS)):
                 excluded_count += 1
                 continue
 
-            key = (title, normalize_artist(track.artist_name))
-            if key in best:
+            same_title = kept.setdefault(title, [])
+            duplicate = next((t for t in same_title if split_artists(t.artist_name) & names), None)
+            if duplicate:
                 excluded_count += 1
-                if track.context_score <= best[key].context_score:
+                if track.context_score <= duplicate.context_score:
                     continue
-            best[key] = track
+                same_title.remove(duplicate)
+            same_title.append(track)
 
         logger.info(f"Filtered out {excluded_count} tracks")
-        return list(best.values())
+        return [track for same_title in kept.values() for track in same_title]
 
     def _filter_by_genre(self, tracks: List[Track], genre: str) -> List[Track]:
         artists = list({t.artist_name for t in tracks})
@@ -576,8 +661,17 @@ class MusicRecommender:
         return filtered
 
     def _filter_by_year(self, tracks: List[Track], year_range: Tuple[int, int]) -> List[Track]:
+        def year_of(track: Track) -> Optional[int]:
+            if track.release_year:
+                return track.release_year
+            year = self.deezer_client.release_year(track.id)
+            if year:
+                # Remember it so the catalog doesn't need to ask Deezer again
+                self.catalog.update(track.id, release_year=year)
+            return year
+
         with ThreadPoolExecutor(max_workers=6) as executor:
-            years = list(executor.map(lambda t: self.deezer_client.release_year(t.id), tracks))
+            years = list(executor.map(year_of, tracks))
         filtered = []
         for track, year in zip(tracks, years):
             track.release_year = year
@@ -586,12 +680,25 @@ class MusicRecommender:
         logger.info(f"Timeframe filter {year_range} kept {len(filtered)} of {len(tracks)} tracks")
         return filtered
 
-    def _resolve_on_deezer(self, tracks: List[Track]) -> List[Track]:
-        """Attach Deezer IDs, previews and covers; drop tracks Deezer doesn't have."""
-        with ThreadPoolExecutor(max_workers=6) as executor:
-            found = list(executor.map(lambda t: self.deezer_client.find_track(t.title, t.artist_name), tracks))
+    def _resolve_tracks(self, tracks: List[Track]) -> List[Track]:
+        """
+        Attach Deezer IDs, covers and embeddings. Songs already in the catalog need no Deezer lookup
+        or audio analysis; others are looked up on Deezer, and dropped if Deezer doesn't have them.
+        """
+        missing = []
         resolved = []
-        for track, deezer_track in zip(tracks, found):
+        for track in tracks:
+            known = self.catalog.find(track.title, track.artist_name)
+            if known:
+                song, track.embedding = known
+                track.id, track.album_cover, track.release_year = song['deezer_id'], song.get('cover'), song.get('release_year')
+                resolved.append(track)
+            else:
+                missing.append(track)
+
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            found = list(executor.map(lambda t: self.deezer_client.find_track(t.title, t.artist_name), missing))
+        for track, deezer_track in zip(missing, found):
             if deezer_track:
                 track.id = deezer_track.id
                 track.preview_url = deezer_track.preview_url
@@ -599,7 +706,8 @@ class MusicRecommender:
                 resolved.append(track)
             else:
                 logger.debug(f"Could not find on Deezer: {track}")
-        logger.info(f"Found {len(resolved)} of {len(tracks)} tracks on Deezer")
+        logger.info(f"Resolved {len(resolved)} of {len(tracks)} tracks "
+                    f"({len(tracks) - len(missing)} already in the catalog)")
         return resolved
 
 

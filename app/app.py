@@ -225,6 +225,7 @@ def recommend():
                 "similarity_score": round(track.similarity_score * 100),
                 "album_cover": track.album_cover,
                 "release_year": track.release_year,
+                "source": track.source,
             }
             for track in result.tracks
         ]

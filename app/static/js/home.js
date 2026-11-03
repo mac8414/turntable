@@ -188,6 +188,9 @@ function renderRecommendationItem(rec) {
             </div>
             <div class="recommendation-right">
                 <div class="recommendation-match">${escapeHtml(rec.similarity_score || 0)}% match</div>
+                <div class="recommendation-source" title="${rec.source === 'sound'
+                    ? 'Found by comparing how songs sound'
+                    : 'Listeners of this song also play it'}">${rec.source === 'sound' ? 'Sounds similar' : 'Fans also play'}</div>
                 <div class="musicLink">
                     <a href="${escapeHtml(links.apple)}" target="_blank" rel="noopener noreferrer">Listen on Apple Music</a>
                 </div>

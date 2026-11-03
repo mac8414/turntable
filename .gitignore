@@ -23,3 +23,7 @@ mobile/TurntableMobile/
 .idea/
 .metadata/
 .vscode/
+
+# Downloaded model and the generated song catalog (see app/build_catalog.py)
+app/models/
+app/data/

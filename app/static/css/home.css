@@ -2666,3 +2666,12 @@ footer {
     transition-duration: 0.01ms !important;
   }
 }
+
+.recommendation-source {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary-orange-light);
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
